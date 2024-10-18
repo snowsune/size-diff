@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Anthropomorphic Sizing Chart</title>
+</head>
+<body>
+    <h1>Anthropomorphic Sizing Chart</h1>
+    <form method="POST">
+        <label for="species">Select Species:</label>
+        <select id="species" name="species">
+            {% for specie in species %}
+                <option value="{{ specie }}" {% if specie == selected_species %} selected {% endif %}>
+                    {{ specie.replace('_', ' ').title() }}
+                </option>
+            {% endfor %}
+        </select>
+        <br>
+        <label for="anthro_height">Anthro Height:</label>
+        <input type="number" step="0.1" id="anthro_height" name="anthro_height" value="{{ anthro_height }}">
+        <br>
+        <button type="submit">Calculate</button>
+    </form>
+
+    {% if calculated_heights %}
+        <h2>Calculated Heights</h2>
+        <table>
+            <tr>
+                <th>Gender</th>
+                <th>Height (cm)</th>
+            </tr>
+            {% for gender, height in calculated_heights.items() %}
+            <tr>
+                <td>{{ gender.title() }}</td>
+                <td>{{ height }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% endif %}
+</body>
+</html>
