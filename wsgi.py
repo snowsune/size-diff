@@ -1,7 +1,7 @@
 import os
 import logging
 
-from app import create_app
+from app import app, create_app
 
 app = create_app()
 
