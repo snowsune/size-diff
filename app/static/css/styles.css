@@ -1,0 +1,101 @@
+/* Basic reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Set background to black and center content */
+body {
+  background-color: #000;
+  color: #fff;
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.container {
+  text-align: center;
+  max-width: 800px;
+  width: 100%;
+  padding: 20px;
+}
+
+/* Title style */
+h1 {
+  font-size: 3em;
+  margin-bottom: 20px;
+}
+
+/* Form styling */
+.form-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+label {
+  font-size: 1.2em;
+  margin-bottom: 5px;
+  display: block;
+}
+
+select,
+input {
+  padding: 10px;
+  font-size: 1.1em;
+  border: none;
+  border-radius: 5px;
+  width: 100%;
+  max-width: 300px;
+}
+
+/* Button styling */
+button {
+  padding: 10px 20px;
+  font-size: 1.2em;
+  background-color: #f80;
+  color: #000;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #ffab40;
+}
+
+/* Image container styling */
+.image-container {
+  margin-top: 30px;
+}
+
+.images-row {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.species-image {
+  text-align: center;
+  background-color: #222;
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.species-image img {
+  max-width: 100px; /* Default placeholder size */
+  border-radius: 5px;
+}
+
+.species-image p {
+  margin-top: 10px;
+}
