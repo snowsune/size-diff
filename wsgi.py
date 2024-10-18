@@ -7,7 +7,7 @@ app = create_app()
 
 if __name__ == "__main__":
     # Setup logging
-    logging.basicConfig()
+    logging.basicConfig(level=logging.INFO)
     logging.info(f"Starting server, version {os.getenv('GIT_COMMIT', 'unknown')}")
 
     # Run app

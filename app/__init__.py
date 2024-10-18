@@ -1,11 +1,20 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, send_file, jsonify
 import os
+import io
 import yaml
+import random
+import logging
+
 import numpy as np
+
+from PIL import Image
 
 from app.utils.species_lookup import load_species_data
 
 app = Flask(__name__)
+
+# Sets up logging
+logging.basicConfig(level=logging.INFO)
 
 # Load species list on startup
 species_data_folder = "app/species_data"
@@ -14,6 +23,56 @@ species_list = [
     for f in os.listdir(species_data_folder)
     if f.endswith(".yaml")
 ]
+
+
+# Route to generate a dynamic image based on species, height, and gender
+# At some point, this will be moved to its own much more complex and thorough function
+@app.route("/generate-image")
+def generate_image():
+    species = request.args.get("species", "default_species")
+    height = request.args.get("height", "default_height")
+    gender = request.args.get("gender", "default_gender")
+
+    # Create a random noise image for now
+    image = Image.new("RGB", (800, 400))  # Example size: 800x400
+    pixels = image.load()
+
+    for i in range(image.size[0]):
+        for j in range(image.size[1]):
+            pixels[i, j] = (
+                random.randint(0, 255),
+                random.randint(0, 255),
+                random.randint(0, 255),
+            )
+
+    # Save image to a BytesIO object
+    img_io = io.BytesIO()
+    image.save(img_io, "PNG")
+    img_io.seek(0)
+
+    return send_file(img_io, mimetype="image/png")
+
+
+# Super cool! Generate previews when linked in discord or insta or, wherever
+@app.route("/preview")
+def preview():
+    species = request.args.get("species", "default_species")
+    height = request.args.get("height", "default_height")
+    gender = request.args.get("gender", "default_gender")
+
+    # Do some cool logging
+    referer = request.headers.get("Referer", "unknown platform")
+    logging.info(f"Generated a preview for {species} on platform {referer}!")
+
+    # Render a preview page with Open Graph tags
+    image_url = f"/generate-image?species={species}&height={height}&gender={gender}"
+    return render_template(
+        "preview.html",
+        species=species,
+        height=height,
+        gender=gender,
+        image_url=image_url,
+    )
 
 
 @app.route("/", methods=["GET", "POST"])
