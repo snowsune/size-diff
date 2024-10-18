@@ -1,0 +1,11 @@
+male:
+  - anthro_size: 5.5
+    height: 155
+  - anthro_size: 6.0
+    height: 170
+
+female:
+  - anthro_size: 5.5
+    height: 145
+  - anthro_size: 6.0
+    height: 160
