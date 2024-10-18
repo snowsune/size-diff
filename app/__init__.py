@@ -2,12 +2,13 @@ from flask import Flask, render_template, request
 import os
 import yaml
 import numpy as np
-from utils.species_lookup import load_species_data
+
+from app.utils.species_lookup import load_species_data
 
 app = Flask(__name__)
 
 # Load species list on startup
-species_data_folder = "species_data"
+species_data_folder = "app/species_data"
 species_list = [
     f.replace(".yaml", "")
     for f in os.listdir(species_data_folder)
@@ -52,6 +53,11 @@ def calculate_height_offsets(species_data, anthro_height):
         calculated_heights[gender] = estimated_height
 
     return calculated_heights
+
+
+# For WSGI
+def create_app():
+    return app
 
 
 if __name__ == "__main__":
