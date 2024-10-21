@@ -1,15 +1,19 @@
-from flask import Flask, render_template, request, send_file, jsonify
+from flask import Flask, render_template, request, send_file, jsonify, redirect
 import os
 import io
 import yaml
 import random
 import logging
 
-import numpy as np
-
 from PIL import Image
 
 from app.utils.species_lookup import load_species_data
+from app.utils.calculate_heights import calculate_height_offsets
+from app.utils.parse_data import (
+    extract_characters,
+    filter_valid_characters,
+    generate_characters_query_string,
+)
 
 app = Flask(__name__)
 
@@ -53,66 +57,39 @@ def generate_image():
     return send_file(img_io, mimetype="image/png")
 
 
-# Super cool! Generate previews when linked in discord or insta or, wherever
-@app.route("/preview")
-def preview():
-    species = request.args.get("species", "default_species")
-    height = request.args.get("height", "default_height")
-    gender = request.args.get("gender", "default_gender")
-
-    # Do some cool logging
-    referer = request.headers.get("Referer", "unknown platform")
-    logging.info(f"Generated a preview for {species} on platform {referer}!")
-
-    # Render a preview page with Open Graph tags
-    image_url = f"/generate-image?species={species}&height={height}&gender={gender}"
-    return render_template(
-        "preview.html",
-        species=species,
-        height=height,
-        gender=gender,
-        image_url=image_url,
-    )
-
-
 @app.route("/", methods=["GET", "POST"])
 def index():
-    species = species_list
-    selected_species = None
-    anthro_height = None
-    calculated_heights = {}
+    species = species_list  # Assuming species_list is defined elsewhere
+
+    # Extract characters from query string
+    characters = request.args.get("characters", "")
+    characters_list = extract_characters(characters)
 
     if request.method == "POST":
+        # Get form data
         selected_species = request.form["species"]
         anthro_height = float(request.form["anthro_height"])
+        gender = request.form["gender"]
 
-        # Load species data from YAML and calculate
-        species_data = load_species_data(selected_species)
-        calculated_heights = calculate_height_offsets(species_data, anthro_height)
+        # Add the new character to the list
+        characters_list.append(
+            {"species": selected_species, "gender": gender, "height": anthro_height}
+        )
 
+        # Redirect with updated query string
+        characters_query = generate_characters_query_string(characters_list)
+        return redirect(f"/?characters={characters_query}")
+
+    # Filter and validate characters, recalculating heights
+    # valid_characters = filter_valid_characters(characters_list)
+
+    # Render the page
     return render_template(
         "index.html",
         species=species,
-        selected_species=selected_species,
-        anthro_height=anthro_height,
-        calculated_heights=calculated_heights,
+        characters_list=characters_list,
         version=os.getenv("GIT_COMMIT", "ERR_NO_REVISION"),
     )
-
-
-def calculate_height_offsets(species_data, anthro_height):
-    # Example logic: Linear interpolation between points
-    calculated_heights = {}
-    for gender, points in species_data.items():
-        heights = [p["height"] for p in points]
-        anthro_sizes = [p["anthro_size"] for p in points]
-
-        # Use regression (linear for now) to estimate height for given anthro height
-        coef = np.polyfit(anthro_sizes, heights, 1)  # linear regression
-        estimated_height = np.polyval(coef, anthro_height)
-        calculated_heights[gender] = estimated_height
-
-    return calculated_heights
 
 
 # For WSGI

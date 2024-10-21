@@ -2,14 +2,14 @@ male:
   image: "m_fox.png"
   data:
     - anthro_size: 5.5
-        height: 155
+      height: 155
     - anthro_size: 6.0
-        height: 170
+      height: 170
 
 female:
   image: "f_fox.png"
   data:
     - anthro_size: 5.5
-        height: 145
+      height: 145
     - anthro_size: 6.0
-        height: 160
+      height: 160
