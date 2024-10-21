@@ -15,8 +15,6 @@
     <meta property="og:type" content="website" />
 </head>
 
-<!-- Wait, how'd you get here?! :P -->
-
 <body>
     <div class="container">
         <h1>Vixi's Anthro Size Diff Calculator!</h1>
@@ -36,10 +34,9 @@
             <div class="form-group">
                 <label for="gender">Select Gender:</label>
                 <select id="gender" name="gender">
-                    <option value="male" {% if selected_gender=='male' %} selected {% endif %}>Male</option>
-                    <option value="female" {% if selected_gender=='female' %} selected {% endif %}>Female</option>
-                    <option value="androgynous" {% if selected_gender=='androgynous' %} selected {% endif %}>Androgynous
-                    </option>
+                    <option value="male" {% if gender=='male' %} selected {% endif %}>Male</option>
+                    <option value="female" {% if gender=='female' %} selected {% endif %}>Female</option>
+                    <option value="androgynous" {% if gender=='androgynous' %} selected {% endif %}>Androgynous</option>
                 </select>
             </div>
 
@@ -48,28 +45,31 @@
                 <input type="number" step="0.1" id="anthro_height" name="anthro_height" value="{{ anthro_height }}">
             </div>
 
-            <button type="submit">Calculate</button>
+            <button type="submit">Add</button>
         </form>
 
-        {% if calculated_heights %}
+        <!-- Display a placeholder showing the dictionary data -->
+        {% if characters_list %}
         <div class="image-container">
-            <h2>Scaled Species Lineup</h2>
-            <div class="images-row">
-                <!-- This section will hold the images side by side -->
-                {% for gender, height in calculated_heights.items() %}
-                <div class="species-image">
-                    <img src="{{ url_for('static', filename='images/' + selected_species + '.png') }}"
-                        alt="{{ selected_species }}" style="height: {{ height }}px;">
-                    <p>{{ gender.title() }}: {{ height }} cm</p>
-                </div>
-                {% endfor %}
+            <h2>Debugging Data Placeholder</h2>
+            <div class="debug-placeholder"
+                style="border: 2px dashed #ccc; padding: 20px; text-align: center; background-color: #f9f9f9;">
+                <h3>Character Data</h3>
+                <pre>{{ characters_list | tojson(indent=2) }}</pre>
+                <!-- Display the character list as JSON-like format -->
             </div>
+        </div>
+
+        <!-- Display sharable link -->
+        <div class="share-link">
+            <p>Share this lineup:</p>
+            <a href="{{ request.url }}">{{ request.url }}</a>
         </div>
         {% endif %}
     </div>
 
     <footer>
-        Version {{ version }}
+        Running Version {{ version }}, Art by <a href="https://kitsunehosting.net">Nobody</a>
     </footer>
 </body>
 
