@@ -18,7 +18,7 @@ from app.utils.parse_data import (
 app = Flask(__name__)
 
 # Sets up logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 # Load species list on startup
 species_data_folder = "app/species_data"
@@ -64,6 +64,8 @@ def index():
     # Extract characters from query string
     characters = request.args.get("characters", "")
     characters_list = extract_characters(characters)
+
+    logging.debug(characters_list)
 
     if request.method == "POST":
         # Get form data

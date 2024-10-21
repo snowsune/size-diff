@@ -14,13 +14,14 @@ def extract_characters(query_string):
     characters_list = []
 
     if query_string:
-        for char in query_string.split("+"):
+        for char in query_string.split(" "):
             try:
                 species, gender, height = char.split(",")
                 characters_list.append(
                     {"species": species, "gender": gender, "height": float(height)}
                 )
-            except ValueError:
+            except ValueError as e:
+                logging.warn(f"Caught error {e} when parsing.")
                 continue  # Gracefully handle incorrect formats
     return characters_list
 
