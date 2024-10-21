@@ -1,11 +1,15 @@
 male:
-  - anthro_size: 5.5
-    height: 160
-  - anthro_size: 6.0
-    height: 175
+  image: "m_wolf.png"
+  data:
+    - anthro_size: 5.5
+        height: 160
+    - anthro_size: 6.0
+        height: 175
 
 female:
-  - anthro_size: 5.5
-    height: 150
-  - anthro_size: 6.0
-    height: 165
+  image: null
+  data:
+    - anthro_size: 5.5
+        height: 150
+    - anthro_size: 6.0
+        height: 165
