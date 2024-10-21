@@ -2,7 +2,7 @@ import os
 import logging
 
 from app.utils.species_lookup import load_species_data
-from app.utils.calculate_heights import calculate_height_offsets
+from app.utils.calculate_heights import calculate_height_offset
 
 
 def extract_characters(query_string):

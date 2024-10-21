@@ -1,4 +1,13 @@
-from flask import Flask, render_template, request, send_file, jsonify, redirect
+from flask import (
+    Flask,
+    render_template,
+    request,
+    send_file,
+    jsonify,
+    redirect,
+    url_for,
+    flash,
+)
 import os
 import io
 import yaml
@@ -8,7 +17,7 @@ import logging
 from PIL import Image
 
 from app.utils.species_lookup import load_species_data
-from app.utils.calculate_heights import calculate_height_offsets
+from app.utils.calculate_heights import calculate_height_offset, convert_to_inches
 from app.utils.parse_data import (
     extract_characters,
     filter_valid_characters,
@@ -17,6 +26,7 @@ from app.utils.parse_data import (
 )
 
 app = Flask(__name__)
+app.secret_key = os.urandom(24)
 
 # Sets up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -76,9 +86,19 @@ def index():
     logging.debug(characters_list)
 
     if request.method == "POST":
-        # Get form data
+        # Get species
         selected_species = request.form["species"]
-        anthro_height = float(request.form["anthro_height"])
+
+        # Calculate the height
+        try:
+            # Try converting it
+            anthro_height = convert_to_inches(request.form["anthro_height"])
+        except Exception as e:
+            # Flash onscreen if err
+            flash(str(e), "error")  # Flash error message to the user
+            return redirect(url_for("index"))  # Redirect to the same page
+
+        # Grab the gender
         gender = request.form["gender"]
 
         # Add the new character to the list
@@ -118,7 +138,3 @@ def remove_character(index):
 # For WSGI
 def create_app():
     return app
-
-
-if __name__ == "__main__":
-    app.run(debug=True)
