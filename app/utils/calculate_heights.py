@@ -37,7 +37,7 @@ def calculate_height_offset(character):
 
     species = character["species"]
     gender = character["gender"]
-    anthro_height = character["anthro_height"]
+    anthro_height = character["height"]
 
     # Load species data from YAML file
     species_data = load_species_data(species)
