@@ -96,6 +96,7 @@ def index():
         selected_species=selected_species,
         anthro_height=anthro_height,
         calculated_heights=calculated_heights,
+        version=os.getenv("GIT_COMMIT", "ERR_NO_REVISION"),
     )
 
 
