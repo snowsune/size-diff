@@ -21,7 +21,7 @@
         <!-- Display the flash message if there is one -->
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-        <div class="flash-messages" style="color:red;">
+        <div class="flash-messages">
             {% for category, message in messages %}
             <div class="alert alert-{{ category }}">{{ message }}</div>
             {% endfor %}
@@ -30,6 +30,13 @@
         {% endwith %}
 
         <form method="POST" class="form-container">
+            <!-- Name Field -->
+            <div class="form-group">
+                <label for="name">Enter Name:</label>
+                <input type="text" id="name" name="name" placeholder="Character Name">
+            </div>
+
+            <!-- Species Field -->
             <div class="form-group">
                 <label for="species">Select Species:</label>
                 <select id="species" name="species">
@@ -41,6 +48,7 @@
                 </select>
             </div>
 
+            <!-- Gender Field -->
             <div class="form-group">
                 <label for="gender">Select Gender:</label>
                 <select id="gender" name="gender">
@@ -50,6 +58,7 @@
                 </select>
             </div>
 
+            <!-- Height Field -->
             <div class="form-group">
                 <label for="anthro_height">Anthro Height:</label>
                 <legend>Ex. 125cm or 4'11"</legend>
@@ -59,33 +68,21 @@
             <button type="submit">Add</button>
         </form>
 
-        <!-- Display a placeholder showing the dictionary data -->
         {% if characters_list %}
         <div class="image-container">
-            <!-- This was just for testing -->
-            <!-- <div class="debug-placeholder"
-                style="border: 2px dashed #000000; padding: 20px; text-align: center; background-color: #f9f9f9; color: #000000;">
-                <h3>Character Data</h3>
-                <pre>{{ characters_list | tojson(indent=2) }}</pre>
-            </div> -->
+            <img src="{{ url_for('generate_image', characters=characters_query, size=1024) }}"
+                alt="Generated Size Image" height="380vh" />
 
-            <!-- Real image renderer -->
-            <img src="{{ url_for('generate_image', characters=characters_query, size=600) }}"
-                alt="Generated Size Image" />
-
-            <!-- Remove Buttons -->
-            <div class="remove-buttons" style="margin-top: 20px; margin-bottom: 20px;">
+            <div class="remove-buttons">
                 {% for char in characters_list %}
                 <a href="{{ url_for('remove_character', index=loop.index0, characters=request.args.get('characters')) }}"
-                    class="remove-btn"
-                    style="margin-right: 10px; padding: 10px; background-color: #611212; color: #fff; text-decoration: none;">
-                    Remove {{ char["species"] }} <!-- Eventually do char["name"] -->
+                    class="remove-btn">
+                    Remove {{ char["name"] }} <!-- Now using the character's name -->
                 </a>
                 {% endfor %}
             </div>
         </div>
 
-        <!-- Display sharable link -->
         <div class="share-link">
             <p>Share this lineup:</p>
             <a href="{{ request.url }}">{{ request.url }}</a>
