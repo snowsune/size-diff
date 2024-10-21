@@ -8,9 +8,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 
     <meta property="og:title" content="Vixi's Anthro Size Diff Calculator" />
-    <meta property="og:description" content="Vixi didn't fill this out lol~" />
-    <meta property="og:image"
-        content="https://size-diff.kitsunehosting.net/generate-image?species=default_species&height=default_height&gender=default_gender" />
+    <meta property="og:description" content="Compare your anthro sizes!" />
+    <meta property="og:image" content="{{ url_for('generate_image', characters=characters_query, size=200) }}" />
     <meta property="og:url" content="https://size-diff.kitsunehosting.net/" />
     <meta property="og:type" content="website" />
 </head>
@@ -63,11 +62,16 @@
         <!-- Display a placeholder showing the dictionary data -->
         {% if characters_list %}
         <div class="image-container">
-            <div class="debug-placeholder"
+            <!-- This was just for testing -->
+            <!-- <div class="debug-placeholder"
                 style="border: 2px dashed #000000; padding: 20px; text-align: center; background-color: #f9f9f9; color: #000000;">
                 <h3>Character Data</h3>
                 <pre>{{ characters_list | tojson(indent=2) }}</pre>
-            </div>
+            </div> -->
+
+            <!-- Real image renderer -->
+            <img src="{{ url_for('generate_image', characters=characters_query, size=600) }}"
+                alt="Generated Size Image" />
 
             <!-- Remove Buttons -->
             <div class="remove-buttons" style="margin-top: 20px; margin-bottom: 20px;">

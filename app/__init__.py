@@ -24,6 +24,7 @@ from app.utils.parse_data import (
     generate_characters_query_string,
     remove_character_from_query,
 )
+from app.utils.generate_image import render_image
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -40,25 +41,31 @@ species_list = [
 ]
 
 
-# Route to generate a dynamic image based on species, height, and gender
-# At some point, this will be moved to its own much more complex and thorough function
 @app.route("/generate-image")
 def generate_image():
-    species = request.args.get("species", "default_species")
-    height = request.args.get("height", "default_height")
-    gender = request.args.get("gender", "default_gender")
+    # Get characters
+    characters = request.args.get("characters", "")
+    characters_list = extract_characters(characters)
 
-    # Create a random noise image for now
-    image = Image.new("RGB", (800, 400))  # Example size: 800x400
-    pixels = image.load()
+    # Get height
+    size = int(request.args.get("size", "400"))
 
-    for i in range(image.size[0]):
-        for j in range(image.size[1]):
-            pixels[i, j] = (
-                random.randint(0, 255),
-                random.randint(0, 255),
-                random.randint(0, 255),
-            )
+    if len(characters_list) == 0:
+        logging.warn("Asked to generate an empty image!")
+
+        # Generate an empty image
+        image = Image.new("RGB", (int(size * 1.4), size))
+        pixels = image.load()
+
+        for i in range(image.size[0]):
+            for j in range(image.size[1]):
+                pixels[i, j] = (
+                    random.randint(0, 255),
+                    random.randint(0, 255),
+                    random.randint(0, 255),
+                )
+    else:
+        image = render_image(characters_list, size)
 
     # Save image to a BytesIO object
     img_io = io.BytesIO()
@@ -110,14 +117,22 @@ def index():
         characters_query = generate_characters_query_string(characters_list)
         return redirect(f"/?characters={characters_query}")
 
-    # Filter and validate characters, recalculating heights
-    # valid_characters = filter_valid_characters(characters_list)
+    # Format characters_list into the query string format (makes it easier for use with the image backend)
+    query_image_format = " ".join(
+        [
+            f"{char['species']},{char['gender']},{char['height']}"
+            for char in characters_list
+        ]
+    )
+
+    print(query_image_format)
 
     # Render the page
     return render_template(
         "index.html",
-        species=species,
+        species=species_list,  # Assuming species_list is defined
         characters_list=characters_list,
+        characters_query=query_image_format,
         version=os.getenv("GIT_COMMIT", "ERR_NO_REVISION"),
     )
 
