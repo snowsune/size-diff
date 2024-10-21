@@ -56,7 +56,17 @@
                 style="border: 2px dashed #000000; padding: 20px; text-align: center; background-color: #f9f9f9; color: #000000;">
                 <h3>Character Data</h3>
                 <pre>{{ characters_list | tojson(indent=2) }}</pre>
-                <!-- Display the character list as JSON-like format -->
+            </div>
+
+            <!-- Remove Buttons -->
+            <div class="remove-buttons" style="margin-top: 20px; margin-bottom: 20px;">
+                {% for char in characters_list %}
+                <a href="{{ url_for('remove_character', index=loop.index0, characters=request.args.get('characters')) }}"
+                    class="remove-btn"
+                    style="margin-right: 10px; padding: 10px; background-color: #611212; color: #fff; text-decoration: none;">
+                    Remove {{ char["species"] }} <!-- Eventually do char["name"] -->
+                </a>
+                {% endfor %}
             </div>
         </div>
 

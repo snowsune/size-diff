@@ -13,6 +13,7 @@ from app.utils.parse_data import (
     extract_characters,
     filter_valid_characters,
     generate_characters_query_string,
+    remove_character_from_query,
 )
 
 app = Flask(__name__)
@@ -65,6 +66,13 @@ def index():
     characters = request.args.get("characters", "")
     characters_list = extract_characters(characters)
 
+    # Insert the default values here!
+    if len(characters_list) == 0:
+        characters_list = [
+            {"species": "arctic_fox", "gender": "female", "height": 22},
+            {"species": "red_wolf", "gender": "male", "height": 68},
+        ]
+
     logging.debug(characters_list)
 
     if request.method == "POST":
@@ -92,6 +100,19 @@ def index():
         characters_list=characters_list,
         version=os.getenv("GIT_COMMIT", "ERR_NO_REVISION"),
     )
+
+
+@app.route("/remove/<int:index>", methods=["GET"])
+def remove_character(index):
+    # Extract characters from query string
+    characters = request.args.get("characters", "")
+    characters_list = extract_characters(characters)
+
+    # Remove the character at the specified index
+    updated_query = remove_character_from_query(characters_list, index)
+
+    # Redirect to the updated URL with the character removed
+    return redirect(f"/?characters={updated_query}")
 
 
 # For WSGI
