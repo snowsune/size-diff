@@ -26,6 +26,19 @@ def extract_characters(query_string):
     return characters_list
 
 
+def remove_character_from_query(characters_list, index_to_remove):
+    """
+    Remove the character at the given index from the characters list.
+    """
+
+    if 0 <= index_to_remove < len(characters_list):
+        # Remove the character at the specified index
+        del characters_list[index_to_remove]
+
+    # Generate the new query string
+    return generate_characters_query_string(characters_list)
+
+
 def filter_valid_characters(characters_list):
     """
     Filters and validates characters, calculating their heights from species data.
