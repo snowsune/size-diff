@@ -2,6 +2,13 @@ import re
 import numpy as np
 
 from app.utils.species_lookup import load_species_data
+from app.utils.character import Character
+
+
+def inches_to_feet_inches(inches: int) -> str:
+    feet = inches // 12
+    remaining_inches = inches % 12
+    return f"{feet}'{remaining_inches}\""
 
 
 def convert_to_inches(_input: str) -> int:
@@ -29,10 +36,12 @@ def convert_to_inches(_input: str) -> int:
     raise ValueError(f"Invalid input format: {_input}")
 
 
-def calculate_height_offset(character):
+def calculate_height_offset(character) -> Character:
     """
     Calculate the corresponding real-world height for a given character.
     Character is a dictionary with 'species', 'gender', and 'anthro_height'.
+
+    It should return Character object (python)
     """
 
     species = character["species"]
@@ -55,7 +64,9 @@ def calculate_height_offset(character):
     estimated_height = np.polyval(coef, anthro_height)
 
     # Return the estimated height along with the corresponding image
-    return {
-        "estimated_height": estimated_height,
-        "image": gender_data["image"],  # Get the image file path for the gender
-    }
+    return Character(
+        "NoName",
+        species,
+        anthro_height,
+        gender_data["image"],
+    )
