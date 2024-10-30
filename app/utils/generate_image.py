@@ -1,10 +1,24 @@
 import numpy as np
 
 from PIL import Image, ImageDraw, ImageFont
+from app.utils.caching import (
+    generate_cache_key,
+    load_image_from_cache,
+    save_image_to_cache,
+)
 from app.utils.calculate_heights import calculate_height_offset, inches_to_feet_inches
 
 
 def render_image(char_list, size):
+    # Generate a unique cache key for this request
+    cache_key = generate_cache_key(char_list, size)
+
+    # Try loading from cache
+    cached_image = load_image_from_cache(cache_key)
+    if cached_image:
+        return cached_image
+
+    # Cache miss, so generate the image...
     height_adjusted_chars = []
 
     # Adjust each character's height based on the anthro height
@@ -85,5 +99,8 @@ def render_image(char_list, size):
 
         # Update the x_offset for the next character
         x_offset += char_width + 10  # Add 10 pixels of padding between characters
+
+    # Save the generated image to cache
+    save_image_to_cache(cache_key, image)
 
     return image
