@@ -13,7 +13,8 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
+  min-height: 90vh;
+  overflow: hidden; /* Disable scrolling */
 }
 
 .container {
@@ -26,7 +27,8 @@ body {
 /* Title style */
 h1 {
   font-size: 2.5em;
-  margin-bottom: 20px;
+  color: cyan;
+  margin-bottom: 10px;
 }
 
 /* Flash message styling */
