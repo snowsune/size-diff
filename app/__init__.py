@@ -93,6 +93,9 @@ def index():
     visitor_ip = request.remote_addr
     stats_manager.register_visitor(visitor_ip)
 
+    # Retrieve the current stats
+    stats = stats_manager.get_stats()
+
     # Insert the default values here!
     if len(characters_list) == 0:
         characters_list = [
@@ -140,18 +143,12 @@ def index():
     # Render the page
     return render_template(
         "index.html",
-        species=species_list,  # Assuming species_list is defined
+        stats=stats,
+        species=species_list,
         characters_list=characters_list,
         characters_query=query_image_format,
         version=os.getenv("GIT_COMMIT", "ERR_NO_REVISION"),
     )
-
-
-@app.route("/stats")
-def get_stats():
-    # Return statistics in JSON format
-    stats = stats_manager.get_stats()
-    return jsonify(stats)
 
 
 @app.route("/remove/<int:index>", methods=["GET"])
