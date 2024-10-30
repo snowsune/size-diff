@@ -7,6 +7,7 @@ from flask import (
     redirect,
     url_for,
     flash,
+    make_response,
 )
 import os
 import io
@@ -79,7 +80,12 @@ def generate_image():
     image.save(img_io, "PNG")
     img_io.seek(0)
 
-    return send_file(img_io, mimetype="image/png")
+    # Create a response with the image and set Content-Type to image/png
+    response = make_response(img_io.read())
+    response.headers.set("Content-Type", "image/png")
+    response.headers.set("Content-Disposition", "inline", filename="preview.png")
+
+    return response
 
 
 @app.route("/", methods=["GET", "POST"])
