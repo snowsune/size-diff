@@ -24,6 +24,7 @@ from app.utils.parse_data import (
     generate_characters_query_string,
     remove_character_from_query,
 )
+from app.utils.caching import get_cache_performance
 from app.utils.stats import StatsManager
 from app.utils.generate_image import render_image
 
@@ -144,6 +145,7 @@ def index():
     return render_template(
         "index.html",
         stats=stats,
+        cache_performance=get_cache_performance(),
         species=species_list,
         characters_list=characters_list,
         characters_query=query_image_format,
