@@ -24,10 +24,13 @@ from app.utils.parse_data import (
     generate_characters_query_string,
     remove_character_from_query,
 )
+from app.utils.stats import StatsManager
 from app.utils.generate_image import render_image
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
+stats_manager = StatsManager("/var/size-diff/stats.json")
+
 
 # Sets up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -49,6 +52,9 @@ def generate_image():
 
     # Get height
     size = int(request.args.get("size", "400"))
+
+    # Record we've generated a new image!
+    stats_manager.increment_images_generated()
 
     if len(characters_list) == 0:
         logging.warn("Asked to generate an empty image!")
@@ -82,6 +88,10 @@ def index():
     # Extract characters from query string
     characters = request.args.get("characters", "")
     characters_list = extract_characters(characters)
+
+    # Record visitor IP in stats
+    visitor_ip = request.remote_addr
+    stats_manager.register_visitor(visitor_ip)
 
     # Insert the default values here!
     if len(characters_list) == 0:
@@ -135,6 +145,13 @@ def index():
         characters_query=query_image_format,
         version=os.getenv("GIT_COMMIT", "ERR_NO_REVISION"),
     )
+
+
+@app.route("/stats")
+def get_stats():
+    # Return statistics in JSON format
+    stats = stats_manager.get_stats()
+    return jsonify(stats)
 
 
 @app.route("/remove/<int:index>", methods=["GET"])
