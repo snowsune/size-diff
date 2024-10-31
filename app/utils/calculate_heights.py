@@ -72,4 +72,5 @@ def calculate_height_offset(character: Character) -> Character:
         anthro_height,  # Changeme later!
         character.gender,
         gender_data["image"],
+        gender_data["ears_offset"],
     )
