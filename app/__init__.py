@@ -158,6 +158,8 @@ def remove_character(index):
     characters = request.args.get("characters", "")
     characters_list = extract_characters(characters)
 
+    logging.info(f"Remove path saw {characters} arg")
+
     # Remove the character at the specified index
     updated_query = remove_character_from_query(characters_list, index)
 
