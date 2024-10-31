@@ -105,8 +105,9 @@ def index():
     # Insert default character values if none exist
     if len(characters_list) == 0:
         characters_list = [
-            Character(name="Vixi", species="arctic_fox", height=22, gender="female"),
-            Character(name="Randal", species="arctic_fox", height=68, gender="male"),
+            Character(name="Vixi", species="arctic_fox", height=60, gender="female"),
+            Character(name="Randal", species="red_fox", height=66, gender="male"),
+            Character(name="Tibran", species="red_wolf", height=102, gender="male"),
         ]
 
     logging.info(f"char list is {characters_list}")
@@ -114,7 +115,7 @@ def index():
     if request.method == "POST":
         # Get species, name, and gender from form data
         selected_species = request.form["species"]
-        name = request.form["name"]
+        name = request.form["name"].replace(" ", "_")[:10]
         gender = request.form["gender"]
 
         # Calculate the height from anthro height input
