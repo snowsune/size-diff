@@ -34,10 +34,10 @@ app.secret_key = os.urandom(24)
 stats_manager = StatsManager("/var/size-diff/stats.json")
 
 # Sets up logging
-if os.getenv("GIT_COMMIT", None) is not None:
-    logging.basicConfig(level=logging.INFO)
-else:
+if os.getenv("GIT_COMMIT", None) == None:
     logging.basicConfig(level=logging.DEBUG)
+else:
+    logging.basicConfig(level=logging.INFO)
 
 # Load species list on startup
 species_data_folder = "app/species_data"
@@ -110,7 +110,7 @@ def index():
         characters_list = [
             Character(name="Vixi", species="arctic_fox", height=60, gender="female"),
             Character(name="Randal", species="red_fox", height=66, gender="male"),
-            Character(name="Tibran", species="red_wolf", height=102, gender="male"),
+            Character(name="Tibran", species="wolf", height=102, gender="male"),
         ]
 
     if request.method == "POST":
