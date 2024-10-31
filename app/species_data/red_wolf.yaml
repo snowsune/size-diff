@@ -7,7 +7,7 @@ male:
       height: 175
 
 female:
-  image: null
+  image: "m_wolf.png"
   data:
     - anthro_size: 5.5
       height: 150
