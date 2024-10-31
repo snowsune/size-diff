@@ -11,9 +11,7 @@ font_path = "app/fonts/OpenSans-Regular.ttf"
 
 
 def extract_dominant_color(image):
-    """
-    Extracts the dominant color of an image by resizing it to 1x1 to get the average color.
-    """
+    """Extracts the dominant color of an image by resizing it to 1x1 to get the average color."""
     small_img = image.resize((1, 1))
     return small_img.getpixel((0, 0))
 
@@ -49,20 +47,37 @@ def render_image(char_list, size):
     font_size = int(size / 20)
     font = ImageFont.truetype(font_path, font_size)
 
-    # Step 5: calculate the character padding
+    # Step 5: Set padding between characters
     char_padding = font_size * 6
 
-    # Step 4: Calculate total width based on scaled character widths and padding
-    total_width = (
-        sum(int(size * scale) for scale in scale_factors)
-        + (len(char_list) - 1) * char_padding
-    )
+    # Step 6: Calculate the total width by scaling each character's height and keeping original aspect ratio
+    total_width = 0
+    character_dimensions = (
+        []
+    )  # Store each character's width and height for later placement
 
-    # Step 5: Create the base image with calculated dimensions
+    for i, char in enumerate(height_adjusted_chars):
+        scale_factor = scale_factors[i]
+        char_height = int(size * scale_factor)  # Scale character height
+        char_img = Image.open(f"app/species_data/{char.image}")
+
+        # Calculate width based on original aspect ratio
+        char_width = int(char_img.width * (char_height / char_img.height))
+
+        # Append the calculated dimensions
+        character_dimensions.append((char_width, char_height))
+
+        # Add to total width including padding between characters
+        total_width += char_width + char_padding
+
+    # Dont remove the last char padding width (thats where the text goes)
+    # total_width -= char_padding
+
+    # Step 7: Create the base image with calculated dimensions
     image = Image.new("RGB", (total_width, size + 100), "white")  # Extra space for text
     draw = ImageDraw.Draw(image)
 
-    # Step 6: Draw the guideline lines (1' or 1" based on height)
+    # Step 8: Draw the guideline lines (1' or 1" based on height)
     if draw_line_at_foot:
         for foot in range(0, int(render_height / 12) + 1):
             y_pos = size - int((foot * 12) / render_height * size)
@@ -72,16 +87,13 @@ def render_image(char_list, size):
             y_pos = size - int((inch) / render_height * size)
             draw.line([(0, y_pos), (total_width, y_pos)], fill="grey", width=1)
 
-    # Step 7: Draw each character onto the canvas, positioned and scaled properly
+    # Step 9: Draw each character onto the canvas, positioned and scaled properly
     x_offset = 0
     for i, char in enumerate(height_adjusted_chars):
-        # Load character image
-        char_img = Image.open(f"app/species_data/{char.image}")
+        char_width, char_height = character_dimensions[i]
 
-        # Scale character image based on height
-        scale_factor = scale_factors[i]
-        char_height = int(size * scale_factor)
-        char_width = int(char_img.width * (char_height / char_img.height))
+        # Load character image and resize based on calculated dimensions
+        char_img = Image.open(f"app/species_data/{char.image}")
         char_img = char_img.resize((char_width, char_height), Image.LANCZOS)
 
         # Paste character image onto the canvas, using alpha for transparency
@@ -92,8 +104,8 @@ def render_image(char_list, size):
         dominant_color = extract_dominant_color(char_img)
 
         # Calculate text positions
-        text_x = x_offset + int(1.1 * char_width)  # Position over left shoulder
-        text_y = y_offset + int(0.3 * char_height)
+        text_x = x_offset + int(1.1 * char_width)  # Position near left shoulder
+        text_y = y_offset + int(0.1 * char_height)
 
         # Draw character's name with dominant color
         draw.text((text_x, text_y), char.name, font=font, fill=dominant_color)
@@ -107,10 +119,10 @@ def render_image(char_list, size):
             fill=dominant_color,
         )
 
-        # Update x_offset for next character, with padding
-        x_offset += char_width + char_padding  # Increase padding between characters
+        # Update x_offset for the next character, with padding
+        x_offset += char_width + char_padding
 
-    # Step 8: Save the generated image to cache
+    # Step 10: Save the generated image to cache
     save_image_to_cache(cache_key, image)
 
     return image
