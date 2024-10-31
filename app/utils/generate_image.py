@@ -56,15 +56,21 @@ def render_image(char_list, size):
         adjusted_char = calculate_height_offset(char)
         height_adjusted_chars.append(adjusted_char)
 
-    # Step 2: Find the tallest character and set render height with 5% padding
-    tallest_char = max(height_adjusted_chars, key=lambda x: x.height).height
-    render_height = int(tallest_char * 1.05)
+    # Step 2: Find the tallest character including any ear offsets
+    tallest_char = max(
+        (char.height - char.ears_offset) for char in height_adjusted_chars
+    )
+    render_height = int(tallest_char * 1.05)  # Add 5% padding
 
     # Determine if we should draw a line every foot or inch based on the height
     draw_line_at_foot = render_height > 22
 
-    # Step 3: Calculate the scale factor for each character based on the render height
     scale_factors = [char.height / render_height for char in height_adjusted_chars]
+    # Step 3: Calculate the scale factor for each character, adding ears_offset if applicable
+    scale_factors = [
+        (char.height - char.ears_offset) / render_height
+        for char in height_adjusted_chars
+    ]
 
     # Step 4: Set a dynamic font size based on the image size
     font_size = int(size / 20)
@@ -117,16 +123,10 @@ def render_image(char_list, size):
         char_img = char_img.resize((char_width, char_height), Image.LANCZOS)
         dominant_color = extract_dominant_color(char_img)
 
-        # Determine if ears_offset is specified and adjust the height if so
-        ears_offset = getattr(char, "ears_offset", None)
-        adjusted_height = char.height
-        if ears_offset is not None:
-            adjusted_height += ears_offset
-
-            # Draw the dotted line at the ears level
-            y_ears_line = size - int((adjusted_height / render_height) * size)
-
-            # Draw a dotted line at the adjusted height
+        # If there is an ear offset, draw the dotted line at the correct height
+        if char.ears_offset != 0.0:
+            # This line is drawn right at the height mark
+            y_ears_line = size - int((char.height / render_height) * size)
             draw_dotted_line(
                 draw,
                 x_offset,
