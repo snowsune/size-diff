@@ -1,4 +1,6 @@
 import numpy as np
+import logging
+
 from PIL import Image, ImageDraw, ImageFont
 from app.utils.caching import (
     generate_cache_key,
@@ -16,7 +18,28 @@ def extract_dominant_color(image):
     return small_img.getpixel((0, 0))
 
 
+def draw_dotted_line(draw, x_start, x_end, y, color, scale=1024):
+    """Draws a dotted line on the ImageDraw canvas."""
+    x = x_start
+
+    dash_length = int((40 * scale) / 1024)
+    gap = int((20 * scale) / 1024)
+    width = int((8 * scale) / 1024)
+
+    while x < x_end:
+        draw.line([(x, y), (min(x + dash_length, x_end), y)], fill=color, width=width)
+        x += dash_length + gap
+
+
 def render_image(char_list, size):
+    """
+    There are a LOT of steps in the image generation process! And i keep adding more!
+    """
+
+    # Limit size
+    if size > 2048:
+        size = 2048
+
     # Generate a unique cache key for this request
     cache_key = generate_cache_key(char_list, size)
 
@@ -52,10 +75,7 @@ def render_image(char_list, size):
 
     # Step 6: Calculate the total width by scaling each character's height and keeping original aspect ratio
     total_width = 0
-    character_dimensions = (
-        []
-    )  # Store each character's width and height for later placement
-
+    character_dimensions = []
     for i, char in enumerate(height_adjusted_chars):
         scale_factor = scale_factors[i]
         char_height = int(size * scale_factor)  # Scale character height
@@ -74,7 +94,9 @@ def render_image(char_list, size):
     # total_width -= char_padding
 
     # Step 7: Create the base image with calculated dimensions
-    image = Image.new("RGB", (total_width, size + 100), "white")  # Extra space for text
+    image = Image.new(
+        "RGB", (total_width, size + 100), "white"
+    )  # 100px extra space for text
     draw = ImageDraw.Draw(image)
 
     # Step 8: Draw the guideline lines (1' or 1" based on height)
@@ -91,26 +113,37 @@ def render_image(char_list, size):
     x_offset = 0
     for i, char in enumerate(height_adjusted_chars):
         char_width, char_height = character_dimensions[i]
-
-        # Load character image and resize based on calculated dimensions
         char_img = Image.open(f"app/species_data/{char.image}")
         char_img = char_img.resize((char_width, char_height), Image.LANCZOS)
+        dominant_color = extract_dominant_color(char_img)
 
-        # Paste character image onto the canvas, using alpha for transparency
+        # Determine if ears_offset is specified and adjust the height if so
+        ears_offset = getattr(char, "ears_offset", None)
+        adjusted_height = char.height
+        if ears_offset is not None:
+            adjusted_height += ears_offset
+
+            # Draw the dotted line at the ears level
+            y_ears_line = size - int((adjusted_height / render_height) * size)
+
+            # Draw a dotted line at the adjusted height
+            draw_dotted_line(
+                draw,
+                x_offset,
+                x_offset + char_width,
+                y_ears_line,
+                color=dominant_color,
+                scale=size,
+            )
+
+        # Paste character image
         y_offset = size - char_height
         image.paste(char_img, (x_offset, y_offset), char_img.convert("RGBA").split()[3])
 
-        # Extract the dominant color from the character image to use for text
-        dominant_color = extract_dominant_color(char_img)
-
-        # Calculate text positions
-        text_x = x_offset + int(1.1 * char_width)  # Position near left shoulder
+        # Draw text
+        text_x = x_offset + int(1.1 * char_width)
         text_y = y_offset + int(0.1 * char_height)
-
-        # Draw character's name with dominant color
         draw.text((text_x, text_y), char.name, font=font, fill=dominant_color)
-
-        # Draw height in feet and inches just above name
         height_ft_in = inches_to_feet_inches(char.height)
         draw.text(
             (text_x, text_y - (font_size + 5)),
@@ -119,7 +152,6 @@ def render_image(char_list, size):
             fill=dominant_color,
         )
 
-        # Update x_offset for the next character, with padding
         x_offset += char_width + char_padding
 
     # Step 10: Save the generated image to cache

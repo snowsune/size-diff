@@ -108,7 +108,7 @@ def index():
     # Insert default character values if none exist
     if len(characters_list) == 0:
         characters_list = [
-            Character(name="Vixi", species="arctic_fox", height=60, gender="female"),
+            Character(name="Vixi", species="arctic_fox", height=62, gender="female"),
             Character(name="Randal", species="red_fox", height=66, gender="male"),
             Character(name="Tibran", species="wolf", height=102, gender="male"),
         ]

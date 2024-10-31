@@ -1,5 +1,6 @@
 male:
   image: "m_giraffe.png"
+  ears_offset: -6
   data:
     - anthro_size: 5.5
       height: 155
@@ -8,6 +9,7 @@ male:
 
 female:
   image: "m_giraffe.png"
+  ears_offset: -6
   data:
     - anthro_size: 5.5
       height: 145
