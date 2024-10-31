@@ -11,7 +11,6 @@ from flask import (
 )
 import os
 import io
-import yaml
 import random
 import logging
 
@@ -28,11 +27,11 @@ from app.utils.parse_data import (
 from app.utils.caching import get_cache_performance
 from app.utils.stats import StatsManager
 from app.utils.generate_image import render_image
+from app.utils.character import Character
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 stats_manager = StatsManager("/var/size-diff/stats.json")
-
 
 # Sets up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -103,49 +102,41 @@ def index():
     # Retrieve the current stats
     stats = stats_manager.get_stats()
 
-    # Insert the default values here!
+    # Insert default character values if none exist
     if len(characters_list) == 0:
         characters_list = [
-            {"species": "arctic_fox", "gender": "female", "height": 22},
-            {"species": "red_wolf", "gender": "male", "height": 68},
+            Character(name="Vixi", species="arctic_fox", height=22, gender="female"),
+            Character(name="Randal", species="arctic_fox", height=68, gender="male"),
         ]
 
-    logging.debug(characters_list)
+    logging.info(f"char list is {characters_list}")
 
     if request.method == "POST":
-        # Get species
+        # Get species, name, and gender from form data
         selected_species = request.form["species"]
-
-        # Calculate the height
-        try:
-            # Try converting it
-            anthro_height = convert_to_inches(request.form["anthro_height"])
-        except Exception as e:
-            # Flash onscreen if err
-            flash(str(e), "error")  # Flash error message to the user
-            return redirect(url_for("index"))  # Redirect to the same page
-
-        # Grab the gender
+        name = request.form["name"]
         gender = request.form["gender"]
 
-        # Add the new character to the list
-        characters_list.append(
-            {"species": selected_species, "gender": gender, "height": anthro_height}
+        # Calculate the height from anthro height input
+        try:
+            anthro_height = convert_to_inches(request.form["anthro_height"])
+        except Exception as e:
+            # Flash onscreen if error
+            flash(str(e), "error")
+            return redirect(url_for("index"))
+
+        # Create a new Character instance and add to list
+        new_character = Character(
+            name=name, species=selected_species, height=anthro_height, gender=gender
         )
+        characters_list.append(new_character)
 
         # Redirect with updated query string
         characters_query = generate_characters_query_string(characters_list)
         return redirect(f"/?characters={characters_query}")
 
-    # Format characters_list into the query string format (makes it easier for use with the image backend)
-    query_image_format = " ".join(
-        [
-            f"{char['species']},{char['gender']},{char['height']}"
-            for char in characters_list
-        ]
-    )
-
-    print(query_image_format)
+    # Format characters_list into the query string format for the image backend
+    query_image_format = generate_characters_query_string(characters_list)
 
     # Render the page
     return render_template(

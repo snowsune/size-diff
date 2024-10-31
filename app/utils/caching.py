@@ -3,6 +3,7 @@ import time
 import logging
 from typing import List, Optional
 from PIL import Image
+from app.utils.character import Character
 
 # Cache settings
 CACHE_EXPIRATION_TIME = 1800  # 30 minutes in seconds
@@ -15,13 +16,16 @@ cache_misses = 0
 os.makedirs(CACHE_DIR, exist_ok=True)
 
 
-def generate_cache_key(char_list: List[dict], size: int) -> str:
+def generate_cache_key(char_list: List[Character], size: int) -> str:
     """
-    Generate a unique cache key based on character list and image size.
+    Generate a unique cache key based on a list of Character instances and image size.
     """
-
+    # Create a key string using each Character's attributes and the requested size
     char_data = "-".join(
-        [f"{char['species']}_{char['gender']}_{char['height']}" for char in char_list]
+        [
+            f"{char.species}_{char.gender}_{char.height}_{char.name}"
+            for char in char_list
+        ]
     )
 
     return f"{char_data}-{size}"
@@ -31,7 +35,6 @@ def get_cache_performance() -> str:
     """
     Calculate and return cache performance as a percentage.
     """
-
     total_requests = cache_hits + cache_misses
     if total_requests == 0:
         return "0%"
@@ -42,7 +45,6 @@ def load_image_from_cache(cache_key: str) -> Optional[Image.Image]:
     """
     Load an image from cache if it exists and is not expired.
     """
-
     global cache_hits, cache_misses
 
     # Check if the image is in the cache and hasn't expired
@@ -68,7 +70,6 @@ def save_image_to_cache(cache_key: str, image: Image.Image):
     """
     Save an image to the cache and store its file path.
     """
-
     file_path = os.path.join(CACHE_DIR, f"{cache_key}.png")
     image.save(file_path, format="PNG")  # Save the image as a PNG file
 
