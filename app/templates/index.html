@@ -84,7 +84,7 @@
 
             <div class="remove-buttons">
                 {% for char in characters_list %}
-                <a href="{{ url_for('remove_character', index=loop.index0, characters=request.args.get('characters')) }}"
+                <a href="{{ url_for('remove_character', index=loop.index0, characters=characters_query) }}"
                     class="remove-btn">
                     Remove {{ char["name"] }} <!-- Now using the character's name -->
                 </a>
