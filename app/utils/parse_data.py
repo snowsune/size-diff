@@ -14,9 +14,6 @@ def extract_characters(query_string: str) -> list:
     # Not sure why but sometimes the + join dosn't always work?
     query_string = query_string.replace("+", " ")
 
-    logging.info(f"Got string {query_string}")
-    logging.info(f"Split is {query_string.split(" ")}")
-
     if query_string:
         for char_data in query_string.split(" "):
             try:
