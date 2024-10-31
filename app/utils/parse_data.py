@@ -7,18 +7,29 @@ from app.utils.calculate_heights import calculate_height_offset
 def extract_characters(query_string: str) -> list:
     """
     Extracts species, gender, height, and name from the query string.
-    Returns a list of Character instances.
+    Returns a list of Character instances with defaults for missing values.
     """
+
     characters_list = []
 
-    # Not sure why but sometimes the + join dosn't always work?
+    # Ensure the delimiter is a space, in case '+' is unreliable
     query_string = query_string.replace("+", " ")
 
     if query_string:
         for char_data in query_string.split(" "):
             try:
-                species, gender, height, name = char_data.split(",")
-                characters_list.append(Character(name, species, float(height), gender))
+                # Unpack with default values for any missing fields
+                species, gender, height, name = (
+                    char_data.split(",") + ["unknown", "unknown", "60", "unknown"]
+                )[:4]
+
+                # Ensure height is a float, with a default if missing or invalid
+                height = float(height) if height.replace(".", "", 1).isdigit() else 0.0
+
+                characters_list.append(
+                    Character(name=name, species=species, height=height, gender=gender)
+                )
+
             except ValueError as e:
                 logging.warning(f"Error parsing character data '{char_data}': {e}")
                 continue  # Gracefully skip incorrect formats
