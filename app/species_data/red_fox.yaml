@@ -1,6 +1,6 @@
 male:
   image: "m_fox.png"
-  ears_offset: -6
+  ears_offset: -8
   data:
     - anthro_size: 5.5
       height: 155
@@ -9,7 +9,7 @@ male:
 
 female:
   image: "f_fox.png"
-  ears_offset: -6
+  ears_offset: -8
   data:
     - anthro_size: 5.5
       height: 145
