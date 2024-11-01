@@ -4,6 +4,7 @@ import yaml
 DEFAULT_DATA = {
     "male": {
         "image": "missing.png",
+        "ears_offset": 0.0,
         "data": [
             {"anthro_size": 5.5, "height": 155},
             {"anthro_size": 6.0, "height": 170},
@@ -11,6 +12,7 @@ DEFAULT_DATA = {
     },
     "female": {
         "image": "missing.png",
+        "ears_offset": 0.0,
         "data": [
             {"anthro_size": 5.5, "height": 145},
             {"anthro_size": 6.0, "height": 160},
