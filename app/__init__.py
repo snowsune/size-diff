@@ -98,6 +98,10 @@ def index():
     characters = request.args.get("characters", "")
     characters_list = extract_characters(characters)
 
+    # Extract settings from query string
+    measure_ears = request.args.get("measure_ears", "false") == "true"
+    scale_height = request.args.get("scale_height", "false") == "true"
+
     # Record visitor IP in stats
     visitor_ip = request.remote_addr
     stats_manager.register_visitor(visitor_ip)
@@ -118,38 +122,51 @@ def index():
         selected_species = request.form["species"]
         name = request.form["name"].replace(" ", "_")[:10]
         gender = request.form["gender"]
+        height = request.form["anthro_height"]
 
-        # Calculate the height from anthro height input
-        try:
-            anthro_height = convert_to_inches(request.form["anthro_height"])
-        except Exception as e:
-            # Flash onscreen if error
-            flash(str(e), "error")
-            return redirect(url_for("index"))
+        # Update settings based on form data
+        measure_ears = "measure_ears" in request.form
+        scale_height = "scale_height" in request.form
 
-        # Create a new Character instance and add to list
-        new_character = Character(
-            name=name, species=selected_species, height=anthro_height, gender=gender
-        )
-        characters_list.append(new_character)
+        # Check and see if they actually filled anything out
+        if len(name) == 0 and len(height) == 0:
+            # They probably just clicked add erronously or changed a **setting** so we'll re-fetch
+            # settings and re-draw.
+            pass
+        else:
+            # Looks like they wanted a new character added/changed! So lets do that.
+            try:
+                anthro_height = convert_to_inches(height)
+            except Exception as e:
+                # Flash onscreen if error
+                flash(str(e), "error")
+                return redirect(url_for("index"))
+
+            # Create a new Character instance and add to list
+            new_character = Character(
+                name=name, species=selected_species, height=anthro_height, gender=gender
+            )
+            characters_list.append(new_character)
 
         # Redirect with updated query string
         characters_query = generate_characters_query_string(characters_list)
-        return redirect(f"/?characters={characters_query}")
 
-    # Format characters_list into the query string format for the image backend
-    query_image_format = generate_characters_query_string(characters_list)
+        # Add settings to query string if enabled
+        settings_query = f"&measure_ears=true" if measure_ears else ""
+        settings_query += f"&scale_height=true" if scale_height else ""
 
-    # Render the page
+        return redirect(f"/?characters={characters_query}{settings_query}")
+
     return render_template(
         "index.html",
         stats=stats,
         cache_performance=get_cache_performance(),
         species=species_list,
         characters_list=characters_list,
-        characters_query=query_image_format,
+        characters_query=generate_characters_query_string(characters_list),
+        measure_ears=measure_ears,
+        scale_height=scale_height,
         version=os.getenv("GIT_COMMIT", "ERR_NO_REVISION"),
-        server_url=os.getenv("SERVER_URL", "https://nextcloud.kitsunehosting.net/"),
     )
 
 

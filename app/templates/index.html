@@ -74,6 +74,7 @@
                 <input type="string" id="anthro_height" name="anthro_height" value="{{ anthro_height }}">
             </div>
 
+            <!-- Add button -->
             <button type="submit">Add</button>
 
 
@@ -81,13 +82,27 @@
             <div class="form-group">
                 <label>
                     Scale Height By Species
-                    <input type="checkbox" id="scale_height" name="scale_height">
+                    <input type="checkbox" id="scale_height" name="scale_height" {% if scale_height %}checked{% endif
+                        %}>
                 </label>
                 <label>
                     Measure To Ears
-                    <input type="checkbox" id="measure_ears" name="measure_ears">
+                    <input type="checkbox" id="measure_ears" name="measure_ears" {% if measure_ears %}checked{% endif
+                        %}>
                 </label>
             </div>
+
+            <!-- Switch script -->
+            <script>
+                document.getElementById('measure_ears').addEventListener('change', function () {
+                    this.form.submit();
+                });
+
+                document.getElementById('scale_height').addEventListener('change', function () {
+                    this.form.submit();
+                });
+            </script>
+
         </form>
 
         {% if characters_list %}
