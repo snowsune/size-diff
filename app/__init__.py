@@ -149,6 +149,7 @@ def index():
         characters_list=characters_list,
         characters_query=query_image_format,
         version=os.getenv("GIT_COMMIT", "ERR_NO_REVISION"),
+        server_url=os.getenv("SERVER_URL", "https://nextcloud.kitsunehosting.net/"),
     )
 
 

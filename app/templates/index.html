@@ -75,6 +75,19 @@
             </div>
 
             <button type="submit">Add</button>
+
+
+            <!-- Switches for Options -->
+            <div class="form-group">
+                <label>
+                    Scale Height By Species
+                    <input type="checkbox" id="scale_height" name="scale_height">
+                </label>
+                <label>
+                    Measure To Ears
+                    <input type="checkbox" id="measure_ears" name="measure_ears">
+                </label>
+            </div>
         </form>
 
         {% if characters_list %}
@@ -104,7 +117,8 @@
             Running Version {{ version }}, Art by <a href="https://kitsunehosting.net">Nobody</a>
         </p>
         <p>
-            Images Generated: {{ stats.images_generated }} | Cache Performance: {{ cache_performance }}
+            Join my <a href="{{ server_url }}">discord server!</a> Images Generated: {{ stats.images_generated }} |
+            Cache Performance: {{ cache_performance }}
         </p>
     </footer>
 </body>
