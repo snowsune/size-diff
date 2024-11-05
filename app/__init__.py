@@ -16,6 +16,8 @@ import logging
 
 from PIL import Image
 
+from concurrent.futures import ThreadPoolExecutor
+
 from app.utils.species_lookup import load_species_data
 from app.utils.calculate_heights import calculate_height_offset, convert_to_inches
 from app.utils.parse_data import (
@@ -32,6 +34,7 @@ from app.utils.character import Character
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 stats_manager = StatsManager("/var/size-diff/stats.json")
+executor = ThreadPoolExecutor(max_workers=4)
 
 # Sets up logging
 if os.getenv("GIT_COMMIT", None) == None:
@@ -63,27 +66,37 @@ def generate_image():
     # Record we've generated a new image!
     stats_manager.increment_images_generated()
 
-    if len(characters_list) == 0:
-        logging.warn("Asked to generate an empty image!")
+    def generate_and_save():
+        if len(characters_list) == 0:
+            logging.warn("Asked to generate an empty image!")
 
-        # Generate an empty image
-        image = Image.new("RGB", (int(size * 1.4), size))
-        pixels = image.load()
+            # Generate an empty image
+            image = Image.new("RGB", (int(size * 1.4), size))
+            pixels = image.load()
 
-        for i in range(image.size[0]):
-            for j in range(image.size[1]):
-                pixels[i, j] = (
-                    random.randint(0, 255),
-                    random.randint(0, 255),
-                    random.randint(0, 255),
-                )
-    else:
-        image = render_image(characters_list, size, measure_to_ears=measure_ears)
+            for i in range(image.size[0]):
+                for j in range(image.size[1]):
+                    pixels[i, j] = (
+                        random.randint(0, 255),
+                        random.randint(0, 255),
+                        random.randint(0, 255),
+                    )
+        else:
+            image = render_image(characters_list, size, measure_to_ears=measure_ears)
 
-    # Save image to a BytesIO object
-    img_io = io.BytesIO()
-    image.save(img_io, "PNG")
-    img_io.seek(0)
+        # Save image to a BytesIO object
+        img_io = io.BytesIO()
+        image.save(img_io, "PNG")
+        img_io.seek(0)
+        return img_io
+
+    # Submit the task to the executor
+    future = executor.submit(generate_and_save)
+
+    try:
+        img_io = future.result(timeout=30)  # Wait for up to 30 seconds
+    except TimeoutError:
+        return "Image generation timed out", 504
 
     # Create a response with the image and set Content-Type to image/png
     response = make_response(img_io.read())

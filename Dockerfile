@@ -23,4 +23,4 @@ HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
     CMD curl --fail http://localhost:5000/version || exit 1
 
 # Run Gunicorn without virtual environment
-ENTRYPOINT ["gunicorn", "-b", "0.0.0.0:5000", "wsgi:app"]
+ENTRYPOINT ["gunicorn", "-b", "0.0.0.0:5000", "-w", "4", "-t", "120", "wsgi:app"]
