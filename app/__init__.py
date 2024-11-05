@@ -175,6 +175,7 @@ def index():
         measure_ears=measure_ears,
         scale_height=scale_height,
         version=os.getenv("GIT_COMMIT", "ERR_NO_REVISION"),
+        server_url=os.getenv("SERVER_URL", "https://nextcloud.kitsunehosting.net/"),
     )
 
 
