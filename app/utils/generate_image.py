@@ -31,7 +31,7 @@ def draw_dotted_line(draw, x_start, x_end, y, color, scale=1024):
         x += dash_length + gap
 
 
-def render_image(char_list, size):
+def render_image(char_list, size, measure_to_ears: bool = True):
     """
     There are a LOT of steps in the image generation process! And i keep adding more!
     """
@@ -41,7 +41,7 @@ def render_image(char_list, size):
         size = 2048
 
     # Generate a unique cache key for this request
-    cache_key = generate_cache_key(char_list, size)
+    cache_key = generate_cache_key(char_list, size, measure_to_ears)
 
     # Try loading from cache
     cached_image = load_image_from_cache(cache_key)
@@ -57,9 +57,12 @@ def render_image(char_list, size):
         height_adjusted_chars.append(adjusted_char)
 
     # Step 2: Find the tallest character including any ear offsets
-    tallest_char = max(
-        (char.height - char.ears_offset) for char in height_adjusted_chars
-    )
+    if measure_to_ears:
+        tallest_char = max(
+            (char.height - char.ears_offset) for char in height_adjusted_chars
+        )
+    else:
+        tallest_char = max(char.height for char in height_adjusted_chars)
     render_height = int(tallest_char * 1.05)  # Add 5% padding
 
     # Determine if we should draw a line every foot or inch based on the height
@@ -67,10 +70,13 @@ def render_image(char_list, size):
 
     scale_factors = [char.height / render_height for char in height_adjusted_chars]
     # Step 3: Calculate the scale factor for each character, adding ears_offset if applicable
-    scale_factors = [
-        (char.height - char.ears_offset) / render_height
-        for char in height_adjusted_chars
-    ]
+    if measure_to_ears:
+        scale_factors = [
+            (char.height - char.ears_offset) / render_height
+            for char in height_adjusted_chars
+        ]
+    else:
+        scale_factors = [char.height / render_height for char in height_adjusted_chars]
 
     # Step 4: Set a dynamic font size based on the image size
     font_size = int(size / 20)
@@ -124,7 +130,7 @@ def render_image(char_list, size):
         dominant_color = extract_dominant_color(char_img)
 
         # If there is an ear offset, draw the dotted line at the correct height
-        if char.ears_offset != 0.0:
+        if char.ears_offset != 0.0 and measure_to_ears:
             # This line is drawn right at the height mark
             y_ears_line = size - int((char.height / render_height) * size)
             draw_dotted_line(
