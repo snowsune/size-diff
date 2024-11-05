@@ -54,6 +54,9 @@ def generate_image():
     characters = request.args.get("characters", "")
     characters_list = extract_characters(characters)
 
+    # Get settings
+    measure_ears = request.args.get("measure_ears", True) == "True"
+
     # Get height
     size = int(request.args.get("size", "400"))
 
@@ -75,7 +78,7 @@ def generate_image():
                     random.randint(0, 255),
                 )
     else:
-        image = render_image(characters_list, size)
+        image = render_image(characters_list, size, measure_to_ears=measure_ears)
 
     # Save image to a BytesIO object
     img_io = io.BytesIO()
@@ -99,7 +102,7 @@ def index():
     characters_list = extract_characters(characters)
 
     # Extract settings from query string
-    measure_ears = request.args.get("measure_ears", "false") == "true"
+    measure_ears = request.args.get("measure_ears", "true") == "true"
     scale_height = request.args.get("scale_height", "false") == "true"
 
     # Record visitor IP in stats
@@ -152,10 +155,14 @@ def index():
         characters_query = generate_characters_query_string(characters_list)
 
         # Add settings to query string if enabled
-        settings_query = f"&measure_ears=true" if measure_ears else ""
+        settings_query = f"&measure_ears=false" if not measure_ears else ""
         settings_query += f"&scale_height=true" if scale_height else ""
 
         return redirect(f"/?characters={characters_query}{settings_query}")
+
+    # Could prolly move this somewhere else?
+    settings_query = f"&measure_ears=false" if not measure_ears else ""
+    settings_query += f"&scale_height=true" if scale_height else ""
 
     return render_template(
         "index.html",
@@ -164,6 +171,7 @@ def index():
         species=species_list,
         characters_list=characters_list,
         characters_query=generate_characters_query_string(characters_list),
+        settings_query=settings_query,
         measure_ears=measure_ears,
         scale_height=scale_height,
         version=os.getenv("GIT_COMMIT", "ERR_NO_REVISION"),

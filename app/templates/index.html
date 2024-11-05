@@ -10,7 +10,8 @@
     <!-- Open Graph tags -->
     <meta property="og:title" content="Vixi's Anthro Size Diff Calculator" />
     <meta property="og:description" content="Compare your anthro sizes!" />
-    <meta property="og:image" content="{{ url_for('generate_image', characters=characters_query, size=630) }}" />
+    <meta property="og:image"
+        content="{{ url_for('generate_image', characters=characters_query, measure_ears=measure_ears, size=630) }}" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:url" content="https://size-diff.kitsunehosting.net/" />
@@ -20,7 +21,8 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Vixi's Anthro Size Diff Calculator" />
     <meta name="twitter:description" content="Compare your anthro sizes!" />
-    <meta name="twitter:image" content="{{ url_for('generate_image', characters=characters_query, size=630) }}" />
+    <meta name="twitter:image"
+        content="{{ url_for('generate_image', characters=characters_query, measure_ears=measure_ears, size=630) }}" />
 </head>
 
 <body>
@@ -107,7 +109,7 @@
 
         {% if characters_list %}
         <div class="image-container">
-            <img src="{{ url_for('generate_image', characters=characters_query, size=1024) }}"
+            <img src="{{ url_for('generate_image', characters=characters_query, measure_ears=measure_ears, size=1024) }}"
                 alt="Generated Size Image" height="380vh" />
 
             <div class="remove-buttons">

@@ -16,7 +16,7 @@ cache_misses = 0
 os.makedirs(CACHE_DIR, exist_ok=True)
 
 
-def generate_cache_key(char_list: List[Character], size: int) -> str:
+def generate_cache_key(char_list: List[Character], size: int, ears: str) -> str:
     """
     Generate a unique cache key based on a list of Character instances and image size.
     """
@@ -28,7 +28,7 @@ def generate_cache_key(char_list: List[Character], size: int) -> str:
         ]
     )
 
-    return f"{char_data}-{size}"
+    return f"{char_data}-{size}-{ears}"
 
 
 def get_cache_performance() -> str:
