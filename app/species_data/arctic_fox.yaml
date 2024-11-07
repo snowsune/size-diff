@@ -2,16 +2,16 @@ male:
   image: "randal.png"
   ears_offset: 4
   data:
-    - anthro_size: 5.5
-      height: 155
-    - anthro_size: 6.0
-      height: 170
+    - anthro_size: 76 # 6'4"
+      height: 22 # 22"
+    - anthro_size: 60 # 5'
+      height: 15 # 15"
 
 female:
   image: "vixi.png"
   ears_offset: 4
   data:
-    - anthro_size: 5.5
-      height: 145
-    - anthro_size: 6.0
-      height: 160
+    - anthro_size: 74 # 6'2"
+      height: 20 # 22"
+    - anthro_size: 60 # 5'
+      height: 14 # 15"

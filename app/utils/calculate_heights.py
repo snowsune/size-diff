@@ -13,7 +13,7 @@ def inches_to_feet_inches(inches: int) -> str:
 
     feet = inches // 12
     remaining_inches = inches % 12
-    return f"{feet}'{remaining_inches}\""
+    return f"{feet}'{remaining_inches:0.1f}\""
 
 
 def convert_to_inches(_input: str) -> int:
@@ -41,12 +41,12 @@ def convert_to_inches(_input: str) -> int:
     raise ValueError(f"Invalid input format: {_input}")
 
 
-def calculate_height_offset(character: Character) -> Character:
+def calculate_height_offset(
+    character: Character, use_species_scaling=False
+) -> Character:
     """
-    Calculate the corresponding real-world height for a given character.
-    Character is a dictionary with 'species', 'gender', and 'anthro_height'.
-
-    It should return Character object (python)
+    Calculate the real-world height for a given character, based on their anthro height.
+    If use_species_scaling is True, the height will be adjusted to the corresponding 'feral' height.
     """
 
     # Load species data for the given species
@@ -56,8 +56,7 @@ def calculate_height_offset(character: Character) -> Character:
     try:
         gender_data = species_data[character.gender]
     except KeyError:
-        # Remove me later! This is just a stop-gap, eventually we need to interpolate
-        # androgyny linearly
+        # If androgynous or missing, use male as default or handle it
         gender_data = species_data["male"]
     anthro_height = character.height
     height_data = gender_data["data"]
@@ -66,16 +65,22 @@ def calculate_height_offset(character: Character) -> Character:
     heights = [point["height"] for point in height_data]
     anthro_sizes = [point["anthro_size"] for point in height_data]
 
-    # Perform linear regression (use a 1st-degree polynomial for interpolation)
-    coef = np.polyfit(anthro_sizes, heights, 1)  # Linear regression
-    estimated_height = np.polyval(coef, anthro_height)
+    # Perform linear regression to model the anthro size to feral height relationship
+    coef = np.polyfit(anthro_sizes, heights, 1)  # Linear regression coefficients
+    feral_height = np.polyval(coef, anthro_height)
 
-    # Return the estimated height along with the corresponding image
+    # Decide which height to use based on the use_species_scaling flag
+    final_height = max(feral_height, 2) if use_species_scaling else anthro_height
+
+    print(f"Using species data... {anthro_height} {final_height}")
+
+    # Return a new Character object with the adjusted height and original character attributes
     return Character(
-        character.name,
-        character.species,
-        anthro_height,  # Changeme later!
-        character.gender,
-        gender_data["image"],
-        gender_data["ears_offset"],
+        name=character.name,
+        species=character.species,
+        height=anthro_height,  # Original anthro height
+        feral_height=final_height,  # Calculated feral height if scaling applied
+        gender=character.gender,
+        image=gender_data["image"],
+        ears_offset=gender_data["ears_offset"],
     )

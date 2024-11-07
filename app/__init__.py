@@ -59,6 +59,7 @@ def generate_image():
 
     # Get settings
     measure_ears = request.args.get("measure_ears", True) == "True"
+    scale_height = request.args.get("scale_height", True) == "True"
 
     # Get height
     size = int(request.args.get("size", "400"))
@@ -82,7 +83,12 @@ def generate_image():
                         random.randint(0, 255),
                     )
         else:
-            image = render_image(characters_list, size, measure_to_ears=measure_ears)
+            image = render_image(
+                characters_list,
+                size,
+                measure_to_ears=measure_ears,
+                use_species_scaling=scale_height,
+            )
 
         # Save image to a BytesIO object
         img_io = io.BytesIO()
