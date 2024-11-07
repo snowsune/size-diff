@@ -12,7 +12,7 @@ def inches_to_feet_inches(inches: int, use_inches: int = 30) -> str:
     """
 
     if inches < use_inches:
-        return f'{inches}"'
+        return f'{inches:.1f}"'
 
     feet = inches // 12
     remaining_inches = inches % 12
