@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import logging
 
@@ -170,12 +171,21 @@ def render_image(
         )
         draw.text(
             (text_x, text_y),
-            height_ft_in,
+            "height_ft_in",
             font=font,
             fill=dominant_color,
         )
 
         x_offset += char_img_width + char_padding
+
+    # This is ONLY to denote the development image
+    if os.getenv("DEBUG", False):
+        draw.text(
+            (0, size),
+            f"DEVELOPMENT VERSION {os.getenv('GIT_COMMIT', '')}  " * 20,
+            font=font,
+            fill=(128, 0, 30),
+        )
 
     # Step 10: Save generated image to cache
     save_image_to_cache(cache_key, image)
