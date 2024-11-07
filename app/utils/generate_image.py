@@ -1,6 +1,7 @@
 import os
-import numpy as np
 import logging
+import numpy as np
+
 
 from PIL import Image, ImageDraw, ImageFont
 from app.utils.caching import (
@@ -171,7 +172,7 @@ def render_image(
         )
         draw.text(
             (text_x, text_y),
-            "height_ft_in",
+            height_ft_in,
             font=font,
             fill=dominant_color,
         )
