@@ -6,10 +6,13 @@ from app.utils.species_lookup import load_species_data
 from app.utils.character import Character
 
 
-def inches_to_feet_inches(inches: int) -> str:
+def inches_to_feet_inches(inches: int, use_inches: int = 30) -> str:
     """
-    Convert inches to a formatted string in feet and inches.
+    Convert inches to a formatted string in feet and inches, or just inches if below use_inches threshold.
     """
+
+    if inches < use_inches:
+        return f'{inches}"'
 
     feet = inches // 12
     remaining_inches = inches % 12
