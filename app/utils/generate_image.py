@@ -138,16 +138,17 @@ def render_image(
         char_img = char_img.resize((char_img_width, char_img_height), Image.LANCZOS)
         dominant_color = extract_dominant_color(char_img)
 
-        # Draw the height line at the actual height (excluding ears offset)
-        y_height_line = size - int((char.feral_height / render_height) * size)
-        draw_dotted_line(
-            draw,
-            x_offset,
-            x_offset + char_img_width,
-            y_height_line,
-            color=dominant_color,
-            scale=size,
-        )
+        if measure_to_ears and char.ears_offset != 0.0:
+            # Draw the height line at the actual height (excluding ears offset)
+            y_height_line = size - int((char.feral_height / render_height) * size)
+            draw_dotted_line(
+                draw,
+                x_offset,
+                x_offset + char_img_width,
+                y_height_line,
+                color=dominant_color,
+                scale=size,
+            )
 
         # Paste character image slightly above the height line to account for ears offset
         y_offset = size - char_img_height
