@@ -53,7 +53,12 @@ def calculate_height_offset(character: Character) -> Character:
     species_data = load_species_data(character.species)
 
     # Extract gender-specific data and interpolation points
-    gender_data = species_data[character.gender]
+    try:
+        gender_data = species_data[character.gender]
+    except KeyError:
+        # Remove me later! This is just a stop-gap, eventually we need to interpolate
+        # androgyny linearly
+        gender_data = species_data["male"]
     anthro_height = character.height
     height_data = gender_data["data"]
 
