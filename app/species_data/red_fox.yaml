@@ -9,7 +9,7 @@ male:
 
 female:
   image: "sinopa.png"
-  ears_offset: -2
+  ears_offset: -1
   data:
     - anthro_size: 5.5
       height: 145
