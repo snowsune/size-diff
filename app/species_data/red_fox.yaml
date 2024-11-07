@@ -1,6 +1,6 @@
 male:
   image: "randal.png"
-  ears_offset: -3
+  ears_offset: 4
   data:
     - anthro_size: 5.5
       height: 155
@@ -9,7 +9,7 @@ male:
 
 female:
   image: "sinopa.png"
-  ears_offset: -1
+  ears_offset: 1.5
   data:
     - anthro_size: 5.5
       height: 145
