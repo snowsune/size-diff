@@ -9,6 +9,7 @@ class Character:
         species: str,
         height: float,
         gender: str,
+        feral_height: float = 0.0,
         image: str = "",
         ears_offset: float = 0.0,
     ):
@@ -16,6 +17,7 @@ class Character:
         self.species = species
         self.height = height
         self.gender = gender
+        self.feral_height = feral_height
 
         # Image generation atributes
         self.image = image

@@ -2,16 +2,16 @@ male:
   image: "m_giraffe.png"
   ears_offset: 0
   data:
-    - anthro_size: 5.5
-      height: 155
-    - anthro_size: 6.0
-      height: 170
+    - anthro_size: 76 # 6'4"
+      height: 220
+    - anthro_size: 60 # 5'
+      height: 190
 
 female:
   image: "m_giraffe.png"
   ears_offset: 0
   data:
-    - anthro_size: 5.5
-      height: 145
-    - anthro_size: 6.0
-      height: 160
+    - anthro_size: 76 # 6'4"
+      height: 200
+    - anthro_size: 60 # 5'
+      height: 170

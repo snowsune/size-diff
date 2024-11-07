@@ -2,16 +2,16 @@ male:
   image: "m_wolf.png"
   ears_offset: 0
   data:
-    - anthro_size: 5.5
-      height: 160
-    - anthro_size: 6.0
-      height: 175
+    - anthro_size: 76 # 6'4"
+      height: 36
+    - anthro_size: 60 # 5'
+      height: 32
 
 female:
   image: "ky_li.png"
   ears_offset: 10
   data:
-    - anthro_size: 5.5
-      height: 150
-    - anthro_size: 6.0
-      height: 165
+    - anthro_size: 76 # 6'4"
+      height: 34
+    - anthro_size: 60 # 5'
+      height: 28

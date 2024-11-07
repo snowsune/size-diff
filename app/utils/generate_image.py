@@ -31,7 +31,12 @@ def draw_dotted_line(draw, x_start, x_end, y, color, scale=1024):
         x += dash_length + gap
 
 
-def render_image(char_list, size, measure_to_ears: bool = True):
+def render_image(
+    char_list,
+    size,
+    measure_to_ears: bool = True,
+    use_species_scaling: bool = False,
+):
     """
     Generates an image comparing character heights, with options to measure to the top of the ears.
     """
@@ -40,7 +45,9 @@ def render_image(char_list, size, measure_to_ears: bool = True):
     size = max(100, min(size, 2048))
 
     # Generate a unique cache key for this request
-    cache_key = generate_cache_key(char_list, size, measure_to_ears)
+    cache_key = generate_cache_key(
+        char_list, size, measure_to_ears, use_species_scaling
+    )
 
     # Attempt to load from cache
     cached_image = load_image_from_cache(cache_key)
@@ -52,18 +59,20 @@ def render_image(char_list, size, measure_to_ears: bool = True):
 
     # Step 1: Calculate scaled heights, adjusting for ears offset if applicable
     for char in char_list:
-        adjusted_char = calculate_height_offset(char)
+        adjusted_char = calculate_height_offset(
+            char, use_species_scaling=use_species_scaling
+        )
 
         # Calculate visual height by adding ears_offset percentage if applicable
         if measure_to_ears and adjusted_char.ears_offset != 0.0:
             # Increase height by a percentage factor so the top of the character appears taller
-            adjusted_char.visual_height = adjusted_char.height * (
+            adjusted_char.visual_height = adjusted_char.feral_height * (
                 1 + adjusted_char.ears_offset / 100.0
             )
             print(f"scaleup was {(1 + adjusted_char.ears_offset / 100.0)}")
         else:
             # Default to actual character height if not measuring to ears
-            adjusted_char.visual_height = adjusted_char.height
+            adjusted_char.visual_height = adjusted_char.feral_height
 
         height_adjusted_chars.append(adjusted_char)
 
@@ -131,7 +140,7 @@ def render_image(char_list, size, measure_to_ears: bool = True):
         dominant_color = extract_dominant_color(char_img)
 
         # Draw the height line at the actual height (excluding ears offset)
-        y_height_line = size - int((char.height / render_height) * size)
+        y_height_line = size - int((char.feral_height / render_height) * size)
         draw_dotted_line(
             draw,
             x_offset,
@@ -148,10 +157,19 @@ def render_image(char_list, size, measure_to_ears: bool = True):
         # Draw character's name and height
         text_x = x_offset + int(1.1 * char_img_width)
         text_y = y_offset + int(0.1 * char_img_height)
-        draw.text((text_x, text_y), char.name, font=font, fill=dominant_color)
-        height_ft_in = inches_to_feet_inches(char.height)
         draw.text(
             (text_x, text_y - (font_size + 5)),
+            char.name,
+            font=font,
+            fill=dominant_color,
+        )
+        height_ft_in = f"{inches_to_feet_inches(char.feral_height)}" + (
+            f"\n({inches_to_feet_inches(char.height)})"
+            if char.height != char.feral_height
+            else ""
+        )
+        draw.text(
+            (text_x, text_y),
             height_ft_in,
             font=font,
             fill=dominant_color,
