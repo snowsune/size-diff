@@ -9,7 +9,7 @@ male:
 
 female:
   image: "vixi.png"
-  ears_offset: -3
+  ears_offset: -2.5
   data:
     - anthro_size: 5.5
       height: 145

@@ -36,9 +36,8 @@ def render_image(char_list, size, measure_to_ears: bool = True):
     There are a LOT of steps in the image generation process! And i keep adding more!
     """
 
-    # Limit size
-    if size > 2048:
-        size = 2048
+    # Limit size between 100 and 2048
+    size = max(100, min(size, 2048))
 
     # Generate a unique cache key for this request
     cache_key = generate_cache_key(char_list, size, measure_to_ears)

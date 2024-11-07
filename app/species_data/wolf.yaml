@@ -9,7 +9,7 @@ male:
 
 female:
   image: "ky_li.png"
-  ears_offset: -8
+  ears_offset: -10
   data:
     - anthro_size: 5.5
       height: 150
