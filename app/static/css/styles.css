@@ -82,14 +82,18 @@ button:hover {
 
 /* Image container styling */
 .image-container {
-  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px; /* Spacing between image and buttons */
+  margin: 20px auto; /* Center the whole container */
 }
 
 .remove-buttons {
   display: flex;
+  gap: 10px; /* Spacing between buttons */
+  flex-wrap: wrap; /* Allow wrapping if too many buttons */
   justify-content: center;
-  gap: 10px;
-  margin-top: 20px;
 }
 
 .remove-btn {
@@ -98,6 +102,11 @@ button:hover {
   color: #fff;
   text-decoration: none;
   border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+.remove-btn:hover {
+  background-color: #8b1f1f;
 }
 
 /* Style the switches */
