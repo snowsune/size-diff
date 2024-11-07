@@ -6,7 +6,7 @@ from PIL import Image
 from app.utils.character import Character
 
 # Cache settings
-CACHE_EXPIRATION_TIME = 1800  # 30 minutes in seconds
+CACHE_EXPIRATION_TIME = 43200  # 12 hrs
 CACHE_DIR = "app/cache"
 cache_index = {}
 cache_hits = 0
