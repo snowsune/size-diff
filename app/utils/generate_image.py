@@ -165,10 +165,13 @@ def render_image(
             font=font,
             fill=dominant_color,
         )
-        height_ft_in = f"{inches_to_feet_inches(char.feral_height)}\n{char.species}" + (
-            f"\n({inches_to_feet_inches(char.height)})"
-            if char.height != char.feral_height
-            else ""
+        height_ft_in = (
+            f"{inches_to_feet_inches(char.feral_height)}\n{char.get_species_name()}"
+            + (
+                f"\n({inches_to_feet_inches(char.height)})"
+                if char.height != char.feral_height
+                else ""
+            )
         )
         draw.text(
             (text_x, text_y),
