@@ -69,7 +69,6 @@ def render_image(
             adjusted_char.visual_height = adjusted_char.feral_height * (
                 1 + adjusted_char.ears_offset / 100.0
             )
-            print(f"scaleup was {(1 + adjusted_char.ears_offset / 100.0)}")
         else:
             # Default to actual character height if not measuring to ears
             adjusted_char.visual_height = adjusted_char.feral_height

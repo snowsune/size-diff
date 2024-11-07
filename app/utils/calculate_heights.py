@@ -13,7 +13,16 @@ def inches_to_feet_inches(inches: int) -> str:
 
     feet = inches // 12
     remaining_inches = inches % 12
-    return f"{feet}'{remaining_inches:0.1f}\""
+
+    # Format feet and remaining_inches as integers if they are whole numbers
+    feet_str = f"{int(feet)}" if feet == int(feet) else f"{feet}"
+    inches_str = (
+        f"{int(remaining_inches)}"
+        if remaining_inches == int(remaining_inches)
+        else f"{remaining_inches:.1f}"
+    )
+
+    return f"{feet_str}'{inches_str}\""
 
 
 def convert_to_inches(_input: str) -> int:
@@ -71,8 +80,6 @@ def calculate_height_offset(
 
     # Decide which height to use based on the use_species_scaling flag
     final_height = max(feral_height, 2) if use_species_scaling else anthro_height
-
-    print(f"Using species data... {anthro_height} {final_height}")
 
     # Return a new Character object with the adjusted height and original character attributes
     return Character(
