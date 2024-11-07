@@ -64,6 +64,7 @@ class StatsManager:
     def register_visitor(self, ip_address: str):
         """Register a unique visitor based on IP."""
         if ip_address not in self.stats["visitor_ips"]:
+            logging.debug(f"New visitor with ip {ip_address} registered!")
             self.stats["visitor_ips"].add(ip_address)
             self.stats["unique_visitors"] += 1
             self.save_stats()

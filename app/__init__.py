@@ -125,7 +125,7 @@ def index():
     scale_height = request.args.get("scale_height", "false") == "true"
 
     # Record visitor IP in stats
-    visitor_ip = request.remote_addr
+    visitor_ip = request.headers.get("X-Real-IP", request.remote_addr)
     stats_manager.register_visitor(visitor_ip)
 
     # Retrieve the current stats
