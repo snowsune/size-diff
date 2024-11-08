@@ -33,7 +33,7 @@ from app.utils.character import Character
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
-stats_manager = StatsManager("/var/size-diff/stats.json")
+stats_manager = StatsManager("/var/size-diff/stats.db")
 executor = ThreadPoolExecutor(max_workers=4)
 
 # Sets up logging
