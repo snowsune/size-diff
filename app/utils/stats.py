@@ -80,7 +80,11 @@ class StatsManager:
 
     def get_stats(self) -> Dict:
         """Get current statistics (excluding visitor IPs)."""
+
+        self.load_stats()  # Is doing a file operation the best use of our time? :/
+
         self.check_and_reset_stats()
+
         return {
             "unique_visitors": self.stats["unique_visitors"],
             "images_generated": self.stats["images_generated"],
