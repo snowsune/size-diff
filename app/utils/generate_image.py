@@ -1,5 +1,7 @@
-import numpy as np
+import os
 import logging
+import numpy as np
+
 
 from PIL import Image, ImageDraw, ImageFont
 from app.utils.caching import (
@@ -163,10 +165,13 @@ def render_image(
             font=font,
             fill=dominant_color,
         )
-        height_ft_in = f"{inches_to_feet_inches(char.feral_height)}\n{char.species}" + (
-            f"\n({inches_to_feet_inches(char.height)})"
-            if char.height != char.feral_height
-            else ""
+        height_ft_in = (
+            f"{inches_to_feet_inches(char.feral_height)}\n{char.get_species_name()}"
+            + (
+                f"\n({inches_to_feet_inches(char.height)})"
+                if char.height != char.feral_height
+                else ""
+            )
         )
         draw.text(
             (text_x, text_y),
@@ -176,6 +181,15 @@ def render_image(
         )
 
         x_offset += char_img_width + char_padding
+
+    # This is ONLY to denote the development image
+    if os.getenv("DEBUG", False):
+        draw.text(
+            (0, size),
+            f"DEVELOPMENT VERSION {os.getenv('GIT_COMMIT', '')}  " * 20,
+            font=font,
+            fill=(128, 0, 30),
+        )
 
     # Step 10: Save generated image to cache
     save_image_to_cache(cache_key, image)

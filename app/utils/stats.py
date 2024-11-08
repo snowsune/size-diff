@@ -1,76 +1,107 @@
-import json
 import os
-from typing import Dict
+import sqlite3
+from datetime import datetime
 
-# Default location
-DEFAULT_PATH = "/tmp/size-diff/stats.json"
-
-# Default statistics structure
-DEFAULT_STATS = {
-    "unique_visitors": 0,
-    "images_generated": 0,
-    "visitor_ips": set(),  # Temporary in-memory storage of IPs for counting unique visitors
-}
+# Default database location
+DEFAULT_DB_PATH = "/tmp/size-diff/stats.db"
 
 
 class StatsManager:
-    def __init__(self, file_path):
+    def __init__(self, db_path=DEFAULT_DB_PATH):
         if os.getenv("GIT_COMMIT"):
-            self.file_path = file_path
+            self.db_path = db_path
         else:
             # Else we're running default/debug mode
-            self.file_path = DEFAULT_PATH
+            self.db_path = DEFAULT_DB_PATH
 
-        # Load stats
-        self.stats = self.load_stats()
+        self._initialize_db()
 
-    def load_stats(self) -> Dict:
-        """
-        Load stats from the JSON file, creating it with default values if it doesn't exist.
-        """
-
-        # Ensure the directory exists
-        os.makedirs(os.path.dirname(self.file_path), exist_ok=True)
-
-        # Check if the file exists, and load data if it does
-        if os.path.exists(self.file_path):
-            with open(self.file_path, "r") as f:
-                data = json.load(f)
-                data["visitor_ips"] = set(
-                    data.get("visitor_ips", [])
-                )  # Ensure IPs are stored as a set
-                return data
-        else:
-            return DEFAULT_STATS.copy()
-
-    def save_stats(self):
-        """
-        Save stats to the JSON file.
-        """
-
-        # Convert visitor_ips set to a list for JSON serialization
-        stats_copy = self.stats.copy()
-        stats_copy["visitor_ips"] = list(stats_copy["visitor_ips"])
-
-        # Save the stats to the JSON file
-        with open(self.file_path, "w") as f:
-            json.dump(stats_copy, f, indent=4)
+    def _initialize_db(self):
+        """Initialize the database and table if it doesn't already exist."""
+        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            # Create the stats table with unique visitor IPs and date tracking
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS stats (
+                    date TEXT PRIMARY KEY,
+                    unique_visitors INTEGER,
+                    images_generated INTEGER
+                )
+            """
+            )
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS visitors (
+                    ip TEXT PRIMARY KEY,
+                    date TEXT
+                )
+            """
+            )
+            # Ensure an entry for today exists
+            today = datetime.now().strftime("%Y-%m-%d")
+            cursor.execute(
+                """
+                INSERT OR IGNORE INTO stats (date, unique_visitors, images_generated)
+                VALUES (?, 0, 0)
+            """,
+                (today,),
+            )
+            conn.commit()
 
     def increment_images_generated(self):
-        """Increment the number of images generated."""
-        self.stats["images_generated"] += 1
-        self.save_stats()
+        """Increment the images generated count for the current day."""
+        today = datetime.now().strftime("%Y-%m-%d")
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                UPDATE stats SET images_generated = images_generated + 1
+                WHERE date = ?
+            """,
+                (today,),
+            )
+            conn.commit()
 
     def register_visitor(self, ip_address: str):
-        """Register a unique visitor based on IP."""
-        if ip_address not in self.stats["visitor_ips"]:
-            self.stats["visitor_ips"].add(ip_address)
-            self.stats["unique_visitors"] += 1
-            self.save_stats()
+        """Register a unique visitor based on IP for the current day."""
+        today = datetime.now().strftime("%Y-%m-%d")
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            # Check if the visitor IP is already registered for today
+            cursor.execute(
+                "SELECT 1 FROM visitors WHERE ip = ? AND date = ?", (ip_address, today)
+            )
+            if cursor.fetchone() is None:
+                # New visitor for today, register them and increment unique visitor count
+                cursor.execute(
+                    "INSERT INTO visitors (ip, date) VALUES (?, ?)", (ip_address, today)
+                )
+                cursor.execute(
+                    """
+                    UPDATE stats SET unique_visitors = unique_visitors + 1
+                    WHERE date = ?
+                """,
+                    (today,),
+                )
+            conn.commit()
 
-    def get_stats(self) -> Dict:
-        """Get current statistics (excluding visitor IPs)."""
-        return {
-            "unique_visitors": self.stats["unique_visitors"],
-            "images_generated": self.stats["images_generated"],
-        }
+    def get_stats(self):
+        """Retrieve current statistics for today."""
+        today = datetime.now().strftime("%Y-%m-%d")
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT unique_visitors, images_generated FROM stats WHERE date = ?",
+                (today,),
+            )
+            stats = cursor.fetchone()
+            if stats:
+                return {
+                    "unique_visitors": stats[0],
+                    "images_generated": stats[1],
+                }
+            else:
+                # If no entry for today, return zeros
+                return {"unique_visitors": 0, "images_generated": 0}
