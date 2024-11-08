@@ -23,6 +23,9 @@ class Character:
         self.image = image
         self.ears_offset = ears_offset
 
+    def get_species_name(self) -> str:
+        return self.species.replace("_", " ").title()
+
     def __repr__(self) -> str:
         return f"Character(name={self.name}, species={self.species}, gender={self.gender}, height={self.height}, image={self.image})"
 
