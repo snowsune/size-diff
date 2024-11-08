@@ -3,4 +3,3 @@ Pillow
 numpy
 pyyaml
 gunicorn
-filelock
