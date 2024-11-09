@@ -65,27 +65,30 @@ class StatsManager:
             conn.commit()
 
     def register_visitor(self, ip_address: str):
-        """Register a unique visitor based on IP for the current day."""
-        today = datetime.now().strftime("%Y-%m-%d")
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
-            # Check if the visitor IP is already registered for today
-            cursor.execute(
-                "SELECT 1 FROM visitors WHERE ip = ? AND date = ?", (ip_address, today)
-            )
-            if cursor.fetchone() is None:
-                # New visitor for today, register them and increment unique visitor count
-                cursor.execute(
-                    "INSERT INTO visitors (ip, date) VALUES (?, ?)", (ip_address, today)
-                )
-                cursor.execute(
-                    """
-                    UPDATE stats SET unique_visitors = unique_visitors + 1
-                    WHERE date = ?
-                """,
-                    (today,),
-                )
-            conn.commit()
+        try:
+            """Register a unique visitor based on IP for the current day."""
+            today = datetime.now().strftime("%Y-%m-%d")
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                try:
+                    # Attempt to insert new visitor record; if it fails, the IP already exists for today
+                    cursor.execute(
+                        "INSERT INTO visitors (ip, date) VALUES (?, ?)",
+                        (ip_address, today),
+                    )
+                    cursor.execute(
+                        """
+                        UPDATE stats SET unique_visitors = unique_visitors + 1
+                        WHERE date = ?
+                    """,
+                        (today,),
+                    )
+                except sqlite3.IntegrityError:
+                    # IP is already recorded for today; no need to update unique_visitors
+                    pass
+                conn.commit()
+        except Exception as e:
+            logging.warn(f"Got uncaught exception {e} when saving visitor stat!")
 
     def get_stats(self):
         """Retrieve current statistics for today."""
