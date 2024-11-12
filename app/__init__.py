@@ -213,6 +213,18 @@ def remove_character(index):
     return redirect(f"/?characters={updated_query}")
 
 
+# The about page
+@app.route("/about")
+def about():
+    # Load a YAML file to display on the page
+    yaml_file_path = os.path.join("app/species_data", "red_fox.yaml")
+    with open(yaml_file_path, "r") as yaml_file:
+        yaml_content = yaml_file.read()
+
+    # Pass the YAML content to the template
+    return render_template("about.html", yaml_content=yaml_content)
+
+
 # For WSGI
 def create_app():
     return app
