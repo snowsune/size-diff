@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - Anthro Size Diff Calculator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+
+<body>
+    <div class="container">
+        <h1>About My Anthro Size Diff Calculator</h1>
+        <p>
+            I LOVE size diff!
+
+            I designed this calculator to help explain/show what I meant by "species based scaling"
+
+            Basically, you have an anthro height! like 5'10" or 210cm. I use this value as input,
+            and then scale it according to the percentiles and heights of other species. Im not so
+            much scaling you but scaling you by your species! For example.. If you were a male with
+            90th percentile height (like 6'1") then I'd perform a regression to scale you against the
+            species of your choice with that same height! This works for any species, and the data
+            is stored in yaml files like such
+        </p>
+
+        <div class="yaml-display">
+            <pre>{{ yaml_content }}</pre>
+        </div>
+
+        <p>
+            Thats how it works! Thanks for using my calculator and I hope it suits you well!
+
+            (You can also of course, disable species scaling by just NOT checking the "Scale By Species" box!)
+        </p>
+
+        <div class="back-link">
+            <a href="{{ url_for('index') }}"><- Back to Calculator</a>
+        </div>
+    </div>
+</body>
+
+</html>

@@ -140,3 +140,25 @@ footer {
   color: #fff;
   padding: 10px 0;
 }
+
+/* For the about page/link */
+.about-link {
+  margin-bottom: 10px;
+  font-size: 1.4em;
+  text-align: center;
+}
+.about-link a {
+  color: cyan;
+  text-decoration: none;
+}
+.about-link a:hover {
+  text-decoration: underline;
+}
+
+.back-link {
+  font-size: 2em;
+}
+
+.yaml-display {
+  text-align: left;
+}
