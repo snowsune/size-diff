@@ -1,5 +1,6 @@
 import os
 import sqlite3
+import logging
 from datetime import datetime
 
 # Default database location
