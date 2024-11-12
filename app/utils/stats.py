@@ -83,8 +83,9 @@ class StatsManager:
                     """,
                         (today,),
                     )
-                except sqlite3.IntegrityError:
+                except sqlite3.IntegrityError as e:
                     # IP is already recorded for today; no need to update unique_visitors
+                    logging.warn(f"Integrity error {e} when recording IP")
                     pass
                 conn.commit()
         except Exception as e:
