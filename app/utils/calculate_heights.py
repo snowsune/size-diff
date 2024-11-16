@@ -2,30 +2,83 @@ import re
 import numpy as np
 import logging
 
+from math import gcd
+from fractions import Fraction
+
 from app.utils.species_lookup import load_species_data
 from app.utils.character import Character
 
 
-def inches_to_feet_inches(inches: int, use_inches: int = 30) -> str:
+def round_to_fraction(value: float, denominator: int) -> str:
     """
-    Convert inches to a formatted string in feet and inches, or just inches if below use_inches threshold.
+    Round a value to the nearest fraction with a fixed denominator and simplify it.
+    """
+    # Scale to the denominator, round, then simplify the fraction
+    numerator = round(value * denominator)
+    if numerator == 0:
+        return ""  # Avoid showing "0"
+
+    # Simplify the fraction
+    common_divisor = gcd(numerator, denominator)
+    simplified_numerator = numerator // common_divisor
+    simplified_denominator = denominator // common_divisor
+
+    if (
+        simplified_denominator == 1
+    ):  # If the denominator simplifies to 1, it's a whole number
+        return f"{simplified_numerator}"
+
+    return f"{simplified_numerator}/{simplified_denominator}"
+
+
+def inches_to_feet_inches(
+    inches: float, use_inches: int = 30, use_fractions: bool = True
+) -> str:
+    """
+    Convert inches to a formatted string in feet and inches, with fractional or decimal precision.
+    If `use_fractions` is True, inches are rounded to the nearest fraction (1/8 or 1/4).
     """
 
     if inches < use_inches:
-        return f'{inches:.1f}"'
+        if use_fractions:
+            whole_inches = int(inches)  # Extract the whole inches part
+            fractional_part = inches - whole_inches
+            rounded_fraction = round_to_fraction(fractional_part, 8)  # Nearest 1/8
 
-    feet = inches // 12
-    remaining_inches = inches % 12
+            if rounded_fraction:
+                return (
+                    f'{whole_inches} {rounded_fraction}"'
+                    if whole_inches
+                    else f'{rounded_fraction}"'
+                )
+            return f'{whole_inches}"'
+        else:
+            return f'{inches:.1f}"'
 
-    # Format feet and remaining_inches as integers if they are whole numbers
-    feet_str = f"{int(feet)}" if feet == int(feet) else f"{feet}"
-    inches_str = (
-        f"{int(remaining_inches)}"
-        if remaining_inches == int(remaining_inches)
-        else f"{remaining_inches:.1f}"
-    )
+    feet = int(inches // 12)  # Whole feet
+    remaining_inches = inches % 12  # Inches leftover after extracting feet
 
-    return f"{feet_str}'{inches_str}\""
+    if use_fractions:
+        whole_inches = int(remaining_inches)  # Extract whole inches part
+        fractional_part = remaining_inches - whole_inches
+        rounded_fraction = round_to_fraction(fractional_part, 4)  # Nearest 1/4
+
+        if rounded_fraction:
+            remaining_inches_str = (
+                f"{whole_inches} {rounded_fraction}"
+                if whole_inches
+                else f"{rounded_fraction}"
+            )
+        else:
+            remaining_inches_str = f"{whole_inches}"
+    else:
+        remaining_inches_str = (
+            f"{int(remaining_inches)}"
+            if remaining_inches == int(remaining_inches)
+            else f"{remaining_inches:.1f}"
+        )
+
+    return f"{feet}'{remaining_inches_str}\""
 
 
 def convert_to_inches(_input: str) -> int:
