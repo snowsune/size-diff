@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vixi's Anthro Size Diff Calculator!</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/banner.css') }}">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
 
     <!-- Open Graph tags -->
@@ -27,6 +28,11 @@
 </head>
 
 <body>
+    <!-- Temporary Banner -->
+    <div class="banner">
+        <a href="{{ server_url }}" class="banner-link">I am looking for sketch artists!</a>
+    </div>
+
     <div class="container">
         <h1>Vixi's Anthro Size Diff Calculator!</h1>
 
@@ -142,7 +148,8 @@
         </p>
         <p>
             Join my <a href="{{ server_url }}">discord server!</a> Images Generated: {{ stats.images_generated }} |
-            Cache Performance: {{ cache_performance }} | Unique Visitors: {{ stats.unique_visitors }}
+            Cache Performance: {{ cache_performance }} | Unique Visitors: {{ stats.unique_visitors }} | <a
+                href="https://buymeacoffee.com/kenwoodfox">Buy me a coffee!</a>
         </p>
     </footer>
 </body>

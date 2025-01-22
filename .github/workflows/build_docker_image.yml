@@ -3,10 +3,9 @@ name: Size Diff CI
 on:
   push:
     branches:
-      - "main"
+      - "*"
     tags:
       - "*"
-  pull_request:
 
 env:
   REGISTRY: ghcr.io

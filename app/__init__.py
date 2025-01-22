@@ -18,6 +18,9 @@ from PIL import Image
 
 from concurrent.futures import ThreadPoolExecutor
 
+from flask_caching import Cache
+from functools import wraps
+
 from app.utils.species_lookup import load_species_data
 from app.utils.calculate_heights import calculate_height_offset, convert_to_inches
 from app.utils.parse_data import (
@@ -26,7 +29,6 @@ from app.utils.parse_data import (
     generate_characters_query_string,
     remove_character_from_query,
 )
-from app.utils.caching import get_cache_performance
 from app.utils.stats import StatsManager
 from app.utils.generate_image import render_image
 from app.utils.character import Character
@@ -35,6 +37,32 @@ app = Flask(__name__)
 app.secret_key = os.urandom(24)
 stats_manager = StatsManager("/var/size-diff/stats.db")
 executor = ThreadPoolExecutor(max_workers=4)
+
+# Cache
+cache = Cache(app, config={"CACHE_TYPE": "simple"})
+cache_stats = {"hits": 0, "misses": 0}
+
+
+def cache_with_stats(timeout, query_string=False):
+    """Track cache performance while caching responses."""
+
+    def decorator(f):
+        @wraps(f)
+        def wrapped(*args, **kwargs):
+            cache_key = f"{request.path}?{request.query_string.decode('utf-8')}"
+            cached_response = cache.get(cache_key)
+            if cached_response:
+                cache_stats["hits"] += 1
+                return cached_response
+            cache_stats["misses"] += 1
+            response = f(*args, **kwargs)
+            cache.set(cache_key, response, timeout=timeout)
+            return response
+
+        return wrapped
+
+    return decorator
+
 
 # Sets up logging
 if os.getenv("GIT_COMMIT", None) == None:
@@ -52,6 +80,7 @@ species_list = [
 
 
 @app.route("/generate-image")
+@cache_with_stats(timeout=31536000, query_string=True)
 def generate_image():
     # Get characters
     characters = request.args.get("characters", "")
@@ -108,6 +137,7 @@ def generate_image():
     response = make_response(img_io.read())
     response.headers.set("Content-Type", "image/png")
     response.headers.set("Content-Disposition", "inline", filename="preview.png")
+    response.headers.set("Cache-Control", "public, max-age=31536000")
 
     return response
 
@@ -186,7 +216,7 @@ def index():
     return render_template(
         "index.html",
         stats=stats,
-        cache_performance=get_cache_performance(),
+        cache_performance=f"{cache_stats['hits']}/{cache_stats['misses']}",
         species=species_list,
         characters_list=characters_list,
         characters_query=generate_characters_query_string(characters_list),
