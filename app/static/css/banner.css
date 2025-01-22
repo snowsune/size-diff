@@ -1,0 +1,22 @@
+.banner {
+  background-color: #ffcc00; /* Bright yellow */
+  color: #000; /* Black text */
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  padding: 10px 0;
+  position: fixed;
+  top: 2vh;
+  left: 2vw;
+  z-index: 1000; /* Ensures it stays above other content */
+  border-bottom: 2px solid #000;
+}
+
+.banner-link {
+  color: #000;
+  text-decoration: none;
+}
+
+.banner-link:hover {
+  text-decoration: underline;
+}
