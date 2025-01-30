@@ -1,0 +1,17 @@
+male:
+  image: "missing.png"
+  ears_offset: 0
+  data:
+    - anthro_size: 76 # 6'4"
+      height: 60
+    - anthro_size: 60 # 5'
+      height: 50
+
+female:
+  image: "missing.png"
+  ears_offset: 0
+  data:
+    - anthro_size: 74 # 6'2"
+      height: 54
+    - anthro_size: 60 # 5'
+      height: 48
