@@ -1,26 +1,40 @@
-# Use the official Python slim image as the base image
-FROM python:3.10-slim
+# Base image: Debian 12 with Python 3.11
+FROM python:3.11-slim-bookworm
 
-# Set the working directory inside the container
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV DJANGO_SETTINGS_MODULE=snowsune.settings
+
+# Set working directory
 WORKDIR /app
 
-# Copy requirements.txt and install dependencies globally
-COPY requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    python3-dev \
+    python3-psycopg2 \
+    gettext \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy the app code to the container
+# Install pip dependencies
+COPY requirements.txt .
+RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
 COPY . .
 
-# Expose port 5000 for the Flask app
-EXPOSE 5000
+# Collect static files
+RUN python manage.py collectstatic --noinput
 
-# Bake the git commit into the env
+# Bake in the git revision
 ARG GIT_COMMIT
 ENV GIT_COMMIT=$GIT_COMMIT
 
-# Healthcheck to ensure the service is up
-# HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
-#     CMD curl --fail http://localhost:5000/ || exit 1
+# Expose port
+EXPOSE 80
 
-# Run Gunicorn without virtual environment
-ENTRYPOINT ["gunicorn", "-b", "0.0.0.0:5000", "-w", "4", "-t", "120", "wsgi:app"]
+# Entrypoint
+ENTRYPOINT "bin/entrypoint.sh"

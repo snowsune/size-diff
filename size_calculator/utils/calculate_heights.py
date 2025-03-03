@@ -5,8 +5,8 @@ import logging
 from math import gcd
 from fractions import Fraction
 
-from app.utils.species_lookup import load_species_data
-from app.utils.character import Character
+from .species_lookup import load_species_data
+from .character import Character
 
 
 def round_to_fraction(value: float, denominator: int) -> str:

@@ -23,7 +23,7 @@ DEFAULT_DATA = {
 
 def load_species_data(species_name):
     try:
-        file_path = f"app/species_data/{species_name}.yaml"
+        file_path = f"size_calculator/species_data/{species_name}.yaml"
         with open(file_path, "r") as file:
             data = yaml.safe_load(file)
         return data

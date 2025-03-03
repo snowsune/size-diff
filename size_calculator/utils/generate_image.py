@@ -5,9 +5,9 @@ import numpy as np
 
 from PIL import Image, ImageDraw, ImageFont
 
-from app.utils.calculate_heights import calculate_height_offset, inches_to_feet_inches
+from .calculate_heights import calculate_height_offset, inches_to_feet_inches
 
-font_path = "app/fonts/OpenSans-Regular.ttf"
+font_path = "size_calculator/static/fonts/OpenSans-Regular.ttf"
 
 
 def extract_dominant_color(image):
@@ -92,7 +92,7 @@ def render_image(
 
         # Scale character image height based on visual height, including ears offset
         char_img_height = int(size * scale_factor)
-        char_img = Image.open(f"app/species_data/{char.image}")
+        char_img = Image.open(f"size_calculator/species_data/{char.image}")
 
         # Calculate width based on original aspect ratio
         char_img_width = int(char_img.width * (char_img_height / char_img.height))
@@ -120,7 +120,7 @@ def render_image(
     x_offset = 0
     for i, char in enumerate(height_adjusted_chars):
         char_img_width, char_img_height = character_dimensions[i]
-        char_img = Image.open(f"app/species_data/{char.image}")
+        char_img = Image.open(f"size_calculator/species_data/{char.image}")
 
         # Resize the character image based on calculated dimensions
         char_img = char_img.resize((char_img_width, char_img_height), Image.LANCZOS)

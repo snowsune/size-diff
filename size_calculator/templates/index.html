@@ -1,19 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 
+{% load static %}
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vixi's Anthro Size Diff Calculator!</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/banner.css') }}">
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/banner.css' %}">
+    <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
 
     <!-- Open Graph tags -->
     <meta property="og:title" content="Vixi's Anthro Size Diff Calculator" />
     <meta property="og:description" content="Compare your anthro sizes!" />
     <meta property="og:image"
-        content="{{ url_for('generate_image', characters=characters_query, measure_ears=measure_ears, scale_height=scale_height, size=630) }}" />
+        content="{% url 'generate_image' %}?characters={{ characters_query }}&measure_ears={{ measure_ears }}&scale_height={{ scale_height }}&size=630" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:url" content="https://size-diff.kitsunehosting.net/" />
@@ -24,7 +26,7 @@
     <meta name="twitter:title" content="Vixi's Anthro Size Diff Calculator" />
     <meta name="twitter:description" content="Compare your anthro sizes!" />
     <meta name="twitter:image"
-        content="{{ url_for('generate_image', characters=characters_query, measure_ears=measure_ears, scale_height=scale_height, size=630) }}" />
+        content="{% url 'generate_image' %}?characters={{ characters_query }}&measure_ears={{ measure_ears }}&scale_height={{ scale_height }}&size=630" />
 </head>
 
 <body>
@@ -37,15 +39,13 @@
         <h1>Vixi's Anthro Size Diff Calculator!</h1>
 
         <!-- Display the flash message if there is one -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         <div class="flash-messages">
-            {% for category, message in messages %}
-            <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
             {% endfor %}
         </div>
         {% endif %}
-        {% endwith %}
 
         <form method="POST" class="form-container">
             <!-- Name Field -->
@@ -58,9 +58,9 @@
             <div class="form-group">
                 <label for="species">Select Species:</label>
                 <select id="species" name="species">
-                    {% for specie in species %}
-                    <option value="{{ specie }}" {% if specie==selected_species %} selected {% endif %}>
-                        {{ specie.replace('_', ' ').title() }}
+                    {% for specie in species_list %}
+                    <option value="{{ specie }}" {% if specie == selected_species %}selected{% endif %}>
+                        {{ specie }}
                     </option>
                     {% endfor %}
                 </select>
@@ -70,9 +70,9 @@
             <div class="form-group">
                 <label for="gender">Select Gender:</label>
                 <select id="gender" name="gender">
-                    <option value="male" {% if gender=='male' %} selected {% endif %}>Male</option>
-                    <option value="female" {% if gender=='female' %} selected {% endif %}>Female</option>
-                    <option value="androgynous" {% if gender=='androgynous' %} selected {% endif %}>Androgynous</option>
+                    <option value="male" {% if gender == 'male' %} selected {% endif %}>Male</option>
+                    <option value="female" {% if gender == 'female' %} selected {% endif %}>Female</option>
+                    <option value="androgynous" {% if gender == 'androgynous' %} selected {% endif %}>Androgynous</option>
                 </select>
             </div>
 
@@ -91,13 +91,12 @@
             <div class="form-group">
                 <label>
                     Scale Height By Species
-                    <input type="checkbox" id="scale_height" name="scale_height" {% if scale_height %}checked{% endif
-                        %}>
+                    <input type="checkbox" id="scale_height" name="scale_height" {% if scale_height == True %}checked{% endif %}>
                 </label>
                 <label>
                     Measure To Top Of Head
-                    <input type="checkbox" id="measure_ears" name="measure_ears" {% if measure_ears %}checked{% endif
-                        %}>
+                    <input type="checkbox" id="measure_ears" name="measure_ears" {% if measure_ears == True %}checked{% endif %}>
+
                 </label>
             </div>
 
@@ -116,14 +115,14 @@
 
         {% if characters_list %}
         <div class="image-container">
-            <img src="{{ url_for('generate_image', characters=characters_query, measure_ears=measure_ears, scale_height=scale_height, size=1024) }}"
+            <img src="{% url 'generate_image' %}?characters={{ characters_query }}&measure_ears={{ measure_ears }}&scale_height={{ scale_height }}&size=1024"
                 alt="Generated Size Image" height="380vh" />
 
             <div class="remove-buttons">
                 {% for char in characters_list %}
-                <a href="{{ url_for('remove_character', index=loop.index0, characters=characters_query, measure_ears=measure_ears, scale_height=scale_height) }}"
+                <a href="{% url 'remove_character' index=forloop.counter0 %}?characters={{ characters_query }}&measure_ears={{ measure_ears }}&scale_height={{ scale_height }}"
                     class="remove-btn">
-                    Remove {{ char["name"] }} <!-- Now using the character's name -->
+                    Remove {{ char.name }}
                 </a>
                 {% endfor %}
             </div>
@@ -131,12 +130,12 @@
 
         <!-- Takes you to the about page -->
         <div class="about-link">
-            <a href="{{ url_for('about') }}">About The Calculator</a>
+            <a href="{% url 'about' %}">About The Calculator</a>
         </div>
 
         <div class="share-link">
             <p>Share this lineup:</p>
-            <a href="{{ request.url }}">{{ request.url }}</a>
+            <a href="{{ request.build_absolute_uri }}">{{ request.build_absolute_uri }}</a>
         </div>
         {% endif %}
     </div>
