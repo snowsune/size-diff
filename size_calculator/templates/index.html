@@ -61,7 +61,7 @@
                 <label for="species">Select Species:</label>
                 <select id="species" name="species">
                     {% for specie in species_list %}
-                    <option value="{{ specie }}" {% if specie==selected_species %}selected{% endif %}>
+                    <option value="{{ specie }}" {% if specie == selected_species %}selected{% endif %}>
                         {{ specie }}
                     </option>
                     {% endfor %}
@@ -72,9 +72,9 @@
             <div class="form-group">
                 <label for="gender">Select Gender:</label>
                 <select id="gender" name="gender">
-                    <option value="male" {% if gender=='male' %} selected {% endif %}>Male</option>
-                    <option value="female" {% if gender=='female' %} selected {% endif %}>Female</option>
-                    <option value="androgynous" {% if gender=='androgynous' %} selected {% endif %}>Androgynous</option>
+                    <option value="male" {% if gender == 'male' %} selected {% endif %}>Male</option>
+                    <option value="female" {% if gender == 'female' %} selected {% endif %}>Female</option>
+                    <option value="androgynous" {% if gender == 'androgynous' %} selected {% endif %}>Androgynous</option>
                 </select>
             </div>
 
@@ -93,13 +93,11 @@
             <div class="form-group">
                 <label>
                     Scale Height By Species
-                    <input type="checkbox" id="scale_height" name="scale_height" {% if scale_height==True %}checked{%
-                        endif %}>
+                    <input type="checkbox" id="scale_height" name="scale_height" {% if scale_height == True %}checked{% endif %}>
                 </label>
                 <label>
                     Measure To Top Of Head
-                    <input type="checkbox" id="measure_ears" name="measure_ears" {% if measure_ears==True %}checked{%
-                        endif %}>
+                    <input type="checkbox" id="measure_ears" name="measure_ears" {% if measure_ears == True %}checked{% endif %}>
 
                 </label>
             </div>
