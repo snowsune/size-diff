@@ -18,6 +18,7 @@ from .utils.parse_data import (
 )
 from .utils.character import Character
 from .utils.generate_image import render_image
+from .utils.calculate_heights import convert_to_inches
 
 
 executor = ThreadPoolExecutor(max_workers=4)
@@ -74,7 +75,7 @@ class IndexView(View):
         )
 
     def post(self, request):
-        selected_species = request.POST.get("species")
+        selected_species = request.POST.get("species").replace(" ", "_")
         name = request.POST.get("name", "").replace(" ", "_")[:10]
         gender = request.POST.get("gender")
         height = request.POST.get("anthro_height")
@@ -89,11 +90,11 @@ class IndexView(View):
             return redirect("index")
 
         try:
-            anthro_height = int(
-                height
-            )  # Replace with `convert_to_inches(height)` if needed
+            anthro_height = convert_to_inches(height)
         except Exception as e:
             messages.error(request, str(e))
+            if os.getenv("DEBUG", False):
+                raise e
             return redirect("index")
 
         new_character = Character(

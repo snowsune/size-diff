@@ -22,11 +22,16 @@ DEFAULT_DATA = {
 
 
 def load_species_data(species_name):
+    species_name = species_name.lower()
+
     try:
         file_path = f"size_calculator/species_data/{species_name}.yaml"
         with open(file_path, "r") as file:
             data = yaml.safe_load(file)
         return data
-    except FileNotFoundError:
+    except FileNotFoundError as e:
+        if os.getenv("DEBUG", False):
+            raise e
+
         # Return default ambiguous data if species file is not found
         return DEFAULT_DATA
