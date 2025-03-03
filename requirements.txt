@@ -3,6 +3,8 @@ django
 whitenoise
 pillow
 psycopg2
+pyyaml
+numpy
 
 # WSGI
 gunicorn
