@@ -6,16 +6,16 @@ DEFAULT_DATA = {
         "image": "missing.png",
         "ears_offset": 0.0,
         "data": [
-            {"anthro_size": 5.5, "height": 155},
-            {"anthro_size": 6.0, "height": 170},
+            {"anthro_size": 5.5, "height": 5.5},
+            {"anthro_size": 6.0, "height": 6.0},
         ],
     },
     "female": {
         "image": "missing.png",
         "ears_offset": 0.0,
         "data": [
-            {"anthro_size": 5.5, "height": 145},
-            {"anthro_size": 6.0, "height": 160},
+            {"anthro_size": 5.5, "height": 5.5},
+            {"anthro_size": 6.0, "height": 6.0},
         ],
     },
 }

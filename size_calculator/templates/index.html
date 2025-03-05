@@ -93,26 +93,49 @@
             <div class="form-group">
                 <label>
                     Scale Height By Species
-                    <input type="checkbox" id="scale_height" name="scale_height" {% if scale_height == True %}checked{% endif %}>
+                    <input type="checkbox" id="scale_height" name="scale_height"
+                        {% if scale_height == True %}checked{% endif %}>
                 </label>
                 <label>
                     Measure To Top Of Head
-                    <input type="checkbox" id="measure_ears" name="measure_ears" {% if measure_ears == True %}checked{% endif %}>
-
+                    <input type="checkbox" id="measure_ears" name="measure_ears"
+                        {% if measure_ears == True %}checked{% endif %}>
                 </label>
             </div>
 
-            <!-- Switch script -->
             <script>
+                function toggleSetting(setting) {
+                    let params = new URLSearchParams(window.location.search);
+
+                    // Toggle the setting
+                    if (params.get(setting) === "true") {
+                        params.set(setting, "false");
+                    } else {
+                        params.set(setting, "true");
+                    }
+
+                    // Redirect with updated query parameters
+                    window.location.href = "?" + params.toString();
+                }
+
                 document.getElementById('measure_ears').addEventListener('change', function () {
-                    this.form.submit();
+                    let nameField = document.querySelector('input[name="name"]').value.trim();
+                    if (nameField.length > 0) {
+                        this.form.submit(); // Wait for form submission
+                    } else {
+                        toggleSetting('measure_ears'); // Apply change immediately
+                    }
                 });
 
                 document.getElementById('scale_height').addEventListener('change', function () {
-                    this.form.submit();
+                    let nameField = document.querySelector('input[name="name"]').value.trim();
+                    if (nameField.length > 0) {
+                        this.form.submit(); // Wait for form submission
+                    } else {
+                        toggleSetting('scale_height'); // Apply change immediately
+                    }
                 });
             </script>
-
         </form>
 
         {% if characters_list %}
