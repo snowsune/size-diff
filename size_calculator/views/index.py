@@ -6,6 +6,12 @@ from ..utils.parse_data import extract_characters, generate_characters_query_str
 from ..utils.character import Character
 from ..utils.calculate_heights import convert_to_inches
 
+default_char_list = [
+    Character(name="Vixi", species="arctic_fox", height=62, gender="female"),
+    Character(name="Randal", species="red_fox", height=66, gender="male"),
+    Character(name="Ky-Li", species="wolf", height=88, gender="female"),
+]
+
 
 class IndexView(View):
     def get(self, request):
@@ -21,13 +27,7 @@ class IndexView(View):
         scale_height = request.GET.get("scale_height", "false") == "true"
 
         if len(characters_list) == 0:
-            characters_list = [
-                Character(
-                    name="Vixi", species="arctic_fox", height=62, gender="female"
-                ),
-                Character(name="Randal", species="red_fox", height=66, gender="male"),
-                Character(name="Ky-Li", species="wolf", height=88, gender="female"),
-            ]
+            characters_list = default_char_list
 
         settings_query = f"&measure_ears=false" if not measure_ears else ""
         settings_query += f"&scale_height=true" if scale_height else ""
@@ -48,9 +48,7 @@ class IndexView(View):
                 "measure_ears": measure_ears,
                 "scale_height": scale_height,
                 "version": os.getenv("GIT_COMMIT", "ERR_NO_REVISION"),
-                "server_url": os.getenv(
-                    "SERVER_URL", "https://nextcloud.kitsunehosting.net/"
-                ),
+                "server_url": os.getenv("SERVER_URL", "#"),
             },
         )
 
@@ -65,6 +63,8 @@ class IndexView(View):
 
         characters = request.GET.get("characters", "")
         characters_list = extract_characters(characters)
+        if len(characters_list) == 0:
+            characters_list = default_char_list
 
         if len(name) == 0 and len(height) == 0:
             return redirect("index")
@@ -75,14 +75,16 @@ class IndexView(View):
             messages.error(request, str(e))
             return redirect("index")
 
+        # Append the new character
         new_character = Character(
             name=name, species=selected_species, height=anthro_height, gender=gender
         )
         characters_list.append(new_character)
 
+        # Generate updated query string
         characters_query = generate_characters_query_string(characters_list)
 
-        settings_query = f"&measure_ears=false" if not measure_ears else ""
-        settings_query += f"&scale_height=true" if scale_height else ""
+        # Preserve settings in query string
+        settings_query = f"&measure_ears={str(measure_ears).lower()}&scale_height={str(scale_height).lower()}"
 
         return redirect(f"/?characters={characters_query}{settings_query}")
