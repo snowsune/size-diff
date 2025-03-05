@@ -11,12 +11,16 @@ body {
   color: #fff;
   font-family: Arial, sans-serif;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 90vh;
-  overflow: hidden; /* Disable scrolling */
+  flex-direction: column; /* Stack everything vertically */
+  align-items: center; /* Center everything */
+  min-height: 100vh;
+  overflow-x: auto; /* Allow horizontal scrolling for wide images */
+  overflow-y: auto;
+  white-space: nowrap; /* Prevent line wrapping */
+  padding-bottom: 60px; /* Prevent footer from covering content */
 }
 
+/* Main UI container */
 .container {
   text-align: center;
   max-width: 800px;
@@ -46,6 +50,9 @@ h1 {
 
 .form-group {
   margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 label {
@@ -80,21 +87,33 @@ button:hover {
   background-color: #ffab40;
 }
 
-/* Image container styling */
+/* Image container (now separate from the main UI container) */
 .image-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 15px; /* Spacing between image and buttons */
-  margin: 20px auto; /* Center the whole container */
+  justify-content: center; /* Ensures the image starts centered */
+  margin-top: 20px;
+  overflow-x: auto; /* Enable scrolling */
+  width: 100vw; /* Ensure it expands fully */
 }
 
-/* Character Controls */
+/* Ensure the image itself stays centered and scrollable */
+.image-container img {
+  max-width: none; /* Prevents unnecessary shrinking */
+  height: 50vh;
+  display: block;
+  margin: 0 auto; /* Center inside the container */
+}
+
+/* Character Controls (Height Adjustment + Remove) */
 .character-controls {
   display: flex;
   flex-direction: row;
-  align-items: center;
+  justify-content: center;
   gap: 10px;
+  margin-top: 10px;
+  flex-wrap: nowrap;
 }
 
 /* Individual Character Row */
@@ -102,14 +121,12 @@ button:hover {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: rgba(255, 255, 255, 0.1); /* Slight contrast */
+  background: rgba(255, 255, 255, 0.1);
   padding: 8px;
   border-radius: 8px;
-  width: 100%;
-  max-width: 500px; /* Prevent it from being too wide */
 }
 
-/* Style the number input */
+/* Number Input for Character Height */
 .character-row input[type="number"] {
   width: 70px;
   padding: 5px;
@@ -168,7 +185,7 @@ button:hover {
 
 input[type="checkbox"] {
   margin-left: 10px;
-  transform: scale(1.2); /* Slightly larger */
+  transform: scale(1.2);
 }
 
 /* Footer styles */
@@ -183,24 +200,19 @@ footer {
   padding: 10px 0;
 }
 
-/* For the about page/link */
-.about-link {
-  margin-bottom: 10px;
+/* Share link and about link styling */
+.about-link,
+.share-link {
+  margin-top: 20px;
   font-size: 1.4em;
   text-align: center;
 }
-.about-link a {
+.about-link a,
+.share-link a {
   color: cyan;
   text-decoration: none;
 }
-.about-link a:hover {
+.about-link a:hover,
+.share-link a:hover {
   text-decoration: underline;
-}
-
-.back-link {
-  font-size: 2em;
-}
-
-.yaml-display {
-  text-align: left;
 }

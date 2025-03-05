@@ -103,88 +103,35 @@
                 </label>
             </div>
 
-            <script>
-                function toggleSetting(setting) {
-                    let params = new URLSearchParams(window.location.search);
-
-                    // Toggle the setting
-                    if (params.get(setting) === "true") {
-                        params.set(setting, "false");
-                    } else {
-                        params.set(setting, "true");
-                    }
-
-                    // Redirect with updated query parameters
-                    window.location.href = "?" + params.toString();
-                }
-
-                document.getElementById('measure_ears').addEventListener('change', function () {
-                    let nameField = document.querySelector('input[name="name"]').value.trim();
-                    if (nameField.length > 0) {
-                        this.form.submit(); // Wait for form submission
-                    } else {
-                        toggleSetting('measure_ears'); // Apply change immediately
-                    }
-                });
-
-                document.getElementById('scale_height').addEventListener('change', function () {
-                    let nameField = document.querySelector('input[name="name"]').value.trim();
-                    if (nameField.length > 0) {
-                        this.form.submit(); // Wait for form submission
-                    } else {
-                        toggleSetting('scale_height'); // Apply change immediately
-                    }
-                });
-            </script>
+            <script type="text/javascript" src="{% static 'js/toggle_setting.js' %}"></script>
         </form>
+    </div>
 
-        <div class="image-container">
-            <img src="{% url 'generate_image' %}?characters={{ characters_query }}&measure_ears={{ measure_ears }}&scale_height={{ scale_height }}&size=1024"
-                alt="Generated Size Image" height="380vh" />
-        
-            <div class="character-controls">
-                {% for char in characters_list %}
-                <div class="character-row">
-                    <label for="height_{{ forloop.counter0 }}">{{ char.name }}'s Height:</label>
-                    <input type="number" id="height_{{ forloop.counter0 }}" value="{{ char.height }}" min="1" step="1">
-        
-                    <!-- Update Button -->
-                    <button onclick="updateHeight({{ forloop.counter0 }}, '{{ char.species }}', '{{ char.gender }}', '{{ char.name }}')">
-                        Update
-                    </button>
-        
-                    <!-- Remove Button -->
-                    <a href="{% url 'remove_character' index=forloop.counter0 %}?characters={{ characters_query }}&measure_ears={{ measure_ears }}&scale_height={{ scale_height }}"
-                        class="remove-btn">
-                        Remove
-                    </a>
-                </div>
-                {% endfor %}
+    <div class="image-container">
+        <img src="{% url 'generate_image' %}?characters={{ characters_query }}&measure_ears={{ measure_ears }}&scale_height={{ scale_height }}&size=1024"
+            alt="Generated Size Image" height="380vh" />
+    
+        <div class="character-controls">
+            {% for char in characters_list %}
+            <div class="character-row">
+                <label for="height_{{ forloop.counter0 }}">{{ char.name }}'s Height:</label>
+                <input type="number" id="height_{{ forloop.counter0 }}" value="{{ char.height }}" min="1" step="1">
+    
+                <!-- Update Button -->
+                <button onclick="updateHeight({{ forloop.counter0 }}, '{{ char.species }}', '{{ char.gender }}', '{{ char.name }}')">
+                    Update
+                </button>
+    
+                <!-- Remove Button -->
+                <a href="{% url 'remove_character' index=forloop.counter0 %}?characters={{ characters_query }}&measure_ears={{ measure_ears }}&scale_height={{ scale_height }}"
+                    class="remove-btn">
+                    Remove
+                </a>
             </div>
+            {% endfor %}
         </div>
 
-        <script>
-            function updateHeight(index, species, gender, name) {
-                let heightInput = document.getElementById(`height_${index}`);
-                let newHeight = heightInput.value;
-        
-                if (newHeight <= 0 || isNaN(newHeight)) {
-                    alert("Please enter a valid height!");
-                    return;
-                }
-        
-                let params = new URLSearchParams(window.location.search);
-                let characters = params.get("characters") || "";
-        
-                let charArray = characters ? characters.split("+") : [];
-                charArray[index] = `${species},${gender},${newHeight},${name}`;
-        
-                params.set("characters", charArray.join("+"));
-        
-                window.location.href = "?" + params.toString();
-            }
-        </script>        
-        
+        <script type="text/javascript" src="{% static 'js/update_height.js' %}"></script>
 
         <!-- Takes you to the about page -->
         <div class="about-link">

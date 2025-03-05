@@ -45,6 +45,9 @@ def render_image(
     # Cache miss, so generate the image
     height_adjusted_chars = []
 
+    # Pre-Step 1: Calculate some limits for things
+    min_text_height = 0.8 * size  # Sets a minimum y height for text
+
     # Step 1: Calculate scaled heights, adjusting for ears offset if applicable
     for char in char_list:
         adjusted_char = calculate_height_offset(
@@ -144,7 +147,7 @@ def render_image(
 
         # Draw character's name and height
         text_x = x_offset + int(1.1 * char_img_width)
-        text_y = y_offset + int(0.1 * char_img_height)
+        text_y = min(y_offset + int(0.1 * char_img_height), min_text_height)
         draw.text(
             (text_x, text_y - (font_size + 5)),
             char.name,
