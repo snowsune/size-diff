@@ -1,0 +1,218 @@
+/* Basic reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Set background to black and center content */
+body {
+  background-color: #000;
+  color: #fff;
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column; /* Stack everything vertically */
+  align-items: center; /* Center everything */
+  min-height: 100vh;
+  overflow-x: auto; /* Allow horizontal scrolling for wide images */
+  overflow-y: auto;
+  white-space: nowrap; /* Prevent line wrapping */
+  padding-bottom: 60px; /* Prevent footer from covering content */
+}
+
+/* Main UI container */
+.container {
+  text-align: center;
+  max-width: 800px;
+  width: 100%;
+  padding: 10px;
+}
+
+/* Title style */
+h1 {
+  font-size: 2.5em;
+  color: cyan;
+  margin-bottom: 10px;
+}
+
+/* Flash message styling */
+.flash-messages {
+  color: red;
+  margin-bottom: 15px;
+}
+
+/* Form styling */
+.form-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+label {
+  font-size: 1.1em;
+  margin-bottom: 5px;
+  display: block;
+}
+
+select,
+input {
+  padding: 10px;
+  font-size: 1.1em;
+  border: none;
+  border-radius: 5px;
+  width: 100%;
+}
+
+/* Button styling */
+button {
+  padding: 10px 20px;
+  font-size: 1.1em;
+  background-color: #f80;
+  color: #000;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-top: 10px;
+}
+
+button:hover {
+  background-color: #ffab40;
+}
+
+/* Image container (now separate from the main UI container) */
+.image-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center; /* Ensures the image starts centered */
+  margin-top: 20px;
+  overflow-x: auto; /* Enable scrolling */
+  width: 100vw; /* Ensure it expands fully */
+}
+
+/* Ensure the image itself stays centered and scrollable */
+.image-container img {
+  max-width: none; /* Prevents unnecessary shrinking */
+  height: 50vh;
+  display: block;
+  margin: 0 auto; /* Center inside the container */
+}
+
+/* Character Controls (Height Adjustment + Remove) */
+.character-controls {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: nowrap;
+}
+
+/* Individual Character Row */
+.character-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 8px;
+  border-radius: 8px;
+}
+
+/* Number Input for Character Height */
+.character-row input[type="number"] {
+  width: 70px;
+  padding: 5px;
+  font-size: 1em;
+  text-align: center;
+  border: 2px solid cyan;
+  border-radius: 5px;
+  background: black;
+  color: white;
+}
+
+/* Update Button */
+.character-row button {
+  background-color: #0066ff;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  font-size: 1em;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.character-row button:hover {
+  background-color: #3388ff;
+}
+
+/* Remove Button */
+.character-row .remove-btn {
+  background-color: #611212;
+  color: #fff;
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 5px;
+  transition: 0.3s;
+}
+
+.character-row .remove-btn:hover {
+  background-color: #8b1f1f;
+}
+
+/* Style the switches */
+.switch-group {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+.switch-group label {
+  display: flex;
+  align-items: center;
+  font-size: 1em;
+}
+
+input[type="checkbox"] {
+  margin-left: 10px;
+  transform: scale(1.2);
+}
+
+/* Footer styles */
+footer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  text-align: center;
+  font-size: 0.8em;
+  background-color: #222;
+  color: #fff;
+  padding: 10px 0;
+}
+
+/* Share link and about link styling */
+.about-link,
+.share-link {
+  margin-top: 20px;
+  font-size: 1.4em;
+  text-align: center;
+}
+.about-link a,
+.share-link a {
+  color: cyan;
+  text-decoration: none;
+}
+.about-link a:hover,
+.share-link a:hover {
+  text-decoration: underline;
+}

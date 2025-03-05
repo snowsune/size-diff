@@ -17,4 +17,4 @@ flask run --debug
 
 ## Artists!
 
-None so far! Be the first!
+Chrissy!

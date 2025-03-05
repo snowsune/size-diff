@@ -1,3 +1,5 @@
 Pipfile*
 cache
 *.*~
+.env
+*.sqlite3

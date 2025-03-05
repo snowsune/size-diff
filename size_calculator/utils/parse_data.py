@@ -1,7 +1,7 @@
 import logging
-from app.utils.character import Character
-from app.utils.species_lookup import load_species_data
-from app.utils.calculate_heights import calculate_height_offset
+from .character import Character
+from .species_lookup import load_species_data
+from .calculate_heights import calculate_height_offset
 
 
 def extract_characters(query_string: str) -> list:

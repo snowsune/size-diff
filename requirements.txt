@@ -1,7 +1,10 @@
-Flask
-Pillow
-numpy
+# Core
+django
+whitenoise
+pillow
+psycopg2
 pyyaml
-gunicorn
-flask-caching
+numpy
 
+# WSGI
+gunicorn
