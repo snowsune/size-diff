@@ -138,20 +138,53 @@
             </script>
         </form>
 
-        {% if characters_list %}
         <div class="image-container">
             <img src="{% url 'generate_image' %}?characters={{ characters_query }}&measure_ears={{ measure_ears }}&scale_height={{ scale_height }}&size=1024"
                 alt="Generated Size Image" height="380vh" />
-
-            <div class="remove-buttons">
+        
+            <div class="character-controls">
                 {% for char in characters_list %}
-                <a href="{% url 'remove_character' index=forloop.counter0 %}?characters={{ characters_query }}&measure_ears={{ measure_ears }}&scale_height={{ scale_height }}"
-                    class="remove-btn">
-                    Remove {{ char.name }}
-                </a>
+                <div class="character-row">
+                    <label for="height_{{ forloop.counter0 }}">{{ char.name }}'s Height:</label>
+                    <input type="number" id="height_{{ forloop.counter0 }}" value="{{ char.height }}" min="1" step="1">
+        
+                    <!-- Update Button -->
+                    <button onclick="updateHeight({{ forloop.counter0 }}, '{{ char.species }}', '{{ char.gender }}', '{{ char.name }}')">
+                        Update
+                    </button>
+        
+                    <!-- Remove Button -->
+                    <a href="{% url 'remove_character' index=forloop.counter0 %}?characters={{ characters_query }}&measure_ears={{ measure_ears }}&scale_height={{ scale_height }}"
+                        class="remove-btn">
+                        Remove
+                    </a>
+                </div>
                 {% endfor %}
             </div>
         </div>
+
+        <script>
+            function updateHeight(index, species, gender, name) {
+                let heightInput = document.getElementById(`height_${index}`);
+                let newHeight = heightInput.value;
+        
+                if (newHeight <= 0 || isNaN(newHeight)) {
+                    alert("Please enter a valid height!");
+                    return;
+                }
+        
+                let params = new URLSearchParams(window.location.search);
+                let characters = params.get("characters") || "";
+        
+                let charArray = characters ? characters.split("+") : [];
+                charArray[index] = `${species},${gender},${newHeight},${name}`;
+        
+                params.set("characters", charArray.join("+"));
+        
+                window.location.href = "?" + params.toString();
+            }
+        </script>        
+        
 
         <!-- Takes you to the about page -->
         <div class="about-link">
@@ -162,7 +195,6 @@
             <p>Share this lineup:</p>
             <a href="{{ request.build_absolute_uri }}">{{ request.build_absolute_uri }}</a>
         </div>
-        {% endif %}
     </div>
 
     <footer>
