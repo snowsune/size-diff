@@ -10,7 +10,7 @@ male:
 
 female:
   image: "f_mouse_hunner.png"
-  ears_offset: 4
+  ears_offset: 7
   color: "049904"
   data:
     - anthro_size: 74 # 6'2"
