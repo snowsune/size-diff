@@ -22,6 +22,7 @@ class Character:
         # Image generation atributes
         self.image = image
         self.ears_offset = ears_offset
+        self.color = None
 
     def get_species_name(self) -> str:
         return self.species.replace("_", " ").title()

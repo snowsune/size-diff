@@ -138,7 +138,7 @@ def calculate_height_offset(
     final_height = max(feral_height, 2) if use_species_scaling else anthro_height
 
     # Return a new Character object with the adjusted height and original character attributes
-    return Character(
+    _char = Character(
         name=character.name,
         species=character.species,
         height=anthro_height,  # Original anthro height
@@ -147,3 +147,12 @@ def calculate_height_offset(
         image=gender_data["image"],
         ears_offset=gender_data["ears_offset"],
     )
+
+    # MESSY inject color here thanks!
+    try:
+        _char.color = gender_data["color"]
+    except:
+        pass
+
+    # Return
+    return _char
