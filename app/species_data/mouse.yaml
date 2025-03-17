@@ -1,0 +1,17 @@
+male:
+  image: "m_mouse_hunner.png"
+  ears_offset: 6
+  data:
+    - anthro_size: 76 # 6'4"
+      height: 3
+    - anthro_size: 60 # 5'
+      height: 4.5
+
+female:
+  image: "f_mouse_hunner.png"
+  ears_offset: 4
+  data:
+    - anthro_size: 74 # 6'2"
+      height: 2.5
+    - anthro_size: 60 # 5'
+      height: 4
