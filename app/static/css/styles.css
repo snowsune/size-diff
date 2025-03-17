@@ -142,6 +142,9 @@ footer {
 }
 
 /* For the about page/link */
+a {
+  color: #78d0ff;
+}
 .about-link {
   margin-bottom: 10px;
   font-size: 1.4em;

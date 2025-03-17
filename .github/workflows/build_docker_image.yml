@@ -1,11 +1,6 @@
 name: Size Diff CI
 
-on:
-  push:
-    branches:
-      - "*"
-    tags:
-      - "*"
+on: push
 
 env:
   REGISTRY: ghcr.io

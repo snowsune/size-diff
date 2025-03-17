@@ -3,11 +3,35 @@ import logging
 import numpy as np
 
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageEnhance, ImageOps
 
 from app.utils.calculate_heights import calculate_height_offset, inches_to_feet_inches
 
 font_path = "app/fonts/OpenSans-Regular.ttf"
+
+
+def apply_color_shift(image, color):
+    """Applies a color tint using the alpha channel as a mask."""
+    if not color:
+        return image  # No change if no color is provided
+
+    # Convert hex color to RGB
+    r, g, b = tuple(int(color[i : i + 2], 16) for i in (0, 2, 4))
+
+    # Convert image to RGBA if it's not already
+    image = image.convert("RGBA")
+
+    # Extract alpha channel as a mask
+    alpha = image.getchannel("A")
+
+    # Create a solid color image
+    color_overlay = Image.new("RGBA", image.size, (r, g, b, 255))
+
+    # Apply the alpha mask so only visible areas are colored
+    tinted_image = Image.composite(color_overlay, image, alpha)
+
+    print("--------> Tinted image!")
+    return tinted_image
 
 
 def extract_dominant_color(image):
@@ -121,6 +145,11 @@ def render_image(
     for i, char in enumerate(height_adjusted_chars):
         char_img_width, char_img_height = character_dimensions[i]
         char_img = Image.open(f"app/species_data/{char.image}")
+
+        # Apply color shift if `char.color` is set
+        print(f"--------> COLOR WAS {char.color}")
+        if char.color:
+            char_img = apply_color_shift(char_img, char.color)
 
         # Resize the character image based on calculated dimensions
         char_img = char_img.resize((char_img_width, char_img_height), Image.LANCZOS)
