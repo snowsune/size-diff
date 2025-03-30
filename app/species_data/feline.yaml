@@ -1,0 +1,19 @@
+male:
+  image: "Felid_Sketch_Male.png"
+  ears_offset: 9
+  color: "282b1d"
+  data:
+    - anthro_size: 76 # 6'4"
+      height: 14
+    - anthro_size: 60 # 5'
+      height: 10
+
+female:
+  image: "Felid_Sketch_Female.png"
+  ears_offset: 9
+  color: "1d751d"
+  data:
+    - anthro_size: 74 # 6'2"
+      height: 11
+    - anthro_size: 60 # 5'
+      height: 7
