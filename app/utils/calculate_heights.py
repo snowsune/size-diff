@@ -45,40 +45,29 @@ def inches_to_feet_inches(
             fractional_part = inches - whole_inches
             rounded_fraction = round_to_fraction(fractional_part, 8)  # Nearest 1/8
 
+            # Sometimes we round up to the next whole inch lol
+            print(f"Rounded frac was {rounded_fraction}")
+            if rounded_fraction == "1":
+                rounded_fraction = False
+                whole_inches = whole_inches + 1
+                print("AAAAA")
+
+            # If theres a fraction
             if rounded_fraction:
                 return (
                     f'{whole_inches} {rounded_fraction}"'
                     if whole_inches
                     else f'{rounded_fraction}"'
                 )
+            # If not, just whatever
             return f'{whole_inches}"'
         else:
             return f'{inches:.1f}"'
 
     feet = int(inches // 12)  # Whole feet
-    remaining_inches = inches % 12  # Inches leftover after extracting feet
+    remaining_inches = round(inches % 12)  # Inches leftover after extracting feet
 
-    if use_fractions:
-        whole_inches = int(remaining_inches)  # Extract whole inches part
-        fractional_part = remaining_inches - whole_inches
-        rounded_fraction = round_to_fraction(fractional_part, 4)  # Nearest 1/4
-
-        if rounded_fraction:
-            remaining_inches_str = (
-                f"{whole_inches} {rounded_fraction}"
-                if whole_inches
-                else f"{rounded_fraction}"
-            )
-        else:
-            remaining_inches_str = f"{whole_inches}"
-    else:
-        remaining_inches_str = (
-            f"{int(remaining_inches)}"
-            if remaining_inches == int(remaining_inches)
-            else f"{remaining_inches:.1f}"
-        )
-
-    return f"{feet}'{remaining_inches_str}\""
+    return f"{feet}'{remaining_inches}\""
 
 
 def convert_to_inches(_input: str) -> int:
