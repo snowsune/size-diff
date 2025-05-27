@@ -1,0 +1,20 @@
+# Kamryn supplied an image and its, a little different but we can always change it later <3
+male:
+  image: "m_shark.png"
+  ears_offset: 3
+  # color: "311b9e"
+  data:
+    - anthro_size: 76 # 6'4"
+      height: 90
+    - anthro_size: 60 # 5'
+      height: 74
+
+female:
+  image: "f_shark.png"
+  ears_offset: 3
+  # color: "664ce6"
+  data:
+    - anthro_size: 74 # 6'2"
+      height: 92
+    - anthro_size: 60 # 5'
+      height: 64
