@@ -166,7 +166,7 @@ def index():
         characters_list = [
             Character(name="Vixi", species="arctic_fox", height=62, gender="female"),
             Character(name="Randal", species="red_fox", height=66, gender="male"),
-            Character(name="Ky-Li", species="wolf", height=88, gender="female"),
+            Character(name="Ky-Li", species="canine", height=88, gender="female"),
         ]
 
     if request.method == "POST":
