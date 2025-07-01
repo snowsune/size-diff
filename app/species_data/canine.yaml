@@ -3,15 +3,16 @@ male:
   ears_offset: 0
   data:
     - anthro_size: 76 # 6'4"
-      height: 36
+      height: 28
     - anthro_size: 60 # 5'
-      height: 32
+      height: 24
 
 female:
   image: "Hieght_Ref_Ky-Li_for_Vixi.png"
-  ears_offset: 10
+  ears_offset: 9
+  color: "add6ed"
   data:
     - anthro_size: 76 # 6'4"
-      height: 34
+      height: 26
     - anthro_size: 60 # 5'
-      height: 28
+      height: 20
