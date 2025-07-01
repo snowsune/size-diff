@@ -1,6 +1,7 @@
 male:
-  image: "m_wolf.png"
-  ears_offset: 0
+  image: "Hieght_Ref_Maxene_for_Vixi.png"
+  ears_offset: 3
+  color: "870716"
   data:
     - anthro_size: 76 # 6'4"
       height: 28
