@@ -1,5 +1,5 @@
 male:
-  image: "m_wolf.png"
+  image: "Placeholder/m_wolf.png"
   ears_offset: 0
   data:
     - anthro_size: 76 # 6'4"
@@ -8,7 +8,7 @@ male:
       height: 32
 
 female:
-  image: "Hieght_Ref_Ky-Li_for_Vixi.png"
+  image: "Hunner/Hieght_Ref_Ky-Li_for_Vixi.png"
   ears_offset: 10
   data:
     - anthro_size: 76 # 6'4"

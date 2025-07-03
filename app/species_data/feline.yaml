@@ -1,5 +1,5 @@
 male:
-  image: "Felid_Sketch_Male.png"
+  image: "Rhainbowmetall/Felid_Sketch_Male.png"
   ears_offset: 9
   color: "282b1d"
   data:
@@ -9,7 +9,7 @@ male:
       height: 10
 
 female:
-  image: "Felid_Sketch_Female.png"
+  image: "Rhainbowmetall/Felid_Sketch_Female.png"
   ears_offset: 9
   color: "1d751d"
   data:
