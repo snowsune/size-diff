@@ -300,6 +300,15 @@ def add_preset():
     return redirect(f"/?characters={characters_query}{settings_query}")
 
 
+@app.route("/taur")
+def taur():
+    """
+    Base route for volnar's sub-page!
+    """
+
+    return render_template("taur.html")
+
+
 # For WSGI
 def create_app():
     return app
