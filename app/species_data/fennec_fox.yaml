@@ -1,5 +1,5 @@
 male:
-  image: "m_fennec.png"
+  image: "Chrissy/m_fennec.png"
   ears_offset: 10
   data:
     - anthro_size: 76 # 6'4"
@@ -8,7 +8,7 @@ male:
       height: 7
 
 female:
-  image: "missing.png"
+  image: "Chrissy/missing.png"
   ears_offset: 0
   data:
     - anthro_size: 74 # 6'2"

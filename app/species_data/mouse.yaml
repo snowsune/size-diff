@@ -1,5 +1,5 @@
 male:
-  image: "m_mouse_hunner.png"
+  image: "Hunner/Size_Refs_Mouse_for_Vixi (male).png"
   ears_offset: 6
   color: "8B8000"
   data:
@@ -9,7 +9,7 @@ male:
       height: 4.5
 
 female:
-  image: "f_mouse_hunner.png"
+  image: "Hunner/Size_Refs_Mouse_for_Vixi (female).png"
   ears_offset: 7
   color: "049904"
   data:
