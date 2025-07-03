@@ -116,7 +116,7 @@ def render_image(
 
         # Scale character image height based on visual height, including ears offset
         char_img_height = int(size * scale_factor)
-        char_img = Image.open(f"app/species_data/{char.image}")
+        char_img = Image.open(f"art/{char.image}")
 
         # Calculate width based on original aspect ratio
         char_img_width = int(char_img.width * (char_img_height / char_img.height))
@@ -144,7 +144,7 @@ def render_image(
     x_offset = 0
     for i, char in enumerate(height_adjusted_chars):
         char_img_width, char_img_height = character_dimensions[i]
-        char_img = Image.open(f"app/species_data/{char.image}")
+        char_img = Image.open(f"art/{char.image}")
 
         # Apply color shift if `char.color` is set
         print(f"--------> COLOR WAS {char.color}")

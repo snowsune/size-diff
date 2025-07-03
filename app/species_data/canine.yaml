@@ -1,5 +1,5 @@
 male:
-  image: "Hieght_Ref_Maxene_for_Vixi.png"
+  image: "Hunner/Hieght_Ref_Maxene_for_Vixi.png"
   ears_offset: 3
   color: "870716"
   data:
@@ -9,7 +9,7 @@ male:
       height: 24
 
 female:
-  image: "Hieght_Ref_Ky-Li_for_Vixi.png"
+  image: "Hunner/Hieght_Ref_Ky-Li_for_Vixi.png"
   ears_offset: 9
   color: "add6ed"
   data:
