@@ -255,6 +255,15 @@ def about():
     return render_template("about.html", yaml_content=yaml_content)
 
 
+@app.route("/taur")
+def taur():
+    """
+    Base route for volnar's sub-page!
+    """
+
+    return render_template("taur.html")
+
+
 # For WSGI
 def create_app():
     return app
