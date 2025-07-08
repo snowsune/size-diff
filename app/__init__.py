@@ -170,7 +170,7 @@ def index():
     # Load presets for the dropdown
     presets = load_preset_characters()
     preset_map = {
-        f"{p['name']} ({p['species'].replace('_', ' ').title()}, {p['gender']}, {p['height']}in)": f"{p['species']},{p['gender']},{p['height']},{p['name']}"
+        f"{p['name'].replace('_', ' ').title()} --- {p['species'].replace('_', ' ').title()}, {p['gender']}, {p.get('description', '')}": f"{p['species']},{p['gender']},{p['height']},{p['name']}"
         for p in presets
     }
 
