@@ -83,9 +83,21 @@
                 <input type="string" id="anthro_height" name="anthro_height" value="{{ anthro_height }}">
             </div>
 
-            <!-- Add button -->
-            <button type="submit">Add</button>
-
+            <!-- Add and Preset Controls in a vertically stacked box -->
+            <div class="form-group" style="display: flex; flex-direction: column; align-items: stretch; gap: 0.5em;">
+                <button type="submit" style="height: 3.5em; width: 100%;">Add</button>
+                <div style="display: flex; align-items: center; gap: 8px; width: 100%; position: relative;">
+                    <input id="preset-autocomplete" placeholder="Preset..."
+                        style="height: 2.2em; width: 100%; min-width: 0; font-size: 1em; margin: 0; padding: 0 8px; box-sizing: border-box;"
+                        autocomplete="off" oninput="showPresetSuggestions()" onkeydown="presetKeyDown(event)">
+                    <div id="preset-suggestions"
+                        style="position: absolute; top: 2.3em; left: 0; right: 0; background: white; border: 1px solid #ccc; z-index: 10; display: none; max-height: 180px; overflow-y: auto;">
+                    </div>
+                    <button type="button" id="preset-add-btn"
+                        style="height: 2.2em; min-width: 90px; font-size: .8em; display: flex; align-items: center; justify-content: center; margin: 0; padding: 0 12px; box-sizing: border-box;">Add
+                        Preset</button>
+                </div>
+            </div>
 
             <!-- Switches for Options -->
             <div class="form-group">
@@ -113,6 +125,124 @@
             </script>
 
         </form>
+
+        <script>
+            // Use presetMap passed from Flask as a JSON object
+            const presetMap = {{ preset_map | tojson | safe }};
+            const presetNames = Object.keys(presetMap);
+            const input = document.getElementById('preset-autocomplete');
+            const suggestionsBox = document.getElementById('preset-suggestions');
+            let selectedSuggestion = -1;
+
+            function fuzzyMatch(str, query) {
+                // Simple fuzzy: all query chars in order in str
+                query = query.toLowerCase();
+                str = str.toLowerCase();
+                let j = 0;
+                for (let i = 0; i < str.length && j < query.length; i++) {
+                    if (str[i] === query[j]) j++;
+                }
+                return j === query.length;
+            }
+
+            function showPresetSuggestions() {
+                const val = input.value.trim();
+                suggestionsBox.innerHTML = '';
+                selectedSuggestion = -1;
+                if (!val) {
+                    suggestionsBox.style.display = 'none';
+                    return;
+                }
+                // Fuzzy and substring match
+                const matches = presetNames.filter(name => name.toLowerCase().includes(val.toLowerCase()) || fuzzyMatch(name, val));
+                if (matches.length === 0) {
+                    suggestionsBox.style.display = 'none';
+                    return;
+                }
+                matches.slice(0, 10).forEach((name, idx) => {
+                    const div = document.createElement('div');
+                    div.textContent = name;
+                    div.className = 'preset-suggestion';
+                    div.style.padding = '4px 8px';
+                    div.style.cursor = 'pointer';
+                    div.onmousedown = function (e) { // use mousedown so it fires before blur
+                        input.value = name;
+                        suggestionsBox.style.display = 'none';
+                    };
+                    if (idx === 0) div.style.borderTop = 'none';
+                    suggestionsBox.appendChild(div);
+                });
+                suggestionsBox.style.display = 'block';
+            }
+
+            input.addEventListener('blur', function () {
+                setTimeout(() => { suggestionsBox.style.display = 'none'; }, 100);
+            });
+
+            function presetKeyDown(e) {
+                const items = suggestionsBox.querySelectorAll('.preset-suggestion');
+                if (!items.length) return;
+                if (e.key === 'ArrowDown') {
+                    selectedSuggestion = (selectedSuggestion + 1) % items.length;
+                    updateSuggestionHighlight(items);
+                    e.preventDefault();
+                } else if (e.key === 'ArrowUp') {
+                    selectedSuggestion = (selectedSuggestion - 1 + items.length) % items.length;
+                    updateSuggestionHighlight(items);
+                    e.preventDefault();
+                } else if (e.key === 'Enter') {
+                    if (selectedSuggestion >= 0 && selectedSuggestion < items.length) {
+                        input.value = items[selectedSuggestion].textContent;
+                        suggestionsBox.style.display = 'none';
+                    }
+                }
+            }
+            function updateSuggestionHighlight(items) {
+                items.forEach((item, idx) => {
+                    item.classList.toggle('selected', idx === selectedSuggestion);
+                });
+            }
+            document.getElementById('preset-add-btn').onclick = function () {
+                var val = input.value;
+                var presetVal = presetMap[val] || null;
+                if (!presetVal) {
+                    // Try to match ignoring case
+                    for (const key in presetMap) {
+                        if (key.toLowerCase().startsWith(val.toLowerCase())) {
+                            presetVal = presetMap[key];
+                            break;
+                        }
+                    }
+                }
+                if (!presetVal) return;
+                var url = new URL(window.location.href);
+                var chars = url.searchParams.get('characters') || '';
+                if (chars && !chars.endsWith('+') && chars.length > 0) chars += '+';
+                chars += presetVal;
+                url.searchParams.set('characters', chars);
+                window.location.href = url.toString();
+            };
+            // Optional: allow Enter key in input to trigger add
+            input.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    document.getElementById('preset-add-btn').click();
+                    e.preventDefault();
+                }
+            });
+        </script>
+
+        <style>
+            #preset-suggestions .preset-suggestion {
+                background: white;
+                color: black;
+            }
+
+            #preset-suggestions .preset-suggestion.selected,
+            #preset-suggestions .preset-suggestion:hover {
+                background: #e0e0ff;
+                color: black;
+            }
+        </style>
 
         {% if characters_list %}
         <div class="image-container">
@@ -144,8 +274,8 @@
     <footer>
         <p>
             Running Version <a href="https://github.com/snowsune/size-diff">{{ version }}</a>,
-            Art by <a href="https://www.furaffinity.net/user/n1chris">Chrissy</a>, 
-            <a href="https://hunner.carrd.co/">Hunner</a>, 
+            Art by <a href="https://www.furaffinity.net/user/n1chris">Chrissy</a>,
+            <a href="https://hunner.carrd.co/">Hunner</a>,
             <a href="https://bsky.app/profile/rhainbowmetall.bsky.social">Rhain</a>,
             <a href="#">Keith</a>,
             and <a href="https://www.furaffinity.net/user/zhelya">Zhelya</a>

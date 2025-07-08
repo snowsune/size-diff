@@ -28,6 +28,7 @@ from app.utils.parse_data import (
     filter_valid_characters,
     generate_characters_query_string,
     remove_character_from_query,
+    load_preset_characters,
 )
 from app.utils.stats import StatsManager
 from app.utils.generate_image import render_image
@@ -169,6 +170,13 @@ def index():
             Character(name="Ky-Li", species="canine", height=88, gender="female"),
         ]
 
+    # Load presets for the dropdown
+    presets = load_preset_characters()
+    preset_map = {
+        f"{p['name']} ({p['species'].replace('_', ' ').title()}, {p['gender']}, {p['height']}in)": f"{p['species']},{p['gender']},{p['height']},{p['name']}"
+        for p in presets
+    }
+
     if request.method == "POST":
         # Get species, name, and gender from form data
         selected_species = request.form["species"]
@@ -225,6 +233,8 @@ def index():
         scale_height=scale_height,
         version=os.getenv("GIT_COMMIT", "ERR_NO_REVISION"),
         server_url=os.getenv("SERVER_URL", "https://nextcloud.kitsunehosting.net/"),
+        presets=presets,
+        preset_map=preset_map,
     )
 
 

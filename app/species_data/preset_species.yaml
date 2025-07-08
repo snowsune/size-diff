@@ -1,0 +1,23 @@
+# Preset characters for quick selection in the calculator
+# Each entry: name, species, gender, height (in inches), optional description
+presets:
+  - name: Randal
+    species: red_fox
+    gender: male
+    height: 66.0
+    description: "The handsome red fox himself!"
+  - name: Vixi
+    species: arctic_fox
+    gender: female
+    height: 62.0
+    description: "Thats me!"
+  - name: Ky-Li
+    species: canine
+    gender: female
+    height: 88.0
+    description: "We love our kydog~"
+  - name: Trip
+    species: sergal
+    gender: male
+    height: 74
+    description: "Trip Sergal"
