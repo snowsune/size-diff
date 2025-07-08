@@ -76,3 +76,19 @@ def generate_characters_query_string(characters_list: list) -> str:
     Generates a query string from the list of Character instances.
     """
     return "+".join(char.to_query_string() for char in characters_list)
+
+
+def load_preset_characters():
+    """
+    Loads preset characters from the preset_species.yaml file.
+    Returns a list of dicts with keys: name, species, gender, height, description.
+    """
+    import yaml
+
+    try:
+        with open("app/species_data/preset_species.yaml", "r") as f:
+            data = yaml.safe_load(f)
+        return data.get("presets", [])
+    except Exception as e:
+        logging.warning(f"Could not load preset characters: {e}")
+        return []
