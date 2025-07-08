@@ -92,3 +92,14 @@ def load_preset_characters():
     except Exception as e:
         logging.warning(f"Could not load preset characters: {e}")
         return []
+
+
+def get_default_characters():
+    """
+    Returns the default list of Character objects for the app.
+    """
+    return [
+        Character(name="Vixi", species="arctic_fox", height=62, gender="female"),
+        Character(name="Randal", species="red_fox", height=66, gender="male"),
+        Character(name="Ky-Li", species="canine", height=88, gender="female"),
+    ]

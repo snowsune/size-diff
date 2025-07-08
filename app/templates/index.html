@@ -217,10 +217,13 @@
                 if (!presetVal) return;
                 var url = new URL(window.location.href);
                 var chars = url.searchParams.get('characters') || '';
-                if (chars && !chars.endsWith('+') && chars.length > 0) chars += '+';
-                chars += presetVal;
-                url.searchParams.set('characters', chars);
-                window.location.href = url.toString();
+                var base = '/add-preset?';
+                var params = new URLSearchParams();
+                params.set('preset', presetVal);
+                if (chars) params.set('characters', chars);
+                if (url.searchParams.get('measure_ears') === 'false') params.set('measure_ears', 'false');
+                if (url.searchParams.get('scale_height') === 'true') params.set('scale_height', 'true');
+                window.location.href = base + params.toString();
             };
             // Optional: allow Enter key in input to trigger add
             input.addEventListener('keydown', function (e) {
