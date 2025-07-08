@@ -85,17 +85,17 @@
 
             <!-- Add and Preset Controls in a vertically stacked box -->
             <div class="form-group" style="display: flex; flex-direction: column; align-items: stretch; gap: 0.5em;">
-                <button type="submit" style="height: 3.5em; width: 100%;">Add</button>
+                <button type="submit" id="add-btn" style="height: 3.5em; width: 100%;" disabled>Add</button>
                 <div style="display: flex; align-items: center; gap: 8px; width: 100%; position: relative;">
-                    <input id="preset-autocomplete" placeholder="Preset..."
+                    <input id="preset-autocomplete" placeholder="Or add a preset..."
                         style="height: 2.2em; width: 100%; min-width: 0; font-size: 1em; margin: 0; padding: 0 8px; box-sizing: border-box;"
                         autocomplete="off" oninput="showPresetSuggestions()" onkeydown="presetKeyDown(event)">
                     <div id="preset-suggestions"
                         style="position: absolute; top: 2.3em; left: 0; right: 0; background: white; border: 1px solid #ccc; z-index: 10; display: none; max-height: 180px; overflow-y: auto;">
                     </div>
                     <button type="button" id="preset-add-btn"
-                        style="height: 2.2em; min-width: 90px; font-size: .8em; display: flex; align-items: center; justify-content: center; margin: 0; padding: 0 12px; box-sizing: border-box;">Add
-                        Preset</button>
+                        style="height: 2.2em; min-width: 90px; font-size: .7em; display: flex; align-items: center; justify-content: center; margin: 0; padding: 0 12px; box-sizing: border-box;"
+                        disabled>Add Preset</button>
                 </div>
             </div>
 
@@ -168,6 +168,7 @@
                     div.onmousedown = function (e) { // use mousedown so it fires before blur
                         input.value = name;
                         suggestionsBox.style.display = 'none';
+                        updatePresetAddButton();
                     };
                     if (idx === 0) div.style.borderTop = 'none';
                     suggestionsBox.appendChild(div);
@@ -194,6 +195,7 @@
                     if (selectedSuggestion >= 0 && selectedSuggestion < items.length) {
                         input.value = items[selectedSuggestion].textContent;
                         suggestionsBox.style.display = 'none';
+                        updatePresetAddButton();
                     }
                 }
             }
@@ -232,6 +234,27 @@
                     e.preventDefault();
                 }
             });
+
+            // Enable/disable Add button based on name and height fields
+            function updateAddButton() {
+                const name = document.getElementById('name').value.trim();
+                const height = document.getElementById('anthro_height').value.trim();
+                const addBtn = document.getElementById('add-btn');
+                addBtn.disabled = !(name && height);
+            }
+            document.getElementById('name').addEventListener('input', updateAddButton);
+            document.getElementById('anthro_height').addEventListener('input', updateAddButton);
+            updateAddButton();
+
+            // Enable/disable Add Preset button based on valid preset selection
+            function updatePresetAddButton() {
+                var val = input.value;
+                var presetVal = presetMap[val] || null;
+                const presetBtn = document.getElementById('preset-add-btn');
+                presetBtn.disabled = !presetVal;
+            }
+            input.addEventListener('input', updatePresetAddButton);
+            updatePresetAddButton();
         </script>
 
         <style>
@@ -244,6 +267,22 @@
             #preset-suggestions .preset-suggestion:hover {
                 background: #e0e0ff;
                 color: black;
+            }
+
+            #add-btn:disabled {
+                background: #e0e0e0 !important;
+                color: #888 !important;
+                cursor: not-allowed !important;
+                border: 1px solid #ccc !important;
+                opacity: 1 !important;
+            }
+
+            #preset-add-btn:disabled {
+                background: #e0e0e0 !important;
+                color: #888 !important;
+                cursor: not-allowed !important;
+                border: 1px solid #ccc !important;
+                opacity: 1 !important;
             }
         </style>
 
