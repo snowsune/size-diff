@@ -25,9 +25,19 @@ presets:
     species: giraffe
     gender: female
     height: 118
-    description: A tall strider? How much description do you need? 
+    description: A tall strider? How much description do you need?
   - name: Volnar
     species: taur_(generic)
     gender: androgynous
     height: 108
     description: 4 legs 4 more fun!
+  - name: Aryaltel_Kavka
+    species: red_fox
+    gender: female
+    height: 66
+    description: All things foxy vixen! With 100% bonus wings!
+  - name: Tirga
+    species: feline
+    gender: androgynous
+    height: 72
+    description: She's got more limbs than she knows what to do with.
