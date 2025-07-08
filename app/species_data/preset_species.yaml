@@ -4,8 +4,8 @@ presets:
   - name: Randal
     species: red_fox
     gender: male
-    height: 66.0
-    description: "The handsome red fox himself!"
+    height: 65.6
+    description: "All things in moderation... except chocolate!"
   - name: Vixi
     species: arctic_fox
     gender: female
@@ -21,3 +21,13 @@ presets:
     gender: male
     height: 74
     description: "Trip Sergal"
+  - name: Fortune_Towers
+    species: giraffe
+    gender: female
+    height: 118
+    description: A tall strider? How much description do you need? 
+  - name: Volnar
+    species: taur_(generic)
+    gender: androgynous
+    height: 108
+    description: 4 legs 4 more fun!

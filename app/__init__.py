@@ -29,6 +29,7 @@ from app.utils.parse_data import (
     generate_characters_query_string,
     remove_character_from_query,
     load_preset_characters,
+    get_default_characters,
 )
 from app.utils.stats import StatsManager
 from app.utils.generate_image import render_image
@@ -164,11 +165,7 @@ def index():
 
     # Insert default character values if none exist
     if len(characters_list) == 0:
-        characters_list = [
-            Character(name="Vixi", species="arctic_fox", height=62, gender="female"),
-            Character(name="Randal", species="red_fox", height=66, gender="male"),
-            Character(name="Ky-Li", species="canine", height=88, gender="female"),
-        ]
+        characters_list = get_default_characters()
 
     # Load presets for the dropdown
     presets = load_preset_characters()
@@ -263,6 +260,44 @@ def about():
 
     # Pass the YAML content to the template
     return render_template("about.html", yaml_content=yaml_content)
+
+
+# Specific for adding a preset
+# handles the edge case where we may need to add the default list.
+@app.route("/add-preset", methods=["GET"])
+def add_preset():
+    # Get the preset value from the query string
+    preset_val = request.args.get("preset")
+    characters = request.args.get("characters", "")
+    characters_list = extract_characters(characters)
+
+    # If the current list is empty, add the defaults
+    if not characters_list:
+        characters_list = get_default_characters()
+    # Add the new preset
+    if preset_val:
+        # Parse the preset string (species,gender,height,name)
+        parts = preset_val.split(",")
+        if len(parts) == 4:
+            characters_list.append(
+                Character(
+                    name=parts[3],
+                    species=parts[0],
+                    height=float(parts[2]),
+                    gender=parts[1],
+                )
+            )
+    # Build the new query string
+    characters_query = generate_characters_query_string(characters_list)
+    # Preserve settings if present
+    measure_ears = request.args.get("measure_ears")
+    scale_height = request.args.get("scale_height")
+    settings_query = ""
+    if measure_ears == "false":
+        settings_query += "&measure_ears=false"
+    if scale_height == "true":
+        settings_query += "&scale_height=true"
+    return redirect(f"/?characters={characters_query}{settings_query}")
 
 
 # For WSGI
