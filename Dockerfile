@@ -11,6 +11,9 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 # Copy the app code to the container
 COPY . .
 
+# Run the art trimming script
+RUN python3 scripts/trim_art.py
+
 # Expose port 5000 for the Flask app
 EXPOSE 5000
 
