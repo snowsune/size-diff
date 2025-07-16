@@ -41,3 +41,8 @@ presets:
     gender: androgynous
     height: 72
     description: She's got more limbs than she knows what to do with.
+  - name: Alice
+    species: canine
+    gender: female
+    height: 141
+    description: Big ol' dog~
