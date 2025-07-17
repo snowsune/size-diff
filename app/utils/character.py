@@ -1,3 +1,6 @@
+from typing import Optional
+
+
 class Character:
     """
     A well-defined representation of a character object.
@@ -12,6 +15,7 @@ class Character:
         feral_height: float = 0.0,
         image: str = "",
         ears_offset: float = 0.0,
+        visual_height: Optional[float] = None,
     ):
         self.name = name
         self.species = species
@@ -23,6 +27,7 @@ class Character:
         self.image = image
         self.ears_offset = ears_offset
         self.color = None
+        self.visual_height = visual_height
 
     def get_species_name(self) -> str:
         return self.species.replace("_", " ").title()
