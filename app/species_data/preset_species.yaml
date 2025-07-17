@@ -39,7 +39,7 @@ presets:
   - name: Tirga
     species: saber-toothed_tiger
     gender: androgynous
-    height: 72
+    height: 84
     description: She's got more limbs than she knows what to do with.
   - name: Alice
     species: canine
