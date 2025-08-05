@@ -37,7 +37,17 @@ presets:
     height: 66
     description: All things foxy vixen! With 100% bonus wings!
   - name: Tirga
-    species: feline
+    species: saber-toothed_tiger
     gender: androgynous
-    height: 72
+    height: 84
     description: She's got more limbs than she knows what to do with.
+  - name: Alice
+    species: canine
+    gender: female
+    height: 141
+    description: Big ol' dog~
+  - name: Maxene
+    species: canine
+    geneer: male
+    height: 78
+    description: Cute demon doggo!
