@@ -48,6 +48,6 @@ presets:
     description: Big ol' dog~
   - name: Maxene
     species: canine
-    geneer: male
+    gender: male
     height: 120
     description: Cute demon doggo!
