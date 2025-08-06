@@ -309,6 +309,115 @@ def taur():
     return render_template("taur.html")
 
 
+# Interactive demo route
+@app.route("/interactive-demo")
+def interactive_demo():
+    return render_template("interactive_demo.html")
+
+
+# Serve species data images for the client-side renderer
+@app.route("/species_data/<filename>")
+def serve_species_image(filename):
+    from flask import send_from_directory
+    import os
+
+    # Get the absolute path to the species_data directory
+    species_data_path = os.path.join(os.path.dirname(__file__), "species_data")
+    return send_from_directory(species_data_path, filename)
+
+
+# Hybrid renderer endpoint (uses JS renderer if available, falls back to Python)
+@app.route("/generate-image-hybrid")
+@cache_with_stats(timeout=31536000, query_string=True)
+def generate_image_hybrid():
+    # Get characters
+    characters = request.args.get("characters", "")
+    characters_list = extract_characters(characters)
+
+    # Get settings
+    measure_ears = request.args.get("measure_ears", True) == "True"
+    scale_height = request.args.get("scale_height", True) == "True"
+
+    # Get height
+    size = int(request.args.get("size", "400"))
+
+    # Record we've generated a new image!
+    stats_manager.increment_images_generated()
+
+    def generate_and_save():
+        if len(characters_list) == 0:
+            logging.warn("Asked to generate an empty image!")
+            # Generate an empty image
+            image = Image.new("RGB", (int(size * 1.4), size))
+            pixels = image.load()
+            for i in range(image.size[0]):
+                for j in range(image.size[1]):
+                    pixels[i, j] = (
+                        random.randint(0, 255),
+                        random.randint(0, 255),
+                        random.randint(0, 255),
+                    )
+        else:
+            # Try JS renderer first, fall back to Python
+            try:
+                from app.utils.js_renderer import render_with_js_fallback
+
+                # Convert characters to dictionaries for JS renderer
+                char_dicts = []
+                for char in characters_list:
+                    char_dict = {
+                        "name": char.name,
+                        "species": char.species,
+                        "height": char.height,
+                        "gender": char.gender,
+                        "feral_height": char.feral_height,
+                        "image": char.image,
+                        "ears_offset": char.ears_offset,
+                    }
+                    if hasattr(char, "color") and char.color:
+                        char_dict["color"] = char.color
+                    char_dicts.append(char_dict)
+
+                options = {
+                    "size": size,
+                    "measureToEars": measure_ears,
+                    "useSpeciesScaling": scale_height,
+                }
+
+                image = render_with_js_fallback(char_dicts, options)
+
+            except ImportError:
+                # Fall back to existing PIL renderer
+                image = render_image(
+                    characters_list,
+                    size,
+                    measure_to_ears=measure_ears,
+                    use_species_scaling=scale_height,
+                )
+
+        # Save image to a BytesIO object
+        img_io = io.BytesIO()
+        image.save(img_io, "PNG")
+        img_io.seek(0)
+        return img_io
+
+    # Submit the task to the executor
+    future = executor.submit(generate_and_save)
+
+    try:
+        img_io = future.result(timeout=30)  # Wait for up to 30 seconds
+    except TimeoutError:
+        return "Image generation timed out", 504
+
+    # Create a response with the image and set Content-Type to image/png
+    response = make_response(img_io.read())
+    response.headers.set("Content-Type", "image/png")
+    response.headers.set("Content-Disposition", "inline", filename="preview.png")
+    response.headers.set("Cache-Control", "public, max-age=31536000")
+
+    return response
+
+
 # For WSGI
 def create_app():
     return app
