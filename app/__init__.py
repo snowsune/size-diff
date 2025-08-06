@@ -230,12 +230,32 @@ def index():
     settings_query = f"&measure_ears=false" if not measure_ears else ""
     settings_query += f"&scale_height=true" if scale_height else ""
 
+    # Convert Character objects to JSON-serializable dictionaries for JavaScript
+    characters_json_data = []
+    for char in characters_list:
+        char_dict = {
+            "name": char.name,
+            "species": char.species,
+            "gender": char.gender,
+            "height": char.height,
+            "feral_height": char.feral_height,
+            "image": char.image,
+            "ears_offset": char.ears_offset,
+            "color": getattr(char, "color", None),
+        }
+        characters_json_data.append(char_dict)
+
+    import json
+
+    characters_json = json.dumps(characters_json_data)
+
     return render_template(
         "index.html",
         stats=stats,
         cache_performance=f"{cache_stats['hits']}/{cache_stats['misses']}",
         species=species_list,
         characters_list=characters_list,
+        characters_json=characters_json,
         characters_query=generate_characters_query_string(characters_list),
         settings_query=settings_query,
         measure_ears=measure_ears,
