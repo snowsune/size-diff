@@ -249,7 +249,7 @@ class UniversalRenderer {
     drawDottedLine(startX, endX, y, color) {
         const dashLength = Math.floor((40 * this.options.size) / 1024);
         const gap = Math.floor((20 * this.options.size) / 1024);
-        const lineWidth = Math.floor((8 * this.options.size) / 1024);
+        const lineWidth = Math.floor((6 * this.options.size) / 1024);
 
         this.ctx.strokeStyle = color;
         this.ctx.lineWidth = lineWidth;
@@ -329,17 +329,16 @@ class UniversalRenderer {
             // Draw character image
             this.ctx.drawImage(characterImage, xOffset, yOffset, dimensions.width, dimensions.height);
 
-            // Draw height indicator line if measuring to ears
-            if (this.options.measureToEars && char.ears_offset) {
-                const heightLineY = this.options.size - Math.floor((char.adjustedHeight / layout.metrics.renderHeight) * this.options.size);
-                const dominantColor = this.getDominantColor(characterImage);
-                this.drawDottedLine(xOffset, xOffset + dimensions.width, heightLineY, dominantColor);
-            }
-
             // Draw character text
             const textX = xOffset + Math.floor(1.1 * dimensions.width);
             const textY = yOffset + Math.floor(0.1 * dimensions.height);
             const dominantColor = this.getDominantColor(characterImage);
+
+            // Draw height indicator line if measuring to ears
+            if (this.options.measureToEars && char.ears_offset) {
+                const heightLineY = this.options.size - Math.floor((char.adjustedHeight / layout.metrics.renderHeight) * this.options.size);
+                this.drawDottedLine(xOffset, xOffset + dimensions.width, heightLineY, dominantColor);
+            }
 
             this.ctx.fillStyle = dominantColor;
             this.ctx.font = `${layout.fontSize}px ${this.options.fontFamily}`;
