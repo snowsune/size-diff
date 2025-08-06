@@ -32,7 +32,7 @@ from app.utils.parse_data import (
     get_default_characters,
 )
 from app.utils.stats import StatsManager
-from app.utils.generate_image import render_image
+from app.utils.generate_image_legacy import render_image
 from app.utils.character import Character
 
 app = Flask(__name__)
@@ -83,7 +83,7 @@ species_list = [
 
 @app.route("/generate-image")
 @cache_with_stats(timeout=31536000, query_string=True)
-def generate_image():
+def generate_image_legacy():
     # Get characters
     characters = request.args.get("characters", "")
     characters_list = extract_characters(characters)
@@ -152,6 +152,13 @@ def index():
     characters = request.args.get("characters", "")
     characters_list = extract_characters(characters)
 
+    # Process characters to populate image and ears_offset from species data
+    processed_characters = []
+    for char in characters_list:
+        processed_char = calculate_height_offset(char, use_species_scaling=False)
+        processed_characters.append(processed_char)
+    characters_list = processed_characters
+
     # Extract settings from query string
     measure_ears = request.args.get("measure_ears", "true") == "true"
     scale_height = request.args.get("scale_height", "false") == "true"
@@ -165,7 +172,12 @@ def index():
 
     # Insert default character values if none exist
     if len(characters_list) == 0:
-        characters_list = get_default_characters()
+        default_chars = get_default_characters()
+        # Process default characters to populate image and ears_offset
+        characters_list = []
+        for char in default_chars:
+            processed_char = calculate_height_offset(char, use_species_scaling=False)
+            characters_list.append(processed_char)
 
     # Load presets for the dropdown
     presets = load_preset_characters()
@@ -326,10 +338,10 @@ def serve_species_image(filename):
     return send_from_directory(species_data_path, filename)
 
 
-# Hybrid renderer endpoint (uses JS renderer if available, falls back to Python)
-@app.route("/generate-image-hybrid")
+# New universal renderer endpoint (replaces the old Python renderer)
+@app.route("/generate-image-new")
 @cache_with_stats(timeout=31536000, query_string=True)
-def generate_image_hybrid():
+def generate_image():
     # Get characters
     characters = request.args.get("characters", "")
     characters_list = extract_characters(characters)
@@ -358,42 +370,33 @@ def generate_image_hybrid():
                         random.randint(0, 255),
                     )
         else:
-            # Try JS renderer first, fall back to Python
-            try:
-                from app.utils.js_renderer import render_with_js_fallback
+            # Use the JavaScript renderer with fallback to Python PIL
+            from app.utils.js_renderer import render_with_js_fallback
 
-                # Convert characters to dictionaries for JS renderer
-                char_dicts = []
-                for char in characters_list:
-                    char_dict = {
-                        "name": char.name,
-                        "species": char.species,
-                        "height": char.height,
-                        "gender": char.gender,
-                        "feral_height": char.feral_height,
-                        "image": char.image,
-                        "ears_offset": char.ears_offset,
-                    }
-                    if hasattr(char, "color") and char.color:
-                        char_dict["color"] = char.color
-                    char_dicts.append(char_dict)
-
-                options = {
-                    "size": size,
-                    "measureToEars": measure_ears,
-                    "useSpeciesScaling": scale_height,
+            # Convert characters to dictionaries for JS renderer
+            char_dicts = []
+            for char in characters_list:
+                char_dict = {
+                    "name": char.name,
+                    "species": char.species,
+                    "height": char.height,
+                    "gender": char.gender,
+                    "feral_height": char.feral_height,
+                    "image": char.image,
+                    "ears_offset": char.ears_offset,
                 }
+                if hasattr(char, "color") and char.color:
+                    char_dict["color"] = char.color
+                char_dicts.append(char_dict)
 
-                image = render_with_js_fallback(char_dicts, options)
+            options = {
+                "size": size,
+                "measureToEars": measure_ears,
+                "useSpeciesScaling": scale_height,
+            }
 
-            except ImportError:
-                # Fall back to existing PIL renderer
-                image = render_image(
-                    characters_list,
-                    size,
-                    measure_to_ears=measure_ears,
-                    use_species_scaling=scale_height,
-                )
+            # This will try JS renderer first, fall back to Python PIL automatically
+            image = render_with_js_fallback(char_dicts, options)
 
         # Save image to a BytesIO object
         img_io = io.BytesIO()

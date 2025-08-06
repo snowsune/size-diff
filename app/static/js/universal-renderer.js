@@ -85,10 +85,11 @@ class UniversalRenderer {
     }
 
     /**
-     * Apply color tint to character image
-     */
+ * Apply color tint to character image using the alpha channel as a mask.
+ * This matches the Python PIL implementation for consistent color tinting.
+ */
     applyColorTint(imageElement, color) {
-        if (!color) return imageElement;
+        if (!color) return imageElement; // No change if no color is provided
 
         // Create a temporary canvas to apply the tint
         const tempCanvas = document.createElement('canvas');
@@ -101,11 +102,12 @@ class UniversalRenderer {
         tempCtx.drawImage(imageElement, 0, 0);
 
         // Apply color tint using composite operation
+        // This simulates PIL's composite with alpha mask
         tempCtx.globalCompositeOperation = 'multiply';
         tempCtx.fillStyle = `#${color}`;
         tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
 
-        // Reset composite operation
+        // Reset composite operation and preserve alpha
         tempCtx.globalCompositeOperation = 'destination-in';
         tempCtx.drawImage(imageElement, 0, 0);
 
@@ -113,21 +115,27 @@ class UniversalRenderer {
     }
 
     /**
-     * Calculate character heights and visual positioning
-     */
+ * Calculate character heights and visual positioning.
+ * This follows the same logic as the Python version's height calculation steps.
+ */
     calculateCharacterMetrics(characters) {
+        // Step 1: Calculate scaled heights, adjusting for ears offset if applicable
         const heightAdjustedChars = characters.map(char => {
-            // Apply species scaling if enabled
+            // Apply species scaling if enabled (would call calculate_height_offset equivalent)
             let adjustedHeight = char.feral_height;
             if (this.options.useSpeciesScaling) {
-                // This would apply species-specific height adjustments
-                // For now, just use the base height
+                // TODO: Implement species-specific height adjustments
+                // This would apply species scaling similar to Python calculate_height_offset
             }
 
-            // Calculate visual height (including ears offset if measuring to ears)
+            // Calculate visual height by adding ears_offset percentage if applicable
             let visualHeight = adjustedHeight;
             if (this.options.measureToEars && char.ears_offset) {
+                // Increase height by a percentage factor so the top of the character appears taller
                 visualHeight = adjustedHeight * (1 + char.ears_offset / 100.0);
+            } else {
+                // Default to actual character height if not measuring to ears
+                visualHeight = adjustedHeight;
             }
 
             return {
@@ -137,11 +145,14 @@ class UniversalRenderer {
             };
         });
 
-        // Find tallest character for scaling
+        // Step 2: Determine the render height based on the tallest character's visual height
         const tallestHeight = Math.max(...heightAdjustedChars.map(c => c.visualHeight));
-        const renderHeight = tallestHeight * 1.05; // 5% padding
+        const renderHeight = tallestHeight * 1.05; // Add 5% padding
 
-        // Calculate scale factors
+        // Decide line granularity based on height (matches Python logic)
+        const drawLineAtFoot = renderHeight > 22;
+
+        // Step 3: Calculate scale factors based on render height
         const scaleFactors = heightAdjustedChars.map(char =>
             char.visualHeight / renderHeight
         );
@@ -150,7 +161,7 @@ class UniversalRenderer {
             characters: heightAdjustedChars,
             renderHeight,
             scaleFactors,
-            drawLineAtFoot: renderHeight > 22
+            drawLineAtFoot
         };
     }
 
