@@ -1,0 +1,24 @@
+{
+  "name": "size-diff-universal-renderer",
+  "version": "1.0.0",
+  "description": "Universal renderer for size diff calculator",
+  "main": "app/static/js/server-renderer.js",
+  "scripts": {
+    "install-canvas": "npm install canvas",
+    "test-renderer": "node app/static/js/server-renderer.js"
+  },
+  "dependencies": {
+    "canvas": "^2.11.2"
+  },
+  "optionalDependencies": {},
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "keywords": [
+    "canvas",
+    "image-generation",
+    "universal-rendering"
+  ],
+  "author": "Size Diff Calculator",
+  "license": "MIT"
+}

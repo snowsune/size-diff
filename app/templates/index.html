@@ -7,6 +7,7 @@
     <title>Vixi's Anthro Size Diff Calculator!</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/banner.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/interactive.css') }}">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
 
     <!-- Open Graph tags -->
@@ -35,6 +36,18 @@
 
     <div class="container">
         <h1>Vixi's Anthro Size Diff Calculator!</h1>
+
+        <!-- Taur Calculator Button -->
+        <div class="taur-calc-link"
+            style="position: absolute; top: 120px; right: 40px; display: flex; flex-direction: column; align-items: flex-end; z-index: 10;">
+            <a href="/taur" class="taur-btn"
+                style="display: flex; align-items: center; background: #f80; color: #000; padding: 20px 30px; border-radius: 10px; font-size: 0.8em; font-weight: bold; text-decoration: none; box-shadow: 0 2px 8px #0008; transition: background 0.3s;">
+                <span style="margin-right: 18px; font-size: 1.5em;">Check out the Taur Calculator!</span>
+                <span style="font-size: 2.5em;">&#8594;</span>
+            </a>
+            <span style="margin-top: 10px; font-size: 1.1em; color: #fff; opacity: 0.8;">A new way to size up your
+                taur-self!</span>
+        </div>
 
         <!-- Display the flash message if there is one -->
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -287,23 +300,68 @@
         </style>
 
         {% if characters_list %}
-        <div class="image-container">
-            <img src="{{ url_for('generate_image', characters=characters_query, measure_ears=measure_ears, scale_height=scale_height, size=1024) }}"
-                alt="Generated Size Image" height="380vh" />
-
-            <div class="remove-buttons">
-                {% for char in characters_list %}
-                <a href="{{ url_for('remove_character', index=loop.index0, characters=characters_query, measure_ears=measure_ears, scale_height=scale_height) }}"
-                    class="remove-btn">
-                    Remove {{ char["name"] }} <!-- Now using the character's name -->
-                </a>
-                {% endfor %}
+        <!-- Interactive Canvas Container -->
+        <div class="interactive-container">
+            <div class="canvas-wrapper">
+                <canvas id="main-canvas"></canvas>
             </div>
+
+            <!-- Character Controls -->
+            <div class="character-controls">
+                <div class="character-list-main">
+                    <h4>Characters (click to edit, drag to reorder)</h4>
+                    <div id="main-character-list">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+
+                <div class="character-editor">
+                    <h4>Edit Selected Character</h4>
+                    <div id="main-no-selection">Click a character to edit its properties</div>
+                    <div class="character-properties-main" id="main-character-properties">
+                        <div class="property-row">
+                            <label>Name:</label>
+                            <input type="text" id="main-char-name">
+                        </div>
+                        <div class="property-row">
+                            <label>Height:</label>
+                            <input type="number" id="main-char-height" step="0.1">
+                        </div>
+                        <div class="property-row">
+                            <label>Color:</label>
+                            <input type="color" id="main-char-color" value="#ffffff">
+                        </div>
+                        <div class="property-row">
+                            <button id="main-remove-character">Remove Character</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Legacy Static Image (for comparison/fallback) -->
+        <div class="static-image-container" style="margin-top: 30px;">
+            <details>
+                <summary>Show Static Image (legacy)</summary>
+                <img src="{{ url_for('generate_image_legacy', characters=characters_query, measure_ears=measure_ears, scale_height=scale_height, size=1024) }}"
+                    alt="Generated Size Image" height="380vh" />
+
+                <div class="remove-buttons">
+                    {% for char in characters_list %}
+                    <a href="{{ url_for('remove_character', index=loop.index0, characters=characters_query, measure_ears=measure_ears, scale_height=scale_height) }}"
+                        class="remove-btn">
+                        Remove {{ char["name"] }} <!-- Now using the character's name -->
+                    </a>
+                    {% endfor %}
+                </div>
+            </details>
         </div>
 
         <!-- Takes you to the about page -->
         <div class="about-link">
             <a href="{{ url_for('about') }}">About The Calculator</a>
+            &nbsp;|&nbsp;
+            <a href="{{ url_for('interactive_demo') }}">🎨 Try Interactive Demo</a>
         </div>
 
         <div class="share-link">
@@ -316,8 +374,8 @@
     <footer>
         <p>
             Running Version <a href="https://github.com/snowsune/size-diff">{{ version }}</a>,
-            Art by <a href="https://www.furaffinity.net/user/n1chris">Chrissy</a>,
-            <a href="https://hunner.carrd.co/">Hunner</a>,
+            Art by <a href="https://hunner.carrd.co/">Hunner</a>,
+            <a href="https://www.furaffinity.net/user/n1chris">Chrissy</a>,
             <a href="https://bsky.app/profile/rhainbowmetall.bsky.social">Rhain</a>,
             <a href="#">Keith</a>,
             and <a href="https://www.furaffinity.net/user/zhelya">Zhelya</a>
@@ -328,6 +386,19 @@
                 href="https://ko-fi.com/snowsune">Support me on Kofi!</a>
         </p>
     </footer>
+
+    <!-- Include Universal Renderer Scripts -->
+    <script src="{{ url_for('static', filename='js/universal-renderer.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/interactive-renderer.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main-page-renderer.js') }}"></script>
+
+    {% if characters_list %}
+    <!-- Data container for JavaScript -->
+    <script id="character-data" data-characters='{{ characters_json }}'
+        data-options='{"size": 1200, "measureToEars": {{ measure_ears|tojson }}, "useSpeciesScaling": {{ scale_height|tojson }}}'>
+        </script>
+    {% endif %}
+
 </body>
 
 </html>
