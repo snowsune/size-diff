@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} - Snowsune.net{% endblock %}
+
+{% block content %}
+<div class="size-diff-container">
+    <header class="size-diff-header">
+        <h1>Vixi's Size-Diff calculator!</h1>
+        <p class="size-diff-subtitle">Calculate size differences with species-based scaling!</p>
+    </header>
+
+    <section class="size-diff-intro">
+        <p>Welcome to my calculator!</p>
+
+        <div class="size-diff-actions">
+            <a href="{% url 'size_diff:calculator' %}" class="btn btn-primary">Start Calculating</a>
+        </div>
+    </section>
+
+    <section class="size-diff-features">
+        <h2>Features</h2>
+        <ul>
+            <li>Species-based height calculations</li>
+            <li>Visual size comparisons</li>
+            <li>Multiple measurement units</li>
+            <li>Character presets</li>
+        </ul>
+    </section>
+</div>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} - Snowsune.net{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'size_diff/css/size_diff.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="size-diff-calculator">
+    <header class="calculator-header">
+        <h1>Size Difference Calculator</h1>
+        <p>Calculate and visualize size differences between characters</p>
+    </header>
+
+    <div class="calculator-container">
+        <div class="character-inputs">
+            <div class="character-input">
+                <h3>Character 1</h3>
+                <div class="input-group">
+                    <label for="char1-species">Species:</label>
+                    <select id="char1-species" name="char1-species">
+                        <option value="">Select Species</option>
+                        <option value="human">Human</option>
+                        <option value="wolf">Wolf</option>
+                        <option value="fox">Fox</option>
+                        <option value="feline">Feline</option>
+                        <option value="equine">Equine</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="char1-height">Height:</label>
+                    <input type="number" id="char1-height" name="char1-height" placeholder="Height in cm">
+                </div>
+            </div>
+
+            <div class="character-input">
+                <h3>Character 2</h3>
+                <div class="input-group">
+                    <label for="char2-species">Species:</label>
+                    <select id="char2-species" name="char2-species">
+                        <option value="">Select Species</option>
+                        <option value="human">Human</option>
+                        <option value="wolf">Wolf</option>
+                        <option value="fox">Fox</option>
+                        <option value="feline">Feline</option>
+                        <option value="equine">Equine</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="char2-height">Height:</label>
+                    <input type="number" id="char2-height" name="char2-height" placeholder="Height in cm">
+                </div>
+            </div>
+        </div>
+
+        <div class="calculator-actions">
+            <button id="calculate-btn" class="btn btn-primary">Calculate Size Difference</button>
+            <button id="reset-btn" class="btn btn-secondary">Reset</button>
+        </div>
+
+        <div class="results-container" id="results" style="display: none;">
+            <h3>Results</h3>
+            <div class="results-content">
+                <p>Size difference calculations will appear here...</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'size_diff/js/size_diff.js' %}"></script>
+{% endblock %}
