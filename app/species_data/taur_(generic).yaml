@@ -1,0 +1,19 @@
+male:
+  image: "Volnar/TaurReference.png"
+  ears_offset: 1
+  color: "590a1b"
+  data:
+    - anthro_size: 76 # 6'4"
+      height: 76 # 
+    - anthro_size: 60 # 5'
+      height: 60 # 
+
+female:
+  image: "Volnar/TaurReference.png"
+  ears_offset: 1
+  color: "2c4b9e"
+  data:
+    - anthro_size: 76 # 6'4"
+      height: 76 # 
+    - anthro_size: 60 # 5'
+      height: 60 # 

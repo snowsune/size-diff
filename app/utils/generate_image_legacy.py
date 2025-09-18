@@ -53,6 +53,17 @@ def draw_dotted_line(draw, x_start, x_end, y, color, scale=1024):
         x += dash_length + gap
 
 
+def get_art_image_path(rel_path):
+    """
+    Returns the path to the trimmed image in art/dist/ if it exists, otherwise falls back to art/.
+    """
+    import os
+
+    dist_path = os.path.join("art", "dist", rel_path)
+    orig_path = os.path.join("art", rel_path)
+    return dist_path if os.path.exists(dist_path) else orig_path
+
+
 def render_image(
     char_list,
     size,
@@ -116,7 +127,7 @@ def render_image(
 
         # Scale character image height based on visual height, including ears offset
         char_img_height = int(size * scale_factor)
-        char_img = Image.open(f"app/species_data/{char.image}")
+        char_img = Image.open(get_art_image_path(char.image))
 
         # Calculate width based on original aspect ratio
         char_img_width = int(char_img.width * (char_img_height / char_img.height))
@@ -144,7 +155,7 @@ def render_image(
     x_offset = 0
     for i, char in enumerate(height_adjusted_chars):
         char_img_width, char_img_height = character_dimensions[i]
-        char_img = Image.open(f"app/species_data/{char.image}")
+        char_img = Image.open(get_art_image_path(char.image))
 
         # Apply color shift if `char.color` is set
         print(f"--------> COLOR WAS {char.color}")

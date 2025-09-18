@@ -32,7 +32,7 @@ from app.utils.parse_data import (
     get_default_characters,
 )
 from app.utils.stats import StatsManager
-from app.utils.generate_image import render_image
+from app.utils.generate_image_legacy import render_image
 from app.utils.character import Character
 
 app = Flask(__name__)
@@ -83,7 +83,7 @@ species_list = [
 
 @app.route("/generate-image")
 @cache_with_stats(timeout=31536000, query_string=True)
-def generate_image():
+def generate_image_legacy():
     # Get characters
     characters = request.args.get("characters", "")
     characters_list = extract_characters(characters)
@@ -152,6 +152,13 @@ def index():
     characters = request.args.get("characters", "")
     characters_list = extract_characters(characters)
 
+    # Process characters to populate image and ears_offset from species data
+    processed_characters = []
+    for char in characters_list:
+        processed_char = calculate_height_offset(char, use_species_scaling=False)
+        processed_characters.append(processed_char)
+    characters_list = processed_characters
+
     # Extract settings from query string
     measure_ears = request.args.get("measure_ears", "true") == "true"
     scale_height = request.args.get("scale_height", "false") == "true"
@@ -165,12 +172,17 @@ def index():
 
     # Insert default character values if none exist
     if len(characters_list) == 0:
-        characters_list = get_default_characters()
+        default_chars = get_default_characters()
+        # Process default characters to populate image and ears_offset
+        characters_list = []
+        for char in default_chars:
+            processed_char = calculate_height_offset(char, use_species_scaling=False)
+            characters_list.append(processed_char)
 
     # Load presets for the dropdown
     presets = load_preset_characters()
     preset_map = {
-        f"{p['name']} ({p['species'].replace('_', ' ').title()}, {p['gender']}, {p['height']}in)": f"{p['species']},{p['gender']},{p['height']},{p['name']}"
+        f"{p['name'].replace('_', ' ').title()} --- {p['species'].replace('_', ' ').title()}, {p['gender']}, {p.get('description', '')}": f"{p['species']},{p['gender']},{p['height']},{p['name']}"
         for p in presets
     }
 
@@ -218,12 +230,32 @@ def index():
     settings_query = f"&measure_ears=false" if not measure_ears else ""
     settings_query += f"&scale_height=true" if scale_height else ""
 
+    # Convert Character objects to JSON-serializable dictionaries for JavaScript
+    characters_json_data = []
+    for char in characters_list:
+        char_dict = {
+            "name": char.name,
+            "species": char.species,
+            "gender": char.gender,
+            "height": char.height,
+            "feral_height": char.feral_height,
+            "image": char.image,
+            "ears_offset": char.ears_offset,
+            "color": getattr(char, "color", None),
+        }
+        characters_json_data.append(char_dict)
+
+    import json
+
+    characters_json = json.dumps(characters_json_data)
+
     return render_template(
         "index.html",
         stats=stats,
         cache_performance=f"{cache_stats['hits']}/{cache_stats['misses']}",
         species=species_list,
         characters_list=characters_list,
+        characters_json=characters_json,
         characters_query=generate_characters_query_string(characters_list),
         settings_query=settings_query,
         measure_ears=measure_ears,
@@ -298,6 +330,115 @@ def add_preset():
     if scale_height == "true":
         settings_query += "&scale_height=true"
     return redirect(f"/?characters={characters_query}{settings_query}")
+
+
+@app.route("/taur")
+def taur():
+    """
+    Base route for volnar's sub-page!
+    """
+
+    return render_template("taur.html")
+
+
+# Interactive demo route
+@app.route("/interactive-demo")
+def interactive_demo():
+    return render_template("interactive_demo.html")
+
+
+# Serve species data images for the client-side renderer
+@app.route("/species_data/<filename>")
+def serve_species_image(filename):
+    from flask import send_from_directory
+    import os
+
+    # Get the absolute path to the species_data directory
+    species_data_path = os.path.join(os.path.dirname(__file__), "species_data")
+    return send_from_directory(species_data_path, filename)
+
+
+# New universal renderer endpoint (replaces the old Python renderer)
+@app.route("/generate-image-new")
+@cache_with_stats(timeout=31536000, query_string=True)
+def generate_image():
+    # Get characters
+    characters = request.args.get("characters", "")
+    characters_list = extract_characters(characters)
+
+    # Get settings
+    measure_ears = request.args.get("measure_ears", True) == "True"
+    scale_height = request.args.get("scale_height", True) == "True"
+
+    # Get height
+    size = int(request.args.get("size", "400"))
+
+    # Record we've generated a new image!
+    stats_manager.increment_images_generated()
+
+    def generate_and_save():
+        if len(characters_list) == 0:
+            logging.warn("Asked to generate an empty image!")
+            # Generate an empty image
+            image = Image.new("RGB", (int(size * 1.4), size))
+            pixels = image.load()
+            for i in range(image.size[0]):
+                for j in range(image.size[1]):
+                    pixels[i, j] = (
+                        random.randint(0, 255),
+                        random.randint(0, 255),
+                        random.randint(0, 255),
+                    )
+        else:
+            # Use the JavaScript renderer with fallback to Python PIL
+            from app.utils.js_renderer import render_with_js_fallback
+
+            # Convert characters to dictionaries for JS renderer
+            char_dicts = []
+            for char in characters_list:
+                char_dict = {
+                    "name": char.name,
+                    "species": char.species,
+                    "height": char.height,
+                    "gender": char.gender,
+                    "feral_height": char.feral_height,
+                    "image": char.image,
+                    "ears_offset": char.ears_offset,
+                }
+                if hasattr(char, "color") and char.color:
+                    char_dict["color"] = char.color
+                char_dicts.append(char_dict)
+
+            options = {
+                "size": size,
+                "measureToEars": measure_ears,
+                "useSpeciesScaling": scale_height,
+            }
+
+            # This will try JS renderer first, fall back to Python PIL automatically
+            image = render_with_js_fallback(char_dicts, options)
+
+        # Save image to a BytesIO object
+        img_io = io.BytesIO()
+        image.save(img_io, "PNG")
+        img_io.seek(0)
+        return img_io
+
+    # Submit the task to the executor
+    future = executor.submit(generate_and_save)
+
+    try:
+        img_io = future.result(timeout=30)  # Wait for up to 30 seconds
+    except TimeoutError:
+        return "Image generation timed out", 504
+
+    # Create a response with the image and set Content-Type to image/png
+    response = make_response(img_io.read())
+    response.headers.set("Content-Type", "image/png")
+    response.headers.set("Content-Disposition", "inline", filename="preview.png")
+    response.headers.set("Cache-Control", "public, max-age=31536000")
+
+    return response
 
 
 # For WSGI
