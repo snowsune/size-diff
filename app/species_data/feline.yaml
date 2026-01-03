@@ -2,6 +2,9 @@ male:
   image: "Rhainbowmetall/Felid_Sketch_Male.png"
   ears_offset: 9
   color: "282b1d"
+  species_length: 30
+  species_tail_length: 12
+  species_weight: 15 # Pounds
   data:
     - anthro_size: 76 # 6'4"
       height: 14
@@ -12,6 +15,9 @@ female:
   image: "Rhainbowmetall/Felid_Sketch_Female.png"
   ears_offset: 9
   color: "1d751d"
+  species_length: 30
+  species_tail_length: 12
+  species_weight: 15 # Pounds
   data:
     - anthro_size: 74 # 6'2"
       height: 11

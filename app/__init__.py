@@ -22,7 +22,11 @@ from flask_caching import Cache
 from functools import wraps
 
 from app.utils.species_lookup import load_species_data
-from app.utils.calculate_heights import calculate_height_offset, convert_to_inches
+from app.utils.calculate_heights import (
+    calculate_height_offset,
+    convert_to_inches,
+    inches_to_feet_inches,
+)
 from app.utils.parse_data import (
     extract_characters,
     filter_valid_characters,
@@ -34,6 +38,7 @@ from app.utils.parse_data import (
 from app.utils.stats import StatsManager
 from app.utils.generate_image import render_image
 from app.utils.character import Character
+from app.utils.taur_calculator import calculate_taur
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -300,13 +305,133 @@ def add_preset():
     return redirect(f"/?characters={characters_query}{settings_query}")
 
 
-@app.route("/taur")
+@app.route("/taur", methods=["GET", "POST"])
 def taur():
     """
-    Base route for volnar's sub-page!
-    """
+    Taur calculator!
 
-    return render_template("taur.html")
+    Collaboration with Volnar <3
+    """
+    # Filter out some ones we dont want to show/dont have data
+    filtered_species = [
+        s
+        for s in species_list
+        if s not in ["taur_(generic)", "preset_species", "rexouium"]
+    ]
+
+    # Load species data for auto-population
+    species_data_map = {}
+    for species_name in filtered_species:
+        try:
+            data = load_species_data(species_name)
+            # Extract species_length, species_tail_length, species_weight from male section
+            # and get a default species_height from the first data point
+            if "male" in data:
+                male_data = data["male"]
+                species_data_map[species_name] = {
+                    "species_length": male_data.get("species_length", 0),
+                    "species_tail_length": male_data.get("species_tail_length", 0),
+                    "species_weight": male_data.get("species_weight", 0),
+                    "species_height": (
+                        male_data.get("data", [{}])[0].get("height", 0)
+                        if male_data.get("data")
+                        else 0
+                    ),
+                }
+        except Exception as e:
+            logging.warning(f"Failed to load species data for {species_name}: {e}")
+            species_data_map[species_name] = {
+                "species_length": 0,
+                "species_tail_length": 0,
+                "species_weight": 0,
+                "species_height": 0,
+            }
+
+    if request.method == "POST":
+        # POST when handling a form submission - redirect with URL parameters
+        params = {}
+        for key in [
+            "name",
+            "measurement_type",
+            "anthro_height",
+            "species_height",
+            "species_length",
+            "species_tail_length",
+            "taur_full_height",
+            "species_weight",
+            "taur_length",
+        ]:
+            value = request.form.get(key, "")
+            if value:
+                params[key] = value
+
+        query_string = "&".join([f"{k}={v}" for k, v in params.items()])
+        return redirect(f"/taur?{query_string}")
+
+    # Handle GET with calculation parameters
+    calculation_result = None
+    cleaned_calculation_result = {}
+    if request.args.get("anthro_height"):
+        try:
+            anthro_height = float(request.args.get("anthro_height", 0))
+            species_height = float(request.args.get("species_height", 0))
+            species_length = float(request.args.get("species_length", 0))
+            species_tail_length = float(request.args.get("species_tail_length", 0))
+            taur_full_height = float(request.args.get("taur_full_height", 0))
+            species_weight = float(request.args.get("species_weight", 0))
+            taur_length = request.args.get("taur_length")
+            measurement_type = request.args.get("measurement_type", "vitruvian")
+
+            taur_length_float = float(taur_length) if taur_length else None
+
+            calculation_result = calculate_taur(
+                anthro_height=anthro_height,
+                species_height=species_height,
+                species_length=species_length,
+                species_tail_length=species_tail_length,
+                taur_full_height=taur_full_height,
+                species_weight=species_weight,
+                taur_length=taur_length_float,
+                measurement_type=measurement_type,
+            )
+
+            cleaned_calculation_result["AR"] = (
+                f"{inches_to_feet_inches(calculation_result['AR'])} (Anthropic Ratio)"
+            )
+            cleaned_calculation_result["TH"] = (
+                f"{inches_to_feet_inches(calculation_result['TH'])} (Taur Height)"
+            )
+            cleaned_calculation_result["TFH"] = (
+                f"{inches_to_feet_inches(calculation_result['TFH'])} (Taur Full Height)"
+            )
+            cleaned_calculation_result["TL"] = (
+                f"{inches_to_feet_inches(calculation_result['TL'])} (Taur Length)"
+            )
+            cleaned_calculation_result["TT"] = (
+                f"{inches_to_feet_inches(calculation_result['TT'])} (Taur Tail Length)"
+            )
+            cleaned_calculation_result["TTo"] = (
+                f"{inches_to_feet_inches(calculation_result['TTo'])} (Taur Torso Length)"
+            )
+            cleaned_calculation_result["THe"] = (
+                f"{inches_to_feet_inches(calculation_result['THe'])} (Taur Head Length)"
+            )
+            cleaned_calculation_result["TW"] = (
+                f"{calculation_result['TW']:.2f} lbs (Taur Weight)"
+            )
+
+        except (ValueError, TypeError) as e:
+            logging.warning(f"Taur calculation error: {e}")
+            calculation_result = None
+            cleaned_calculation_result = None
+
+    return render_template(
+        "taur.html",
+        species=filtered_species,
+        species_data=species_data_map,
+        calculation_result=cleaned_calculation_result,
+        form_data=dict(request.args) if request.args else None,
+    )
 
 
 # For WSGI

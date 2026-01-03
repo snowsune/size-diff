@@ -3,6 +3,9 @@ male:
   image: "Mori/m_shark.png"
   ears_offset: 3
   # color: "311b9e"
+  species_length: 72
+  species_tail_length: 36
+  species_weight: 500 # Pounds
   data:
     - anthro_size: 76 # 6'4"
       height: 90
@@ -13,6 +16,9 @@ female:
   image: "Mori/f_shark.png"
   ears_offset: 3
   # color: "664ce6"
+  species_length: 72
+  species_tail_length: 36
+  species_weight: 500 # Pounds
   data:
     - anthro_size: 74 # 6'2"
       height: 92
