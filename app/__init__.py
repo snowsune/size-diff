@@ -395,14 +395,30 @@ def taur():
                 measurement_type=measurement_type,
             )
 
-            cleaned_calculation_result["AR"] = f"{inches_to_feet_inches(calculation_result["AR"])} (Anthropic Ratio)"
-            cleaned_calculation_result["TH"] = f"{inches_to_feet_inches(calculation_result["TH"])} (Taur Height)"
-            cleaned_calculation_result["TFH"] = f"{inches_to_feet_inches(calculation_result["TFH"])} (Taur Full Height)"
-            cleaned_calculation_result["TL"] = f"{inches_to_feet_inches(calculation_result["TL"])} (Taur Length)"
-            cleaned_calculation_result["TT"] = f"{inches_to_feet_inches(calculation_result["TT"])} (Taur Tail Length)"
-            cleaned_calculation_result["TTo"] = f"{inches_to_feet_inches(calculation_result["TTo"])} (Taur Torso Length)"
-            cleaned_calculation_result["THe"] = f"{inches_to_feet_inches(calculation_result["THe"])} (Taur Head Length)"
-            cleaned_calculation_result["TW"] = f"{calculation_result["TW"]:.2f} lbs (Taur Weight)"
+            cleaned_calculation_result["AR"] = (
+                f"{inches_to_feet_inches(calculation_result["AR"])} (Anthropic Ratio)"
+            )
+            cleaned_calculation_result["TH"] = (
+                f"{inches_to_feet_inches(calculation_result["TH"])} (Taur Height)"
+            )
+            cleaned_calculation_result["TFH"] = (
+                f"{inches_to_feet_inches(calculation_result["TFH"])} (Taur Full Height)"
+            )
+            cleaned_calculation_result["TL"] = (
+                f"{inches_to_feet_inches(calculation_result["TL"])} (Taur Length)"
+            )
+            cleaned_calculation_result["TT"] = (
+                f"{inches_to_feet_inches(calculation_result["TT"])} (Taur Tail Length)"
+            )
+            cleaned_calculation_result["TTo"] = (
+                f"{inches_to_feet_inches(calculation_result["TTo"])} (Taur Torso Length)"
+            )
+            cleaned_calculation_result["THe"] = (
+                f"{inches_to_feet_inches(calculation_result["THe"])} (Taur Head Length)"
+            )
+            cleaned_calculation_result["TW"] = (
+                f"{calculation_result["TW"]:.2f} lbs (Taur Weight)"
+            )
 
         except (ValueError, TypeError) as e:
             logging.warning(f"Taur calculation error: {e}")
