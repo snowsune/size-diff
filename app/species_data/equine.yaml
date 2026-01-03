@@ -1,6 +1,9 @@
 male:
   image: "Placeholder/f_equine.png"
   ears_offset: 0
+  species_length: 72
+  species_tail_length: 24
+  species_weight: 1000 # Pounds
   data:
     - anthro_size: 76 # 6'4"
       height: 72
@@ -10,6 +13,9 @@ male:
 female:
   image: "Placeholder/f_equine.png"
   ears_offset: 0
+  species_length: 72
+  species_tail_length: 24
+  species_weight: 1000 # Pounds
   data:
     - anthro_size: 76 # 6'4"
       height: 70

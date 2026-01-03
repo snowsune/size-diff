@@ -2,6 +2,9 @@ male:
   image: "Hunner/Hieght_Ref_Maxene_for_Vixi.png"
   ears_offset: 3
   color: "870716"
+  species_length: 36
+  species_tail_length: 18
+  species_weight: 80 # Pounds
   data:
     - anthro_size: 76 # 6'4"
       height: 28
@@ -12,6 +15,9 @@ female:
   image: "Hunner/Hieght_Ref_Ky-Li_for_Vixi.png"
   ears_offset: 9
   color: "add6ed"
+  species_length: 36
+  species_tail_length: 18
+  species_weight: 80 # Pounds
   data:
     - anthro_size: 76 # 6'4"
       height: 26
