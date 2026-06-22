@@ -3,7 +3,11 @@
   "canvas": {
     "width": 4000,
     "height": 3000,
-    "floor_margin": 120
+    "floor_margin": 120,
+    "calibration": {
+      "pixels_per_inch": 17.453703703703704,
+      "TFH": { "inches": 108, "span_pixels": 1885 }
+    }
   },
   "layers": {
     "lBody": {
@@ -12,6 +16,7 @@
       "scale_center": [990, 1725],
       "scale_from": "TH",
       "reference_inches": 61,
+      "span_pixels": 1006,
       "joints": {
         "floor": [1452, 2487],
         "upper_attach": [738, 1481],
@@ -34,7 +39,7 @@
       "trim": { "x": 1104, "y": 785, "width": 1863, "height": 1461 },
       "scale_center": [440, 705],
       "scale_from": "TT",
-      "reference_inches": 36,
+      "span_pixels": 1504,
       "joints": {
         "body_attach": [1386, 1453]
       }
@@ -74,8 +79,8 @@
       "reference": "TL"
     },
     "TT": {
-      "start": ["tail", 282, 668],
-      "end": ["tail", 1780, 668],
+      "start": ["tail", 281, 668],
+      "end": ["tail", 1785, 668],
       "reference": "TT"
     }
   }

@@ -52,7 +52,7 @@ function initTaurCanvas(config) {
         return document.getElementById('taur_rider_color')?.value || DEFAULT_RIDER_COLOR;
     }
 
-    function scaled(layerKey, anchorJoint, worldX, worldY) {
+    function scaled(layerKey, anchorJoint, worldX, worldY, pixelsPerInch = null) {
         return placeScaledLayer({
             layerKey,
             layerDef: layerDef(layerKey),
@@ -61,6 +61,7 @@ function initTaurCanvas(config) {
             worldX,
             worldY,
             result: window.taurLastResult,
+            pixelsPerInch,
             placementFromJoint,
             anchorJointOnPlacement,
             jointLocalPosition,
@@ -76,31 +77,50 @@ function initTaurCanvas(config) {
         const groundY = floorY();
         const showRider = document.getElementById('show_rider')?.checked;
         const lBodyDef = layerDef('lBody');
+        const result = window.taurLastResult;
 
+        function attachTailAndRider(placements, lBodyPlacement, pixelsPerInch) {
+            function lBodyJointWorld(jointName) {
+                const [lx, ly] = jointLocalPosition(lBodyDef, jointName);
+                return placementLocalToWorld(lBodyPlacement, lx, ly);
+            }
+
+            const [tailX, tailY] = lBodyJointWorld('tail_attach');
+            placements.push(scaled('tail', 'body_attach', tailX, tailY, pixelsPerInch));
+
+            if (showRider && hasJoint('lBody', 'rider_attach') && hasJoint('rider', 'seat_attach')) {
+                const [riderX, riderY] = lBodyJointWorld('rider_attach');
+                placements.push(scaled('rider', 'seat_attach', riderX, riderY, pixelsPerInch));
+            } else if (showRider) {
+                console.warn(
+                    'Rider not shown: missing lBody.rider_attach or rider.seat_attach in taur_data.json'
+                );
+            }
+
+            return placements;
+        }
+
+        // Pass 1: place body layers so we can read the live TFH line.
         const lBodyPlacement = scaled('lBody', 'floor', centerX, groundY);
         const placements = [lBodyPlacement];
 
-        function lBodyJointWorld(jointName) {
-            const [lx, ly] = jointLocalPosition(lBodyDef, jointName);
+        const [upperX, upperY] = (() => {
+            const [lx, ly] = jointLocalPosition(lBodyDef, 'upper_attach');
             return placementLocalToWorld(lBodyPlacement, lx, ly);
-        }
-
-        const [upperX, upperY] = lBodyJointWorld('upper_attach');
-        const [tailX, tailY] = lBodyJointWorld('tail_attach');
+        })();
 
         placements.push(scaled('uBody', 'lower_attach', upperX, upperY));
-        placements.push(scaled('tail', 'body_attach', tailX, tailY));
 
-        if (showRider && hasJoint('lBody', 'rider_attach') && hasJoint('rider', 'seat_attach')) {
-            const [riderX, riderY] = lBodyJointWorld('rider_attach');
-            placements.push(scaled('rider', 'seat_attach', riderX, riderY));
-        } else if (showRider) {
-            console.warn(
-                'Rider not shown: missing lBody.rider_attach or rider.seat_attach in taur_data.json'
-            );
-        }
+        const scenePixelsPerInch = TaurMeasurements.deriveScenePixelsPerInch({
+            canvasConfig: taurData.canvas ?? {},
+            measurementDefs: taurData.measurements ?? {},
+            placements,
+            groundY,
+            result,
+            placementLocalToWorld,
+        });
 
-        return placements;
+        return attachTailAndRider(placements, lBodyPlacement, scenePixelsPerInch);
     }
 
     function renderScene(targetCanvas, targetView, targetCtx, { includeMeasurements, drawDebug }) {
