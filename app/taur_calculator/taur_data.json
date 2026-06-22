@@ -28,7 +28,7 @@
       "trim": { "x": 137, "y": 616, "width": 722, "height": 1242 },
       "scale_center": [566, 894],
       "scale_from": "UBH",
-      "span_pixels": 1401,
+      "span_pixels": 822,
       "joints": {
         "lower_attach": [738, 1481]
       }
@@ -53,17 +53,27 @@
         "seat_attach": [1112, 1537],
         "mount_attach": [979, 2017]
       }
+    },
+    "standingChar": {
+      "path": "Hunner/Size_Refs_Mouse_for_Vixi (male).png",
+      "trim": { "x": 799, "y": 210, "width": 1205, "height": 3746 },
+      "scale_center": [602, 3744],
+      "scale_from": "StH",
+      "span_pixels": 3744,
+      "joints": {
+        "floor": [1401, 3954]
+      }
     }
   },
   "measurements": {
     "TFH": {
-      "start": ["uBody", 417, 80],
+      "start": ["uBody", 417, 659],
       "end": { "floor": true, "alignX": "start" },
       "offset": [-56, 0],
       "reference": "TFH"
     },
     "THe": {
-      "start": ["uBody", 417, 80],
+      "start": ["uBody", 417, 659],
       "end": ["uBody", 417, 400],
       "reference": "THe"
     },

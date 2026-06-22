@@ -16,6 +16,9 @@ SHARED_FIELDS = frozenset({
     "show_rider",
     "rider_height",
     "taur_rider_color",
+    "show_standing",
+    "standing_height",
+    "taur_standing_color",
 })
 
 ALGORITHM_FIELDS = {
@@ -110,12 +113,12 @@ def _validate_field(key: str, value: str, species_names: set[str]) -> str | None
             return "name too long"
         return None
 
-    if key in {"show_measurements", "show_rider"}:
+    if key in {"show_measurements", "show_rider", "show_standing"}:
         if not CHECKBOX_RE.match(value):
             return f"invalid {key}"
         return None
 
-    if key in {"taur_body_color", "taur_rider_color"}:
+    if key in {"taur_body_color", "taur_rider_color", "taur_standing_color"}:
         if not COLOR_RE.match(value):
             return f"invalid {key}"
         return None

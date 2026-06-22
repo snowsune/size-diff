@@ -26,7 +26,7 @@ const TaurMeasurements = (() => {
         return result?.[source];
     }
 
-    function calibrationPixelsPerInch(canvasConfig = {}) {
+    function scenePixelsPerInch(canvasConfig = {}) {
         const calibration = canvasConfig.calibration ?? {};
         if (calibration.pixels_per_inch) {
             return calibration.pixels_per_inch;
@@ -35,11 +35,6 @@ const TaurMeasurements = (() => {
             return calibration.TFH.span_pixels / calibration.TFH.inches;
         }
         return null;
-    }
-
-    /** Canonical scene ruler — same ppi for every layer. */
-    function scenePixelsPerInch(canvasConfig = {}) {
-        return calibrationPixelsPerInch(canvasConfig);
     }
 
     /** Layer scale: inches * scene pixels-per-inch / art span in source pixels. */
@@ -118,12 +113,6 @@ const TaurMeasurements = (() => {
         }
 
         return tfhDistance / tfhInches;
-    }
-
-    /** @deprecated Use scenePixelsPerInch for placement; this is for diagnostics. */
-    function deriveScenePixelsPerInch(options) {
-        return measuredTfhPixelsPerInch(options)
-            ?? calibrationPixelsPerInch(options.canvasConfig ?? {});
     }
 
     /**
@@ -219,9 +208,7 @@ const TaurMeasurements = (() => {
         scaleForLayer,
         placeScaledLayer,
         scenePixelsPerInch,
-        calibrationPixelsPerInch,
         measuredTfhPixelsPerInch,
-        deriveScenePixelsPerInch,
         measureDefinitionWorldDistance,
     };
 })();

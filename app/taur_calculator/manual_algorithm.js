@@ -13,7 +13,7 @@ const ManualAlgorithm = (() => {
     /** Default inches when entering manual mode for the first time. */
     const DEFAULT_FIELD_INCHES = {
         manual_lower_body_height: 54,
-        manual_taur_full_height: 128,
+        manual_taur_full_height: 108,
         manual_tail_length: 84,
         rider_height: 72,
     };

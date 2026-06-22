@@ -69,7 +69,7 @@
                         <label for="taur_full_height">Taur Full Height (TFH): <span class="info-icon"
                                 title="Pawpads to top of head, excluding horns/ears/antlers. Feet and inches (e.g. 9'0&quot;) or cm (e.g. 274cm)">ℹ️</span></label>
                         <input type="text" id="taur_full_height" name="taur_full_height"
-                            placeholder="e.g., 9'0&quot;" />
+                            value="9'0&quot;" placeholder="e.g., 9'0&quot;" />
                     </div>
 
                     <div class="taur-form-group taur-half">
@@ -171,6 +171,24 @@
                 <div class="taur-form-group taur-rider-color" id="rider-color-group" hidden>
                     <label for="taur_rider_color">Rider Color:</label>
                     <input type="color" id="taur_rider_color" name="taur_rider_color" value="#ff8800" />
+                </div>
+
+                <div class="taur-form-group taur-rider-toggle">
+                    <label for="show_standing">
+                        <input type="checkbox" id="show_standing" name="show_standing" value="1" />
+                        Show Standing Character
+                    </label>
+                </div>
+
+                <div class="taur-form-group taur-rider-height" id="standing-height-group" hidden>
+                    <label for="standing_height">Standing Height: <span class="info-icon"
+                            title="Feet and inches (e.g. 5'0&quot;) or cm (e.g. 152cm). Reference art is sized for 5'0&quot;">ℹ️</span></label>
+                    <input type="text" id="standing_height" name="standing_height" placeholder="e.g., 5'0&quot;" />
+                </div>
+
+                <div class="taur-form-group taur-rider-color" id="standing-color-group" hidden>
+                    <label for="taur_standing_color">Standing Color:</label>
+                    <input type="color" id="taur_standing_color" name="taur_standing_color" value="#007516" />
                 </div>
 
                 <button type="button" id="taur-share-btn">Share</button>

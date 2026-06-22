@@ -8,6 +8,7 @@ const TaurAlgorithms = (() => {
         shared: [
             'name', 'algorithm', 'taur_body_color', 'show_measurements',
             'show_rider', 'rider_height', 'taur_rider_color',
+            'show_standing', 'standing_height', 'taur_standing_color',
         ],
         volnar: [
             'measurement_type', 'species', 'anthro_height', 'species_height',
@@ -25,7 +26,7 @@ const TaurAlgorithms = (() => {
     };
 
     /** Dimensions shown in manual-mode overlay; canvas uses TFH, TH, UBH, TT, RH. */
-    const DISPLAY_KEYS = ['UBH', 'TFH', 'TH', 'TT', 'RH'];
+    const DISPLAY_KEYS = ['UBH', 'TFH', 'TH', 'TT', 'RH', 'StH'];
 
     const DISPLAY_LABELS = {
         UBH: 'Upper Body Height',
@@ -33,6 +34,7 @@ const TaurAlgorithms = (() => {
         TH: 'Lower Body Height',
         TT: 'Tail Length',
         RH: 'Rider Height',
+        StH: 'Standing Height',
     };
 
     function algorithmMode(algorithmId) {
@@ -67,6 +69,10 @@ const TaurAlgorithms = (() => {
         return Boolean(form?.elements?.show_rider?.checked);
     }
 
+    function showStanding(form) {
+        return Boolean(form?.elements?.show_standing?.checked);
+    }
+
     function upperBodyHeight(result) {
         if (result?.UBH != null) {
             return result.UBH;
@@ -85,16 +91,21 @@ const TaurAlgorithms = (() => {
             next.UBH = next.UBH ?? upperBodyHeight(next);
         }
 
-        if (!showRider(form)) {
-            return next;
+        if (showRider(form)) {
+            const riderHeight = next.RH ?? SizeDiffUnits.parseFormLengthInput(form, 'rider_height');
+            if (riderHeight != null && !Number.isNaN(riderHeight)) {
+                next = { ...next, RH: riderHeight };
+            }
         }
 
-        const riderHeight = next.RH ?? SizeDiffUnits.parseFormLengthInput(form, 'rider_height');
-        if (riderHeight == null || Number.isNaN(riderHeight)) {
-            return next;
+        if (showStanding(form)) {
+            const standingHeight = next.StH ?? SizeDiffUnits.parseFormLengthInput(form, 'standing_height');
+            if (standingHeight != null && !Number.isNaN(standingHeight)) {
+                next = { ...next, StH: standingHeight };
+            }
         }
 
-        return { ...next, RH: riderHeight };
+        return next;
     }
 
     function calculateFromForm(form) {
@@ -116,7 +127,14 @@ const TaurAlgorithms = (() => {
 
     function requiredFieldNames(form) {
         const impl = get(currentId(form));
-        return impl?.requiredFieldNames?.(form) ?? [];
+        const names = [...(impl?.requiredFieldNames?.(form) ?? [])];
+        if (showRider(form)) {
+            names.push('rider_height');
+        }
+        if (showStanding(form)) {
+            names.push('standing_height');
+        }
+        return names;
     }
 
     function panelMatchesAlgorithm(panel, algorithmId) {
@@ -177,6 +195,10 @@ const TaurAlgorithms = (() => {
 
         if (result.RH != null) {
             formatted.RH = `${fmt(result.RH)} (Rider Height)`;
+        }
+
+        if (result.StH != null) {
+            formatted.StH = `${fmt(result.StH)} (Standing Height)`;
         }
 
         if (algorithmId === 'volnar') {

@@ -21,6 +21,8 @@ function initTaurCanvas(config) {
     const BODY_LAYER_KEYS = new Set(['lBody', 'uBody', 'tail']);
     const DEFAULT_BODY_COLOR = '#ff0000';
     const DEFAULT_RIDER_COLOR = '#ff8800';
+    const DEFAULT_STANDING_COLOR = '#007516';
+    const STANDING_CHAR_FLOOR_X = 400;
     const TRIM_ART_COMMAND = 'python3 scripts/trim_art.py';
     const SHARE_EXPORT_WIDTH = 1200;
     const SHARE_EXPORT_HEIGHT = 900;
@@ -50,6 +52,20 @@ function initTaurCanvas(config) {
 
     function riderColor() {
         return document.getElementById('taur_rider_color')?.value || DEFAULT_RIDER_COLOR;
+    }
+
+    function standingColor() {
+        return document.getElementById('taur_standing_color')?.value || DEFAULT_STANDING_COLOR;
+    }
+
+    function placementColor(layerKey) {
+        if (layerKey === 'standingChar') {
+            return standingColor();
+        }
+        if (layerKey === 'rider') {
+            return riderColor();
+        }
+        return bodyColor();
     }
 
     const OVERLAY_CORNER_PAD = 56;
@@ -162,7 +178,9 @@ function initTaurCanvas(config) {
             for (const { key, valueLines } of rowLayouts) {
                 const rowColor = key === 'RH' && document.getElementById('show_rider')?.checked
                     ? riderColor()
-                    : color;
+                    : key === 'StH' && document.getElementById('show_standing')?.checked
+                        ? standingColor()
+                        : color;
                 targetCtx.fillStyle = rowColor;
 
                 targetCtx.font = `bold ${fonts.body}px sans-serif`;
@@ -204,11 +222,19 @@ function initTaurCanvas(config) {
         const centerX = taurData.canvas.width / 2;
         const groundY = floorY();
         const showRider = document.getElementById('show_rider')?.checked;
+        const showStanding = document.getElementById('show_standing')?.checked;
         const lBodyDef = layerDef('lBody');
         const scenePpi = TaurMeasurements.scenePixelsPerInch(taurData.canvas) ?? 1;
+        const placements = [];
+
+        if (showStanding && layerDef('standingChar')?.joints?.floor) {
+            placements.push(
+                scaled('standingChar', 'floor', STANDING_CHAR_FLOOR_X, groundY, scenePpi)
+            );
+        }
 
         const lBodyPlacement = scaled('lBody', 'floor', centerX, groundY, scenePpi);
-        const placements = [lBodyPlacement];
+        placements.push(lBodyPlacement);
 
         const [lx, ly] = jointLocalPosition(lBodyDef, 'upper_attach');
         const [upperX, upperY] = placementLocalToWorld(lBodyPlacement, lx, ly);
@@ -245,7 +271,7 @@ function initTaurCanvas(config) {
         contentBounds = expandBounds(contentBounds, {
             left: 72,
             top: 48,
-            right: 48,
+            right: 72,
             bottom: 8,
         });
 
@@ -259,21 +285,23 @@ function initTaurCanvas(config) {
         targetView.clear(targetCtx);
 
         const groundY = floorY();
-        const logicalW = taurData.canvas.width;
+        const vs = targetView.getViewState();
+        const groundScreenY = groundY * vs.scale + vs.offsetY;
 
+        targetCtx.save();
+        targetCtx.setTransform(1, 0, 0, 1, 0, 0);
         targetCtx.strokeStyle = '#bbb';
-        targetCtx.lineWidth = 3 / targetView.getViewState().scale;
+        targetCtx.lineWidth = 3;
         targetCtx.beginPath();
-        targetCtx.moveTo(0, groundY);
-        targetCtx.lineTo(logicalW, groundY);
+        targetCtx.moveTo(0, groundScreenY);
+        targetCtx.lineTo(vs.displayW, groundScreenY);
         targetCtx.stroke();
+        targetCtx.restore();
 
         for (const placement of placements) {
             const image = layers[placement.layerKey];
             const mask = layers[`${placement.layerKey}_mask`] ?? null;
-            const color = BODY_LAYER_KEYS.has(placement.layerKey)
-                ? bodyColor()
-                : riderColor();
+            const color = placementColor(placement.layerKey);
             drawLayer(targetCtx, image, placement, { color, mask });
         }
 

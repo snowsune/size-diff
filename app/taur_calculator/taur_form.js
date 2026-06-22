@@ -123,7 +123,7 @@ function initTaurForm(config = {}) {
         const missing = new Set(TaurAlgorithms.missingRequiredFields(form));
 
         form.querySelectorAll(
-            '#calculated-inputs input, #calculated-inputs select, #manual-inputs input, #rider-height-group input'
+            '#calculated-inputs input, #calculated-inputs select, #manual-inputs input, #rider-height-group input, #standing-height-group input'
         ).forEach((input) => {
             input.classList.remove('taur-field-missing');
         });
@@ -215,6 +215,13 @@ function initTaurForm(config = {}) {
         redrawCanvas();
     }
 
+    function updateStandingControls() {
+        const showStanding = document.getElementById('show_standing')?.checked;
+        document.getElementById('standing-height-group').hidden = !showStanding;
+        document.getElementById('standing-color-group').hidden = !showStanding;
+        redrawCanvas();
+    }
+
     const SPECIES_LENGTH_FIELDS = [
         ['species_height', 'species_height'],
         ['species_length', 'species_length'],
@@ -294,7 +301,7 @@ function initTaurForm(config = {}) {
         if (event.target.name === 'show_measurements') {
             return;
         }
-        if (event.target.name === 'taur_body_color' || event.target.name === 'taur_rider_color') {
+        if (event.target.name === 'taur_body_color' || event.target.name === 'taur_rider_color' || event.target.name === 'taur_standing_color') {
             redrawCanvas();
             return;
         }
@@ -325,10 +332,16 @@ function initTaurForm(config = {}) {
             scheduleApply();
             return;
         }
+        if (name === 'show_standing') {
+            updateStandingControls();
+            scheduleApply();
+            return;
+        }
         if (name === 'algorithm') {
             onAlgorithmChange();
             updateAlgorithmControls();
             updateRiderControls();
+            updateStandingControls();
             scheduleApply();
             return;
         }
@@ -364,6 +377,7 @@ function initTaurForm(config = {}) {
     updateAlgorithmControls();
     updateMeasurementControls();
     updateRiderControls();
+    updateStandingControls();
     updateSpeciesControls();
 
     applyFormState();
