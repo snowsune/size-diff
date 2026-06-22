@@ -1,7 +1,5 @@
 function initTaurForm(config = {}) {
     const form = document.getElementById('taur-form');
-    const resultsEl = document.getElementById('taur-results');
-    const resultsBody = document.getElementById('taur-results-body');
     const algorithmSelect = document.getElementById('algorithm');
     const algorithmPanels = form.querySelectorAll('[data-algorithm-panel]');
     const shareEl = document.getElementById('taur-share');
@@ -18,14 +16,19 @@ function initTaurForm(config = {}) {
         );
     }
 
-    function renderResults(formatted) {
-        resultsBody.innerHTML = '';
-        for (const [key, value] of Object.entries(formatted)) {
-            const row = document.createElement('tr');
-            row.innerHTML = `<td>${key}</td><td>${value}</td>`;
-            resultsBody.appendChild(row);
-        }
-        resultsEl.hidden = false;
+    function updateResultsOverlay(formatted) {
+        const name = document.getElementById('name')?.value?.trim() || '';
+        window.taurResultsOverlay = {
+            name,
+            rows: Object.entries(formatted),
+        };
+    }
+
+    function clearResultsOverlay() {
+        window.taurResultsOverlay = {
+            name: document.getElementById('name')?.value?.trim() || '',
+            rows: [],
+        };
     }
 
     function buildShareUrl() {
@@ -119,7 +122,7 @@ function initTaurForm(config = {}) {
     function applyFormState() {
         const missing = TaurAlgorithms.validateForm(form);
         if (missing !== null) {
-            resultsEl.hidden = true;
+            clearResultsOverlay();
             window.taurLastResult = null;
             updateMeasurementControls();
             updateRequiredFieldHighlights();
@@ -131,12 +134,12 @@ function initTaurForm(config = {}) {
             const algorithmId = TaurAlgorithms.currentId(form);
             const { raw } = TaurAlgorithms.calculateFromForm(form);
             window.taurLastResult = raw;
-            renderResults(TaurAlgorithms.formatResults(raw, algorithmId, form));
+            updateResultsOverlay(TaurAlgorithms.formatResults(raw, algorithmId, form));
             updateMeasurementControls();
             updateRequiredFieldHighlights();
             redrawCanvas();
         } catch {
-            resultsEl.hidden = true;
+            clearResultsOverlay();
             window.taurLastResult = null;
             updateMeasurementControls();
             updateRequiredFieldHighlights();
@@ -273,6 +276,21 @@ function initTaurForm(config = {}) {
         if (event.target.name === 'show_measurements') {
             return;
         }
+        if (event.target.name === 'taur_body_color') {
+            redrawCanvas();
+            return;
+        }
+        if (event.target.name === 'name') {
+            clearResultsOverlay();
+            if (window.taurLastResult) {
+                const algorithmId = TaurAlgorithms.currentId(form);
+                updateResultsOverlay(
+                    TaurAlgorithms.formatResults(window.taurLastResult, algorithmId, form)
+                );
+            }
+            redrawCanvas();
+            return;
+        }
         scheduleApply();
     });
 
@@ -318,6 +336,7 @@ function initTaurForm(config = {}) {
     });
 
     const fromUrl = populateFromUrl();
+    clearResultsOverlay();
     updateAlgorithmControls();
     updateMeasurementControls();
     updateRiderControls();

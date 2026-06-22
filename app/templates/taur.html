@@ -33,19 +33,6 @@
                 <p>By Vixi, <a href="https://www.f-list.net/c/Volnar" style="color: #78d0ff;">Volnar</a> and <a href="https://www.furaffinity.net/user/snownight" style="color: #78d0ff;">Snow</a>! With art by <a href="https://hunner.carrd.co/" style="color: #78d0ff;">Hunner</a>!</p>
             </div>
 
-
-
-
-            <!-- Results filled client-side by taur_form.js -->
-            <div class="taur-results" id="taur-results" hidden>
-                <h2>Calculation Results</h2>
-                <div class="results-box">
-                    <table>
-                        <tbody id="taur-results-body"></tbody>
-                    </table>
-                </div>
-            </div>
-
             <form class="taur-form" id="taur-form">
                 <div class="taur-form-group">
                     <label for="algorithm">Algorithm:</label>
@@ -137,21 +124,21 @@
                 </div>
 
                 <div id="manual-inputs" class="taur-algorithm-panel taur-panel-hidden" data-algorithm-panel="manual">
-                    <p class="taur-manual-hint">Set upper body height, lower body height, and tail length. Rider height is only needed when showing a rider. Feet and inches (e.g. 9'0&quot;) or cm (e.g. 274cm).</p>
+                    <p class="taur-manual-hint">Set lower body height, taur full height, and tail length. Upper body is computed as full height minus lower body. Rider height is only needed when showing a rider. Feet and inches (e.g. 9'0&quot;) or cm (e.g. 274cm).</p>
 
                     <div class="taur-form-group taur-half">
-                        <label for="manual_upper_body_height">Upper Body Height:</label>
-                        <input type="text" id="manual_upper_body_height" name="manual_upper_body_height" placeholder="e.g., 9'0&quot;" />
-                    </div>
-
-                    <div class="taur-form-group taur-half">
-                        <label for="manual_lower_body_height">Lower Body Height:</label>
+                        <label for="manual_lower_body_height">Lower Body Height (TH):</label>
                         <input type="text" id="manual_lower_body_height" name="manual_lower_body_height" placeholder="e.g., 4'6&quot;" />
                     </div>
 
                     <div class="taur-form-group taur-half">
+                        <label for="manual_taur_full_height">Taur Full Height (TFH):</label>
+                        <input type="text" id="manual_taur_full_height" name="manual_taur_full_height" placeholder="e.g., 9'0&quot;" />
+                    </div>
+
+                    <div class="taur-form-group taur-half">
                         <label for="manual_tail_length">Tail Length:</label>
-                        <input type="text" id="manual_tail_length" name="manual_tail_length" placeholder="e.g., 3'0&quot;" />
+                        <input type="text" id="manual_tail_length" name="manual_tail_length" placeholder="e.g., 7'0&quot;" />
                     </div>
                 </div>
 

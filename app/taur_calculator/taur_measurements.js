@@ -5,16 +5,33 @@ const TaurMeasurements = (() => {
     const ORDER = ['TFH', 'THe', 'TTo', 'TL', 'TT'];
 
     function scaleValue(layerDef, result) {
-        return result?.[layerDef.scale_from];
+        const source = layerDef.scale_from;
+        if (source === 'UBH') {
+            if (result?.UBH != null) {
+                return result.UBH;
+            }
+            if (result?.TFH != null && result?.TH != null) {
+                return result.TFH - result.TH;
+            }
+            return null;
+        }
+        return result?.[source];
     }
 
-    /**
-     * Layer scale from a single scene-wide ruler (world pixels per inch).
-     * Layers with span_pixels use: inches * ppi / span_pixels.
-     * Layers with only reference_inches use: inches / reference_inches (bootstrap).
-     */
-    function scaleForLayer(layerDef, result, pixelsPerInch = null) {
-        if (!layerDef?.scale_from) {
+    function calibrationPixelsPerInch(canvasConfig = {}) {
+        const calibration = canvasConfig.calibration ?? {};
+        if (calibration.pixels_per_inch) {
+            return calibration.pixels_per_inch;
+        }
+        if (calibration.TFH?.span_pixels && calibration.TFH?.inches) {
+            return calibration.TFH.span_pixels / calibration.TFH.inches;
+        }
+        return null;
+    }
+
+    /** Layer scale: inches * scene pixels-per-inch / art span in source pixels. */
+    function scaleForLayer(layerDef, result, pixelsPerInch) {
+        if (!layerDef?.scale_from || pixelsPerInch == null || !layerDef.span_pixels) {
             return 1;
         }
 
@@ -23,15 +40,7 @@ const TaurMeasurements = (() => {
             return 1;
         }
 
-        if (pixelsPerInch != null && layerDef.span_pixels) {
-            return (value * pixelsPerInch) / layerDef.span_pixels;
-        }
-
-        if (layerDef.reference_inches) {
-            return value / layerDef.reference_inches;
-        }
-
-        return 1;
+        return (value * pixelsPerInch) / layerDef.span_pixels;
     }
 
     function resolveEndpoint(spec, placements, groundY, startPoint, placementLocalToWorld) {
@@ -93,15 +102,7 @@ const TaurMeasurements = (() => {
             }
         }
 
-        const calibration = canvasConfig.calibration ?? {};
-        if (calibration.pixels_per_inch) {
-            return calibration.pixels_per_inch;
-        }
-        if (calibration.TFH?.span_pixels && calibration.TFH?.inches) {
-            return calibration.TFH.span_pixels / calibration.TFH.inches;
-        }
-
-        return null;
+        return calibrationPixelsPerInch(canvasConfig);
     }
 
     /**
@@ -115,7 +116,7 @@ const TaurMeasurements = (() => {
         worldX,
         worldY,
         result,
-        pixelsPerInch = null,
+        pixelsPerInch,
         placementFromJoint,
         anchorJointOnPlacement,
         jointLocalPosition,
@@ -196,6 +197,7 @@ const TaurMeasurements = (() => {
         buildScene,
         scaleForLayer,
         placeScaledLayer,
+        calibrationPixelsPerInch,
         deriveScenePixelsPerInch,
         measureDefinitionWorldDistance,
     };

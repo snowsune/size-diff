@@ -19,16 +19,17 @@ const TaurAlgorithms = (() => {
             'species_length', 'species_tail_length',
         ],
         manual: [
-            'manual_upper_body_height', 'manual_lower_body_height',
+            'manual_lower_body_height', 'manual_taur_full_height',
             'manual_tail_length',
         ],
     };
 
-    /** Dimensions the canvas art layers consume. */
-    const DISPLAY_KEYS = ['TFH', 'TH', 'TT', 'RH'];
+    /** Dimensions shown in manual-mode overlay; canvas uses TFH, TH, UBH, TT, RH. */
+    const DISPLAY_KEYS = ['UBH', 'TFH', 'TH', 'TT', 'RH'];
 
     const DISPLAY_LABELS = {
-        TFH: 'Upper Body Height',
+        UBH: 'Upper Body Height',
+        TFH: 'Taur Full Height',
         TH: 'Lower Body Height',
         TT: 'Tail Length',
         RH: 'Rider Height',
@@ -66,18 +67,34 @@ const TaurAlgorithms = (() => {
         return Boolean(form?.elements?.show_rider?.checked);
     }
 
-    /** Attach rider height when the rider is shown. Canvas reads RH from the result. */
+    function upperBodyHeight(result) {
+        if (result?.UBH != null) {
+            return result.UBH;
+        }
+        if (result?.TFH != null && result?.TH != null) {
+            return result.TFH - result.TH;
+        }
+        return null;
+    }
+
+    /** Attach derived dimensions used by the canvas and results overlay. */
     function finalizeResult(result, form) {
+        let next = { ...result };
+
+        if (next.TFH != null && next.TH != null) {
+            next.UBH = next.UBH ?? upperBodyHeight(next);
+        }
+
         if (!showRider(form)) {
-            return result;
+            return next;
         }
 
-        const riderHeight = result.RH ?? SizeDiffUnits.parseFormLengthInput(form, 'rider_height');
+        const riderHeight = next.RH ?? SizeDiffUnits.parseFormLengthInput(form, 'rider_height');
         if (riderHeight == null || Number.isNaN(riderHeight)) {
-            return result;
+            return next;
         }
 
-        return { ...result, RH: riderHeight };
+        return { ...next, RH: riderHeight };
     }
 
     function calculateFromForm(form) {
@@ -150,8 +167,13 @@ const TaurAlgorithms = (() => {
             TTo: `${fmt(result.TTo)} (Taur Torso Length)`,
             TL: `${fmt(result.TL)} (Taur Length)`,
             TT: `${fmt(result.TT)} (Taur Tail Length)`,
-            TH: `${fmt(result.TH)} (Taur Height)`,
+            TH: `${fmt(result.TH)} (Lower Body Height)`,
         };
+
+        const ubh = upperBodyHeight(result);
+        if (ubh != null) {
+            formatted.UBH = `${fmt(ubh)} (Upper Body Height)`;
+        }
 
         if (result.RH != null) {
             formatted.RH = `${fmt(result.RH)} (Rider Height)`;
@@ -183,6 +205,7 @@ const TaurAlgorithms = (() => {
         requiredFieldNames,
         missingRequiredFields,
         panelMatchesAlgorithm,
+        upperBodyHeight,
         DISPLAY_KEYS,
         DISPLAY_LABELS,
         FORM_FIELDS,

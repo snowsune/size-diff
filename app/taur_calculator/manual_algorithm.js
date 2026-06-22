@@ -3,14 +3,13 @@
  */
 const ManualAlgorithm = (() => {
     const DIMENSION_FIELDS = [
-        ['manual_upper_body_height', 'TFH'],
         ['manual_lower_body_height', 'TH'],
+        ['manual_taur_full_height', 'TFH'],
         ['manual_tail_length', 'TT'],
     ];
 
     const RIDER_FIELD = ['rider_height', 'RH'];
 
-    // If show rider is checked, include the rider height field
     function activeFields(form) {
         return form?.elements?.show_rider?.checked
             ? [...DIMENSION_FIELDS, RIDER_FIELD]
@@ -18,9 +17,16 @@ const ManualAlgorithm = (() => {
     }
 
     function calculate(values) {
+        const TFH = values.TFH;
+        const TH = values.TH;
+        if (TFH < TH) {
+            throw new Error('Taur full height must be at least the lower body height.');
+        }
+
         const result = {
-            TFH: values.TFH,
-            TH: values.TH,
+            TFH,
+            TH,
+            UBH: TFH - TH,
             TT: values.TT,
         };
         if (values.RH != null) {
@@ -48,8 +54,13 @@ const ManualAlgorithm = (() => {
         const mapping = Object.fromEntries([...DIMENSION_FIELDS, RIDER_FIELD]);
         for (const [fieldId, key] of Object.entries(mapping)) {
             const input = document.getElementById(fieldId);
-            if (input && result[key] != null && !Number.isNaN(result[key])) {
-                input.value = SizeDiffUnits.formatInches(result[key]);
+            if (!input) {
+                continue;
+            }
+
+            const value = result[key];
+            if (value != null && !Number.isNaN(value)) {
+                input.value = SizeDiffUnits.formatInches(value);
             }
         }
     }

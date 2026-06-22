@@ -15,7 +15,6 @@
       "trim": { "x": 462, "y": 762, "width": 1229, "height": 1726 },
       "scale_center": [990, 1725],
       "scale_from": "TH",
-      "reference_inches": 61,
       "span_pixels": 1006,
       "joints": {
         "floor": [1452, 2487],
@@ -28,8 +27,8 @@
       "path": "Hunner/Taur/Side_Taur_Hight_Refrence_U_BODY_Volnar_for_Vixi.png",
       "trim": { "x": 137, "y": 616, "width": 722, "height": 1242 },
       "scale_center": [566, 894],
-      "scale_from": "TFH",
-      "reference_inches": 108,
+      "scale_from": "UBH",
+      "span_pixels": 1885,
       "joints": {
         "lower_attach": [738, 1481]
       }
@@ -49,7 +48,7 @@
       "trim": { "x": 852, "y": 637, "width": 970, "height": 1381 },
       "scale_center": [260, 900],
       "scale_from": "RH",
-      "reference_inches": 100,
+      "span_pixels": 1381,
       "joints": {
         "seat_attach": [1112, 1537],
         "mount_attach": [979, 2017]

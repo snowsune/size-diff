@@ -52,7 +52,130 @@ function initTaurCanvas(config) {
         return document.getElementById('taur_rider_color')?.value || DEFAULT_RIDER_COLOR;
     }
 
-    function scaled(layerKey, anchorJoint, worldX, worldY, pixelsPerInch = null) {
+    const OVERLAY_CORNER_PAD = 56;
+
+    function overlayFontSizes(displayH) {
+        return {
+            heading: Math.max(13, displayH * 0.021),
+            body: Math.max(12, displayH * 0.019),
+            lineHeight: Math.max(15, displayH * 0.023),
+        };
+    }
+
+    function wrapTextLines(ctx, text, maxWidth) {
+        const words = String(text).split(/\s+/);
+        const lines = [];
+        let line = '';
+
+        for (const word of words) {
+            const candidate = line ? `${line} ${word}` : word;
+            if (line && ctx.measureText(candidate).width > maxWidth) {
+                lines.push(line);
+                line = word;
+            } else {
+                line = candidate;
+            }
+        }
+
+        if (line) {
+            lines.push(line);
+        }
+
+        return lines;
+    }
+
+    function drawResultsOverlay(targetCtx, targetView) {
+        const overlay = window.taurResultsOverlay ?? { name: '', rows: [] };
+        if (!overlay.name && !overlay.rows?.length) {
+            return;
+        }
+
+        const vs = targetView.getViewState();
+        const fonts = overlayFontSizes(vs.displayH);
+        const color = bodyColor();
+        const rightX = vs.displayW - OVERLAY_CORNER_PAD;
+        const maxBlockWidth = Math.min(
+            vs.displayW * 0.48,
+            vs.displayW - OVERLAY_CORNER_PAD * 2
+        );
+        let y = OVERLAY_CORNER_PAD;
+
+        targetCtx.save();
+        targetCtx.setTransform(1, 0, 0, 1, 0, 0);
+        targetCtx.fillStyle = color;
+        targetCtx.textBaseline = 'top';
+
+        let keyWidth = 0;
+        if (overlay.rows?.length) {
+            targetCtx.font = `bold ${fonts.body}px sans-serif`;
+            for (const [key] of overlay.rows) {
+                keyWidth = Math.max(keyWidth, targetCtx.measureText(key).width);
+            }
+            keyWidth = Math.ceil(keyWidth) + 10;
+        }
+
+        const valueWidth = Math.max(80, maxBlockWidth - keyWidth);
+        const rowLayouts = [];
+        let blockWidth = 0;
+
+        if (overlay.name) {
+            targetCtx.font = `bold ${fonts.heading}px sans-serif`;
+            blockWidth = Math.max(blockWidth, targetCtx.measureText(overlay.name).width);
+        }
+
+        if (overlay.rows?.length) {
+            targetCtx.font = `bold ${fonts.heading}px sans-serif`;
+            blockWidth = Math.max(
+                blockWidth,
+                targetCtx.measureText('Calculation Results').width
+            );
+
+            targetCtx.font = `${fonts.body}px sans-serif`;
+            for (const [key, value] of overlay.rows) {
+                const valueLines = wrapTextLines(targetCtx, value, valueWidth);
+                let rowWidth = keyWidth;
+                for (const line of valueLines) {
+                    rowWidth = Math.max(rowWidth, keyWidth + targetCtx.measureText(line).width);
+                }
+                blockWidth = Math.max(blockWidth, rowWidth);
+                rowLayouts.push({ key, valueLines });
+            }
+        }
+
+        const x = rightX - blockWidth;
+
+        if (overlay.name) {
+            targetCtx.font = `bold ${fonts.heading}px sans-serif`;
+            targetCtx.textAlign = 'right';
+            targetCtx.fillText(overlay.name, rightX, y);
+            targetCtx.textAlign = 'left';
+            y += fonts.heading + fonts.lineHeight * 0.45;
+        }
+
+        if (overlay.rows?.length) {
+            targetCtx.font = `bold ${fonts.heading}px sans-serif`;
+            targetCtx.textAlign = 'right';
+            targetCtx.fillText('Calculation Results', rightX, y);
+            targetCtx.textAlign = 'left';
+            y += fonts.heading + fonts.lineHeight * 0.4;
+
+            for (const { key, valueLines } of rowLayouts) {
+                targetCtx.font = `bold ${fonts.body}px sans-serif`;
+                targetCtx.fillText(key, x, y);
+
+                targetCtx.font = `${fonts.body}px sans-serif`;
+                const valueX = x + keyWidth;
+                for (let i = 0; i < valueLines.length; i += 1) {
+                    targetCtx.fillText(valueLines[i], valueX, y + i * fonts.lineHeight);
+                }
+                y += fonts.lineHeight * Math.max(1, valueLines.length);
+            }
+        }
+
+        targetCtx.restore();
+    }
+
+    function scaled(layerKey, anchorJoint, worldX, worldY, pixelsPerInch) {
         return placeScaledLayer({
             layerKey,
             layerDef: layerDef(layerKey),
@@ -78,49 +201,43 @@ function initTaurCanvas(config) {
         const showRider = document.getElementById('show_rider')?.checked;
         const lBodyDef = layerDef('lBody');
         const result = window.taurLastResult;
+        const calPpi = TaurMeasurements.calibrationPixelsPerInch(taurData.canvas) ?? 1;
 
-        function attachTailAndRider(placements, lBodyPlacement, pixelsPerInch) {
-            function lBodyJointWorld(jointName) {
-                const [lx, ly] = jointLocalPosition(lBodyDef, jointName);
-                return placementLocalToWorld(lBodyPlacement, lx, ly);
-            }
-
-            const [tailX, tailY] = lBodyJointWorld('tail_attach');
-            placements.push(scaled('tail', 'body_attach', tailX, tailY, pixelsPerInch));
-
-            if (showRider && hasJoint('lBody', 'rider_attach') && hasJoint('rider', 'seat_attach')) {
-                const [riderX, riderY] = lBodyJointWorld('rider_attach');
-                placements.push(scaled('rider', 'seat_attach', riderX, riderY, pixelsPerInch));
-            } else if (showRider) {
-                console.warn(
-                    'Rider not shown: missing lBody.rider_attach or rider.seat_attach in taur_data.json'
-                );
-            }
-
-            return placements;
-        }
-
-        // Pass 1: place body layers so we can read the live TFH line.
-        const lBodyPlacement = scaled('lBody', 'floor', centerX, groundY);
+        // Body layers use the art calibration ruler; tail/rider use the live TFH line.
+        const lBodyPlacement = scaled('lBody', 'floor', centerX, groundY, calPpi);
         const placements = [lBodyPlacement];
 
-        const [upperX, upperY] = (() => {
-            const [lx, ly] = jointLocalPosition(lBodyDef, 'upper_attach');
-            return placementLocalToWorld(lBodyPlacement, lx, ly);
-        })();
+        const [lx, ly] = jointLocalPosition(lBodyDef, 'upper_attach');
+        const [upperX, upperY] = placementLocalToWorld(lBodyPlacement, lx, ly);
+        placements.push(scaled('uBody', 'lower_attach', upperX, upperY, calPpi));
 
-        placements.push(scaled('uBody', 'lower_attach', upperX, upperY));
-
-        const scenePixelsPerInch = TaurMeasurements.deriveScenePixelsPerInch({
+        const livePpi = TaurMeasurements.deriveScenePixelsPerInch({
             canvasConfig: taurData.canvas ?? {},
             measurementDefs: taurData.measurements ?? {},
             placements,
             groundY,
             result,
             placementLocalToWorld,
-        });
+        }) ?? calPpi;
 
-        return attachTailAndRider(placements, lBodyPlacement, scenePixelsPerInch);
+        function lBodyJointWorld(jointName) {
+            const [jx, jy] = jointLocalPosition(lBodyDef, jointName);
+            return placementLocalToWorld(lBodyPlacement, jx, jy);
+        }
+
+        const [tailX, tailY] = lBodyJointWorld('tail_attach');
+        placements.push(scaled('tail', 'body_attach', tailX, tailY, livePpi));
+
+        if (showRider && hasJoint('lBody', 'rider_attach') && hasJoint('rider', 'seat_attach')) {
+            const [riderX, riderY] = lBodyJointWorld('rider_attach');
+            placements.push(scaled('rider', 'seat_attach', riderX, riderY, livePpi));
+        } else if (showRider) {
+            console.warn(
+                'Rider not shown: missing lBody.rider_attach or rider.seat_attach in taur_data.json'
+            );
+        }
+
+        return placements;
     }
 
     function renderScene(targetCanvas, targetView, targetCtx, { includeMeasurements, drawDebug }) {
@@ -186,6 +303,8 @@ function initTaurCanvas(config) {
         if (drawDebug) {
             debugHud.draw(targetCtx);
         }
+
+        drawResultsOverlay(targetCtx, targetView);
 
         return placements;
     }

@@ -38,8 +38,8 @@ ALGORITHM_FIELDS = {
         "species_tail_length",
     }),
     "manual": frozenset({
-        "manual_upper_body_height",
         "manual_lower_body_height",
+        "manual_taur_full_height",
         "manual_tail_length",
     }),
 }
