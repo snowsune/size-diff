@@ -4,16 +4,23 @@
  * Attach to window.SizeDiffCompositor
  */
 const SizeDiffCompositor = (() => {
+    function jointPoint(layerDef, jointName) {
+        const point = layerDef?.joints?.[jointName];
+        if (!point) {
+            throw new Error(`Unknown joint "${jointName}"`);
+        }
+        return point;
+    }
+
     function jointLocalPosition(layerDef, jointName) {
-        const [jx, jy] = layerDef.joints[jointName];
+        const [jx, jy] = jointPoint(layerDef, jointName);
         const trim = layerDef.trim;
         return [jx - trim.x, jy - trim.y];
     }
 
     function jointWorldPosition(layerDef, jointName, placedAtJoint, worldX, worldY) {
-        const joints = layerDef.joints;
-        const [jx, jy] = joints[jointName];
-        const [px, py] = joints[placedAtJoint];
+        const [jx, jy] = jointPoint(layerDef, jointName);
+        const [px, py] = jointPoint(layerDef, placedAtJoint);
         return [worldX + (jx - px), worldY + (jy - py)];
     }
 

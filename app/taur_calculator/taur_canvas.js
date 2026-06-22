@@ -67,16 +67,21 @@ function initTaurCanvas(config) {
         });
     }
 
+    function hasJoint(layerKey, jointName) {
+        return Boolean(taurData.layers[layerKey]?.joints?.[jointName]);
+    }
+
     function buildPlacements() {
         const centerX = taurData.canvas.width / 2;
         const groundY = floorY();
         const showRider = document.getElementById('show_rider')?.checked;
+        const lBodyDef = layerDef('lBody');
 
         const [upperX, upperY] = jointWorldPosition(
-            layerDef('lBody'), 'upper_attach', 'floor', centerX, groundY
+            lBodyDef, 'upper_attach', 'floor', centerX, groundY
         );
         const [tailX, tailY] = jointWorldPosition(
-            layerDef('lBody'), 'tail_attach', 'floor', centerX, groundY
+            lBodyDef, 'tail_attach', 'floor', centerX, groundY
         );
 
         const placements = [
@@ -84,7 +89,7 @@ function initTaurCanvas(config) {
                 layerKey: 'lBody',
                 visible: true,
                 ...placementFromJoint(
-                    layerDef('lBody'), layers.lBody, 'floor', centerX, groundY,
+                    lBodyDef, layers.lBody, 'floor', centerX, groundY,
                     { layerKey: 'lBody' }
                 ),
             },
@@ -92,11 +97,15 @@ function initTaurCanvas(config) {
             scaled('tail', 'body_attach', tailX, tailY),
         ];
 
-        if (showRider) {
+        if (showRider && hasJoint('lBody', 'rider_attach') && hasJoint('rider', 'seat_attach')) {
             const lBodyPlacement = placements.find((p) => p.layerKey === 'lBody');
-            const [rx, ry] = jointLocalPosition(layerDef('lBody'), 'rider_attach');
+            const [rx, ry] = jointLocalPosition(lBodyDef, 'rider_attach');
             const [riderX, riderY] = placementLocalToWorld(lBodyPlacement, rx, ry);
             placements.push(scaled('rider', 'seat_attach', riderX, riderY));
+        } else if (showRider) {
+            console.warn(
+                'Rider not shown: missing lBody.rider_attach or rider.seat_attach in taur_data.json'
+            );
         }
 
         return placements;
@@ -109,7 +118,12 @@ function initTaurCanvas(config) {
     });
 
     function drawScene() {
-        latestPlacements = buildPlacements();
+        try {
+            latestPlacements = buildPlacements();
+        } catch (err) {
+            console.error('Taur buildPlacements failed:', err);
+            return;
+        }
         const centerX = taurData.canvas.width / 2;
 
         let contentBounds = unionBounds(
@@ -152,7 +166,7 @@ function initTaurCanvas(config) {
         }
 
         const showLines = document.getElementById('show_measurements')?.checked ?? false;
-        if (showLines) {
+        if (showLines && window.taurLastResult) {
             const measurementScene = TaurMeasurements.buildScene({
                 measurementDefs: taurData.measurements ?? {},
                 placements: latestPlacements,

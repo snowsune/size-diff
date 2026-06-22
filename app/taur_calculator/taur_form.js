@@ -54,11 +54,30 @@ function initTaurForm(config = {}) {
         shareUrlInput.select();
     }
 
+    function updateRequiredFieldHighlights() {
+        const missing = new Set(TaurAlgorithms.missingRequiredFields(form));
+
+        for (const name of TaurAlgorithms.requiredFieldNames(form)) {
+            const input = document.getElementById(name) || form.querySelector(`[name="${name}"]`);
+            if (!input) {
+                continue;
+            }
+            const panel = input.closest('.taur-algorithm-panel');
+            if (panel?.hidden) {
+                input.classList.remove('taur-field-missing');
+                continue;
+            }
+            input.classList.toggle('taur-field-missing', missing.has(name));
+        }
+    }
+
     function applyFormState() {
         const missing = TaurAlgorithms.validateForm(form);
         if (missing !== null) {
             resultsEl.hidden = true;
             window.taurLastResult = null;
+            updateMeasurementControls();
+            updateRequiredFieldHighlights();
             redrawCanvas();
             return;
         }
@@ -68,10 +87,14 @@ function initTaurForm(config = {}) {
             const { raw } = TaurAlgorithms.calculateFromForm(form);
             window.taurLastResult = raw;
             renderResults(TaurAlgorithms.formatResults(raw, algorithmId, form));
+            updateMeasurementControls();
+            updateRequiredFieldHighlights();
             redrawCanvas();
         } catch {
             resultsEl.hidden = true;
             window.taurLastResult = null;
+            updateMeasurementControls();
+            updateRequiredFieldHighlights();
             redrawCanvas();
         }
     }
@@ -88,6 +111,29 @@ function initTaurForm(config = {}) {
 
         if (isManual && window.taurLastResult) {
             ManualAlgorithm.fillFromResult(window.taurLastResult);
+        }
+
+        updateRequiredFieldHighlights();
+    }
+
+    function updateMeasurementControls() {
+        const checkbox = document.getElementById('show_measurements');
+        const label = document.getElementById('show_measurements-label');
+        const hasDimensions = window.taurLastResult != null;
+
+        if (!checkbox) {
+            return;
+        }
+
+        checkbox.disabled = !hasDimensions;
+        label?.classList.toggle('taur-toggle-disabled', !hasDimensions);
+        label?.setAttribute(
+            'title',
+            hasDimensions ? '' : 'Fill in dimensions to show measurement lines'
+        );
+
+        if (!hasDimensions && checkbox.checked) {
+            checkbox.checked = false;
         }
     }
 
@@ -143,10 +189,13 @@ function initTaurForm(config = {}) {
     form.addEventListener('change', (event) => {
         const { name } = event.target;
         if (name === 'show_measurements') {
-            redrawCanvas();
+            if (!event.target.disabled) {
+                redrawCanvas();
+            }
             return;
         }
         if (name === 'show_rider') {
+            updateRiderControls();
             scheduleApply();
             return;
         }
@@ -163,8 +212,6 @@ function initTaurForm(config = {}) {
         scheduleApply();
     });
 
-    document.getElementById('show_rider')?.addEventListener('change', updateRiderControls);
-
     shareBtn?.addEventListener('click', shareLink);
     shareCopyBtn?.addEventListener('click', async () => {
         shareLink();
@@ -179,6 +226,7 @@ function initTaurForm(config = {}) {
 
     const fromUrl = populateFromUrl();
     updateAlgorithmControls();
+    updateMeasurementControls();
     updateRiderControls();
 
     if (!fromUrl) {

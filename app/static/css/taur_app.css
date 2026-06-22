@@ -192,6 +192,18 @@
     border-color: #f80;
 }
 
+.taur-form-group input.taur-field-missing,
+.taur-form-group select.taur-field-missing {
+    border-color: #e55;
+    background: #2a1818;
+    box-shadow: 0 0 0 1px rgba(229, 85, 85, 0.35);
+}
+
+.taur-form-group input.taur-field-missing:focus,
+.taur-form-group select.taur-field-missing:focus {
+    border-color: #f88;
+}
+
 .taur-form-group input[type="color"] {
     width: 100%;
     height: clamp(1.6rem, 3vh, 2.2rem);
@@ -206,6 +218,16 @@
     gap: 8px;
     cursor: pointer;
     margin-bottom: 0;
+}
+
+.taur-rider-toggle label.taur-toggle-disabled {
+    color: #666;
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.taur-rider-toggle label.taur-toggle-disabled input {
+    cursor: not-allowed;
 }
 
 .taur-rider-toggle input[type="checkbox"] {

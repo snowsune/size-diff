@@ -112,7 +112,7 @@ const VolnarsAlgorithm = (() => {
         return { raw: calculate(inputs) };
     }
 
-    return { calculate, calculateFromForm, validateForm };
+    return { calculate, calculateFromForm, validateForm, requiredFieldNames: () => [...REQUIRED_FIELDS] };
 })();
 
 const ManualAlgorithm = (() => {
@@ -180,7 +180,13 @@ const ManualAlgorithm = (() => {
         }
     }
 
-    return { calculate, calculateFromForm, validateForm, fillFromResult };
+    return {
+        calculate,
+        calculateFromForm,
+        validateForm,
+        fillFromResult,
+        requiredFieldNames: () => DIMENSION_FIELDS.map(([field]) => field),
+    };
 })();
 
 const TaurAlgorithms = (() => {
@@ -235,6 +241,25 @@ const TaurAlgorithms = (() => {
         return impl.validateForm(form);
     }
 
+    function requiredFieldNames(form) {
+        const impl = get(currentId(form));
+        return impl?.requiredFieldNames?.() ?? [];
+    }
+
+    function missingRequiredFields(form) {
+        return requiredFieldNames(form).filter((name) => {
+            const el = form.elements?.[name] ?? form.querySelector(`[name="${name}"]`);
+            if (!el) {
+                return false;
+            }
+            const panel = el.closest('.taur-algorithm-panel');
+            if (panel?.hidden) {
+                return false;
+            }
+            return !String(el.value ?? '').trim();
+        });
+    }
+
     function formatResults(result, algorithmId = 'volnar', form = null) {
         const fmt = SizeDiffUnits.formatInches;
         const ratio = SizeDiffUnits.formatRatio;
@@ -270,6 +295,8 @@ const TaurAlgorithms = (() => {
         currentId,
         get,
         shareFieldNames,
+        requiredFieldNames,
+        missingRequiredFields,
         FORM_FIELDS,
     };
 })();
