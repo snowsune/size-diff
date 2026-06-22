@@ -64,6 +64,11 @@ def get_art_image_path(rel_path):
     return dist_path if os.path.exists(dist_path) else orig_path
 
 
+def get_dist_art_path(rel_path):
+    """Returns the path to a trimmed image in art/dist/."""
+    return os.path.join("art", "dist", rel_path)
+
+
 def render_image(
     char_list,
     size,

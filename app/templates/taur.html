@@ -10,7 +10,7 @@
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
 </head>
 
-<body>
+<body class="taur-page">
     <div class="taur-container">
         <div class="taur-left-column">
             <div class="taur-canvas-container">
@@ -20,7 +20,7 @@
         <div class="taur-right-column">
             <div class="taur-header">
                 <h1>Taur Calculator</h1>
-                <p>By Vixi and <a href="https://www.f-list.net/c/Volnar" style="color: #78d0ff;">Volnar</a>!</p>
+                <p>By Vixi, <a href="https://www.f-list.net/c/Volnar" style="color: #78d0ff;">Volnar</a> and <a href="https://www.furaffinity.net/user/snownight" style="color: #78d0ff;">Snow</a>! With art by <a href="https://hunner.carrd.co/" style="color: #78d0ff;">Hunner</a>!</p>
             </div>
 
 
@@ -79,39 +79,39 @@
                     </select>
                 </div>
 
-                <div class="taur-form-group">
+                <div class="taur-form-group taur-half">
                     <label for="anthro_height">Anthro Height (AH): <span class="info-icon"
                             title="Your anthro height before taurification, measured in inches">ℹ️</span></label>
                     <input type="number" step="0.1" id="anthro_height" name="anthro_height" placeholder="e.g., 76" />
                 </div>
 
-                <div class="taur-form-group">
+                <div class="taur-form-group taur-half">
                     <label for="species_height">Species Height (SH): <span class="info-icon"
                             title="Your species's feral height, measured in inches">ℹ️</span></label>
                     <input type="number" step="0.1" id="species_height" name="species_height" placeholder="e.g., 36" />
                 </div>
 
-                <div class="taur-form-group">
+                <div class="taur-form-group taur-half">
                     <label for="species_length">Species Length w/o Tail (SL): <span class="info-icon"
                             title="Your species's body length from nose to base of tail, measured in inches">ℹ️</span></label>
                     <input type="number" step="0.1" id="species_length" name="species_length" placeholder="e.g., 48" />
                 </div>
 
-                <div class="taur-form-group">
+                <div class="taur-form-group taur-half">
                     <label for="species_tail_length">Species Tail Length (ST): <span class="info-icon"
                             title="Your species's tail length, measured in inches">ℹ️</span></label>
                     <input type="number" step="0.1" id="species_tail_length" name="species_tail_length"
                         placeholder="e.g., 24" />
                 </div>
 
-                <div class="taur-form-group">
+                <div class="taur-form-group taur-half">
                     <label for="taur_full_height">Taur Full Height (TFH): <span class="info-icon"
                             title="Your desired final taur height (from pawpads to top of head not including horns, ears or antlers), measured in inches">ℹ️</span></label>
                     <input type="number" step="0.1" id="taur_full_height" name="taur_full_height"
                         placeholder="e.g., 108" />
                 </div>
 
-                <div class="taur-form-group">
+                <div class="taur-form-group taur-half">
                     <label for="species_weight">Species Weight (SW): <span class="info-icon"
                             title="Your species's weight, measured in pounds (NOT YOUR OC'S WEIGHT!)">ℹ️</span></label>
                     <input type="number" step="0.1" id="species_weight" name="species_weight" placeholder="e.g., 150" />
@@ -124,6 +124,29 @@
                         placeholder="Leave empty for auto" />
                 </div>
 
+                <div class="taur-form-group">
+                    <label for="taur_body_color">Body Color (lower, upper, tail):</label>
+                    <input type="color" id="taur_body_color" name="taur_body_color" value="#ff0000" />
+                </div>
+
+                <div class="taur-form-group taur-rider-toggle">
+                    <label for="show_rider">
+                        <input type="checkbox" id="show_rider" name="show_rider" value="1" />
+                        Show Rider
+                    </label>
+                </div>
+
+                <div class="taur-form-group taur-rider-height" id="rider-height-group" hidden>
+                    <label for="rider_height">Rider Height: <span class="info-icon"
+                            title="The rider's height in inches">ℹ️</span></label>
+                    <input type="number" step="0.1" id="rider_height" name="rider_height" placeholder="e.g., 76" />
+                </div>
+
+                <div class="taur-form-group taur-rider-color" id="rider-color-group" hidden>
+                    <label for="taur_rider_color">Rider Color:</label>
+                    <input type="color" id="taur_rider_color" name="taur_rider_color" value="#ff8800" />
+                </div>
+
                 <button type="submit">Calculate</button>
             </form>
             <div class="back-link-container">
@@ -133,33 +156,28 @@
     </div>
 
     <script>
-        const canvas = document.getElementById('taur-canvas');
-        const ctx = canvas.getContext('2d');
-        const img = new Image();
+        window.taurCanvasConfig = {
+            taurData: {{ taur_data | tojson | safe }},
+            layerSources: {{ taur_layer_urls | tojson | safe }},
+            debug: {{ debug | tojson }},
+        };
+    </script>
+    <script src="{{ url_for('static', filename='js/size_diff/compositor.js') }}"></script>
+    <script src="{{ url_for('taur_calculator_asset', filename='taur_canvas.js') }}"></script>
+    <script>
+        const showRiderCheckbox = document.getElementById('show_rider');
+        const riderHeightGroup = document.getElementById('rider-height-group');
 
-        function drawImage() {
-            const maxW = window.innerWidth / 2;
-            const maxH = window.innerHeight;
-            const scale = Math.min(maxW / img.width, maxH / img.height, 1.0);
-
-            canvas.width = img.width * scale;
-            canvas.height = img.height * scale;
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        function updateRiderControls() {
+            const showRider = showRiderCheckbox.checked;
+            riderHeightGroup.hidden = !showRider;
+            document.getElementById('rider-color-group').hidden = !showRider;
+            document.getElementById('taur-canvas')?.dispatchEvent(
+                new CustomEvent('compositor-redraw')
+            );
         }
 
-        function drawText(name, height, species) {
-            const scale = canvas.width / img.width;
-            ctx.fillStyle = '#fff';
-            ctx.font = `bold ${24 * scale}px Arial`;
-            ctx.textAlign = 'center';
-            ctx.fillText(name, canvas.width / 2, 50 * scale);
-            ctx.fillText(height + '"', canvas.width / 2, 80 * scale);
-            ctx.font = `${20 * scale}px Arial`;
-            ctx.fillText(species.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()), canvas.width / 2, 110 * scale);
-        }
-
-        img.onload = drawImage;
-        img.src = "{{ url_for('static', filename='images/taur/TaurCalculatorReference.png') }}";
+        showRiderCheckbox.addEventListener('change', updateRiderControls);
 
         // Species data for auto-population
         const speciesData = {{ species_data | tojson | safe }};
@@ -213,9 +231,14 @@
         for (const [key, value] of urlParams.entries()) {
             const input = document.getElementById(key) || document.querySelector(`[name="${key}"]`);
             if (input) {
-                input.value = value;
+                if (input.type === 'checkbox') {
+                    input.checked = value === '1' || value === 'on' || value === 'true';
+                } else {
+                    input.value = value;
+                }
             }
         }
+        updateRiderControls();
         // Trigger species change to populate fields
         document.getElementById('species').dispatchEvent(new Event('change'));
         {% endif %}

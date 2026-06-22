@@ -3,6 +3,7 @@ from flask import (
     render_template,
     request,
     send_file,
+    send_from_directory,
     jsonify,
     redirect,
     url_for,
@@ -36,9 +37,11 @@ from app.utils.parse_data import (
     get_default_characters,
 )
 from app.utils.stats import StatsManager
-from app.utils.generate_image import render_image
+from app.utils.generate_image import render_image, get_dist_art_path
+from app.utils.art_paths import layer_asset_urls
 from app.utils.character import Character
 from app.utils.taur_calculator import calculate_taur
+from app.utils.taur_data import load_taur_data
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -84,6 +87,37 @@ species_list = [
     for f in os.listdir(species_data_folder)
     if f.endswith(".yaml")
 ]
+
+
+TAUR_DATA = load_taur_data()
+TAUR_CALCULATOR_DIR = os.path.join(os.path.dirname(__file__), "taur_calculator")
+
+
+def register_taur_calculator_routes(application):
+    if "taur_calculator_asset" in application.view_functions:
+        return
+
+    @application.route(
+        "/taur-calculator/<path:filename>", endpoint="taur_calculator_asset"
+    )
+    def taur_calculator_asset(filename):
+        return send_from_directory(TAUR_CALCULATOR_DIR, filename)
+
+
+register_taur_calculator_routes(app)
+
+
+@app.route("/art/<path:rel_path>")
+def serve_art(rel_path):
+    """Serve trimmed art assets from art/dist/."""
+    file_path = get_dist_art_path(rel_path)
+    art_dist_root = os.path.abspath(os.path.join("art", "dist"))
+    resolved = os.path.abspath(file_path)
+
+    if not resolved.startswith(art_dist_root + os.sep) or not os.path.isfile(resolved):
+        return "Not found", 404
+
+    return send_file(resolved, max_age=31536000)
 
 
 @app.route("/generate-image")
@@ -353,6 +387,7 @@ def taur():
         for key in [
             "name",
             "measurement_type",
+            "species",
             "anthro_height",
             "species_height",
             "species_length",
@@ -360,6 +395,10 @@ def taur():
             "taur_full_height",
             "species_weight",
             "taur_length",
+            "show_rider",
+            "rider_height",
+            "taur_body_color",
+            "taur_rider_color",
         ]:
             value = request.form.get(key, "")
             if value:
@@ -425,15 +464,26 @@ def taur():
             calculation_result = None
             cleaned_calculation_result = None
 
+    taur_data = TAUR_DATA
     return render_template(
         "taur.html",
         species=filtered_species,
         species_data=species_data_map,
         calculation_result=cleaned_calculation_result,
         form_data=dict(request.args) if request.args else None,
+        taur_data=taur_data,
+        taur_layer_urls={
+            key: layer_asset_urls(
+                layer["path"],
+                lambda path: url_for("serve_art", rel_path=path),
+            )
+            for key, layer in taur_data["layers"].items()
+        },
+        debug=app.debug or os.getenv("GIT_COMMIT") is None,
     )
 
 
 # For WSGI
 def create_app():
+    register_taur_calculator_routes(app)
     return app

@@ -1,0 +1,42 @@
+{
+  "source_size": [3000, 3000],
+  "canvas": {
+    "width": 4000,
+    "height": 3000,
+    "floor_margin": 120
+  },
+  "layers": {
+    "lBody": {
+      "path": "Hunner/Taur/Side_Taur_Hight_Refrence_L_BODY_Volnar_for_Vixi.png",
+      "trim": { "x": 462, "y": 762, "width": 1229, "height": 1726 },
+      "joints": {
+        "floor": [1452, 2487],
+        "upper_attach": [738, 1481],
+        "tail_attach": [1386, 1453]
+      }
+    },
+    "uBody": {
+      "path": "Hunner/Taur/Side_Taur_Hight_Refrence_U_BODY_Volnar_for_Vixi.png",
+      "trim": { "x": 137, "y": 616, "width": 722, "height": 1242 },
+      "joints": {
+        "lower_attach": [738, 1481],
+        "rider_attach": [979, 2017]
+      }
+    },
+    "tail": {
+      "path": "Hunner/Taur/Side_Taur_Hight_Refrence_TAIL_Volnar_for_Vixi.png",
+      "trim": { "x": 1104, "y": 785, "width": 1863, "height": 1461 },
+      "joints": {
+        "body_attach": [1386, 1453]
+      }
+    },
+    "rider": {
+      "path": "Hunner/Taur/Side_Taur_Hight_Refrence_RIDER_Volnar_Felix_for_Vixi.png",
+      "trim": { "x": 852, "y": 637, "width": 970, "height": 1381 },
+      "scale_center": [300, 875],
+      "joints": {
+        "mount_attach": [979, 2017]
+      }
+    }
+  }
+}
