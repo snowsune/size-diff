@@ -10,6 +10,14 @@ const ManualAlgorithm = (() => {
 
     const RIDER_FIELD = ['rider_height', 'RH'];
 
+    /** Default inches when entering manual mode for the first time. */
+    const DEFAULT_FIELD_INCHES = {
+        manual_lower_body_height: 54,
+        manual_taur_full_height: 128,
+        manual_tail_length: 84,
+        rider_height: 72,
+    };
+
     function activeFields(form) {
         return form?.elements?.show_rider?.checked
             ? [...DIMENSION_FIELDS, RIDER_FIELD]
@@ -65,9 +73,27 @@ const ManualAlgorithm = (() => {
         }
     }
 
+    function applyDefaults() {
+        for (const [fieldId, inches] of Object.entries(DEFAULT_FIELD_INCHES)) {
+            const input = document.getElementById(fieldId);
+            if (input) {
+                input.value = SizeDiffUnits.formatInches(inches);
+            }
+        }
+    }
+
+    function dimensionFieldsEmpty() {
+        return DIMENSION_FIELDS.every(([fieldId]) => {
+            const input = document.getElementById(fieldId);
+            return !String(input?.value ?? '').trim();
+        });
+    }
+
     return {
         ...core,
         fillFromResult,
+        applyDefaults,
+        dimensionFieldsEmpty,
     };
 })();
 

@@ -28,7 +28,7 @@
       "trim": { "x": 137, "y": 616, "width": 722, "height": 1242 },
       "scale_center": [566, 894],
       "scale_from": "UBH",
-      "span_pixels": 1885,
+      "span_pixels": 1401,
       "joints": {
         "lower_attach": [738, 1481]
       }

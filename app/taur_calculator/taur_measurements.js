@@ -1,5 +1,13 @@
 /**
  * Measurement anchors and scaled layer placement.
+ *
+ * Scene ruler: one world pixels-per-inch value for every layer.
+ *   scale = dimension_inches × scenePixelsPerInch / layer.span_pixels
+ *
+ * span_pixels must match the pixel length of that layer's measurement line in
+ * source art (see measurements.* in taur_data.json). Mixing rulers (e.g. cal ppi
+ * on body but a live TFH-derived ppi on tail) makes independent dimensions
+ * drag each other when only one input changes.
  */
 const TaurMeasurements = (() => {
     const ORDER = ['TFH', 'THe', 'TTo', 'TL', 'TT'];
@@ -27,6 +35,11 @@ const TaurMeasurements = (() => {
             return calibration.TFH.span_pixels / calibration.TFH.inches;
         }
         return null;
+    }
+
+    /** Canonical scene ruler — same ppi for every layer. */
+    function scenePixelsPerInch(canvasConfig = {}) {
+        return calibrationPixelsPerInch(canvasConfig);
     }
 
     /** Layer scale: inches * scene pixels-per-inch / art span in source pixels. */
@@ -80,8 +93,8 @@ const TaurMeasurements = (() => {
         return SizeDiffUnits.worldDistance(start, end);
     }
 
-    /** Read the live TFH line length and derive world pixels per inch. */
-    function deriveScenePixelsPerInch({
+    /** Measured TFH line ÷ stated TFH — for debug/calibration checks only. */
+    function measuredTfhPixelsPerInch({
         canvasConfig = {},
         measurementDefs = {},
         placements,
@@ -90,19 +103,27 @@ const TaurMeasurements = (() => {
         placementLocalToWorld,
     }) {
         const tfhInches = result?.TFH;
-        if (tfhInches) {
-            const tfhDistance = measureDefinitionWorldDistance(
-                measurementDefs.TFH,
-                placements,
-                groundY,
-                placementLocalToWorld
-            );
-            if (tfhDistance) {
-                return tfhDistance / tfhInches;
-            }
+        if (!tfhInches) {
+            return null;
         }
 
-        return calibrationPixelsPerInch(canvasConfig);
+        const tfhDistance = measureDefinitionWorldDistance(
+            measurementDefs.TFH,
+            placements,
+            groundY,
+            placementLocalToWorld
+        );
+        if (!tfhDistance) {
+            return null;
+        }
+
+        return tfhDistance / tfhInches;
+    }
+
+    /** @deprecated Use scenePixelsPerInch for placement; this is for diagnostics. */
+    function deriveScenePixelsPerInch(options) {
+        return measuredTfhPixelsPerInch(options)
+            ?? calibrationPixelsPerInch(options.canvasConfig ?? {});
     }
 
     /**
@@ -197,7 +218,9 @@ const TaurMeasurements = (() => {
         buildScene,
         scaleForLayer,
         placeScaledLayer,
+        scenePixelsPerInch,
         calibrationPixelsPerInch,
+        measuredTfhPixelsPerInch,
         deriveScenePixelsPerInch,
         measureDefinitionWorldDistance,
     };

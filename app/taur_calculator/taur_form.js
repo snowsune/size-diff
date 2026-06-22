@@ -9,6 +9,28 @@ function initTaurForm(config = {}) {
     const speciesData = config.speciesData ?? {};
 
     let debounceTimer = null;
+    let manualModeInitialized = false;
+    let previousAlgorithm = algorithmSelect.value;
+
+    function applyManualEntryDefaults() {
+        if (manualModeInitialized) {
+            return;
+        }
+        ManualAlgorithm.applyDefaults();
+        manualModeInitialized = true;
+    }
+
+    function onAlgorithmChange() {
+        const algo = algorithmSelect.value;
+        if (algo === 'manual' && previousAlgorithm !== 'manual') {
+            if (!manualModeInitialized) {
+                applyManualEntryDefaults();
+            } else if (window.taurLastResult) {
+                ManualAlgorithm.fillFromResult(window.taurLastResult);
+            }
+        }
+        previousAlgorithm = algo;
+    }
 
     function redrawCanvas() {
         document.getElementById('taur-canvas')?.dispatchEvent(
@@ -162,10 +184,6 @@ function initTaurForm(config = {}) {
             );
         });
 
-        if (algo === 'manual' && window.taurLastResult) {
-            ManualAlgorithm.fillFromResult(window.taurLastResult);
-        }
-
         updateRequiredFieldHighlights();
     }
 
@@ -276,7 +294,7 @@ function initTaurForm(config = {}) {
         if (event.target.name === 'show_measurements') {
             return;
         }
-        if (event.target.name === 'taur_body_color') {
+        if (event.target.name === 'taur_body_color' || event.target.name === 'taur_rider_color') {
             redrawCanvas();
             return;
         }
@@ -308,6 +326,7 @@ function initTaurForm(config = {}) {
             return;
         }
         if (name === 'algorithm') {
+            onAlgorithmChange();
             updateAlgorithmControls();
             updateRiderControls();
             scheduleApply();
@@ -336,6 +355,11 @@ function initTaurForm(config = {}) {
     });
 
     const fromUrl = populateFromUrl();
+    if (fromUrl && algorithmSelect.value === 'manual') {
+        manualModeInitialized = true;
+    } else if (algorithmSelect.value === 'manual' && ManualAlgorithm.dimensionFieldsEmpty()) {
+        applyManualEntryDefaults();
+    }
     clearResultsOverlay();
     updateAlgorithmControls();
     updateMeasurementControls();

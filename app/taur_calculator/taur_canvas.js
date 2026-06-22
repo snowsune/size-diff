@@ -160,6 +160,11 @@ function initTaurCanvas(config) {
             y += fonts.heading + fonts.lineHeight * 0.4;
 
             for (const { key, valueLines } of rowLayouts) {
+                const rowColor = key === 'RH' && document.getElementById('show_rider')?.checked
+                    ? riderColor()
+                    : color;
+                targetCtx.fillStyle = rowColor;
+
                 targetCtx.font = `bold ${fonts.body}px sans-serif`;
                 targetCtx.fillText(key, x, y);
 
@@ -200,25 +205,14 @@ function initTaurCanvas(config) {
         const groundY = floorY();
         const showRider = document.getElementById('show_rider')?.checked;
         const lBodyDef = layerDef('lBody');
-        const result = window.taurLastResult;
-        const calPpi = TaurMeasurements.calibrationPixelsPerInch(taurData.canvas) ?? 1;
+        const scenePpi = TaurMeasurements.scenePixelsPerInch(taurData.canvas) ?? 1;
 
-        // Body layers use the art calibration ruler; tail/rider use the live TFH line.
-        const lBodyPlacement = scaled('lBody', 'floor', centerX, groundY, calPpi);
+        const lBodyPlacement = scaled('lBody', 'floor', centerX, groundY, scenePpi);
         const placements = [lBodyPlacement];
 
         const [lx, ly] = jointLocalPosition(lBodyDef, 'upper_attach');
         const [upperX, upperY] = placementLocalToWorld(lBodyPlacement, lx, ly);
-        placements.push(scaled('uBody', 'lower_attach', upperX, upperY, calPpi));
-
-        const livePpi = TaurMeasurements.deriveScenePixelsPerInch({
-            canvasConfig: taurData.canvas ?? {},
-            measurementDefs: taurData.measurements ?? {},
-            placements,
-            groundY,
-            result,
-            placementLocalToWorld,
-        }) ?? calPpi;
+        placements.push(scaled('uBody', 'lower_attach', upperX, upperY, scenePpi));
 
         function lBodyJointWorld(jointName) {
             const [jx, jy] = jointLocalPosition(lBodyDef, jointName);
@@ -226,11 +220,11 @@ function initTaurCanvas(config) {
         }
 
         const [tailX, tailY] = lBodyJointWorld('tail_attach');
-        placements.push(scaled('tail', 'body_attach', tailX, tailY, livePpi));
+        placements.push(scaled('tail', 'body_attach', tailX, tailY, scenePpi));
 
         if (showRider && hasJoint('lBody', 'rider_attach') && hasJoint('rider', 'seat_attach')) {
             const [riderX, riderY] = lBodyJointWorld('rider_attach');
-            placements.push(scaled('rider', 'seat_attach', riderX, riderY, livePpi));
+            placements.push(scaled('rider', 'seat_attach', riderX, riderY, scenePpi));
         } else if (showRider) {
             console.warn(
                 'Rider not shown: missing lBody.rider_attach or rider.seat_attach in taur_data.json'
@@ -300,7 +294,34 @@ function initTaurCanvas(config) {
             }
         }
 
-        if (drawDebug) {
+        if (drawDebug && window.taurLastResult) {
+            debugHud.draw(targetCtx);
+
+            const scenePpi = TaurMeasurements.scenePixelsPerInch(taurData.canvas);
+            const measuredTfhPpi = TaurMeasurements.measuredTfhPixelsPerInch({
+                canvasConfig: taurData.canvas ?? {},
+                measurementDefs: taurData.measurements ?? {},
+                placements,
+                groundY,
+                result: window.taurLastResult,
+                placementLocalToWorld,
+            });
+            const ttWorld = TaurMeasurements.measureDefinitionWorldDistance(
+                taurData.measurements?.TT,
+                placements,
+                groundY,
+                placementLocalToWorld
+            );
+            const { TFH, TT } = window.taurLastResult;
+            console.debug('Taur scene ruler', {
+                scenePpi,
+                measuredTfhPpi,
+                tfhWorld: measuredTfhPpi != null && TFH != null ? measuredTfhPpi * TFH : null,
+                tfhExpected: TFH != null && scenePpi != null ? TFH * scenePpi : null,
+                ttWorld,
+                ttExpected: TT != null && scenePpi != null ? TT * scenePpi : null,
+            });
+        } else if (drawDebug) {
             debugHud.draw(targetCtx);
         }
 
