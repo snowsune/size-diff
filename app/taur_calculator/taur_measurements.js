@@ -4,19 +4,15 @@
 const TaurMeasurements = (() => {
     const ORDER = ['TFH', 'THe', 'TTo', 'TL', 'TT'];
 
-    function scaleValue(layerDef, result, form) {
-        const source = layerDef.scale_from;
-        if (source.startsWith('form:')) {
-            return SizeDiffUnits.parseFormLengthInput(form, source.slice(5));
-        }
-        return result?.[source];
+    function scaleValue(layerDef, result) {
+        return result?.[layerDef.scale_from];
     }
 
-    function scaleForLayer(layerDef, result, form) {
+    function scaleForLayer(layerDef, result) {
         if (!layerDef?.scale_from || !layerDef.reference_inches) {
             return 1;
         }
-        const value = scaleValue(layerDef, result, form);
+        const value = scaleValue(layerDef, result);
         if (value == null || Number.isNaN(value)) {
             return 1;
         }
@@ -35,7 +31,6 @@ const TaurMeasurements = (() => {
         worldX,
         worldY,
         result,
-        form,
         placementFromJoint,
         anchorJointOnPlacement,
         jointLocalPosition,
@@ -55,7 +50,7 @@ const TaurMeasurements = (() => {
                     worldY,
                     {
                         layerKey,
-                        scale: scaleForLayer(layerDef, result, form),
+                        scale: scaleForLayer(layerDef, result),
                         scaleCenter,
                     }
                 ),

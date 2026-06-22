@@ -9,6 +9,9 @@
     "lBody": {
       "path": "Hunner/Taur/Side_Taur_Hight_Refrence_L_BODY_Volnar_for_Vixi.png",
       "trim": { "x": 462, "y": 762, "width": 1229, "height": 1726 },
+      "scale_center": [990, 1725],
+      "scale_from": "TH",
+      "reference_inches": 61,
       "joints": {
         "floor": [1452, 2487],
         "upper_attach": [738, 1481],
@@ -40,7 +43,7 @@
       "path": "Hunner/Taur/Side_Taur_Hight_Refrence_RIDER_Volnar_Felix_for_Vixi.png",
       "trim": { "x": 852, "y": 637, "width": 970, "height": 1381 },
       "scale_center": [260, 900],
-      "scale_from": "form:rider_height",
+      "scale_from": "RH",
       "reference_inches": 100,
       "joints": {
         "seat_attach": [1112, 1537],

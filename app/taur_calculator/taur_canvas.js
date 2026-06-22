@@ -1,6 +1,5 @@
 function initTaurCanvas(config) {
     const {
-        jointWorldPosition,
         jointLocalPosition,
         placementFromJoint,
         placementLocalToWorld,
@@ -60,7 +59,6 @@ function initTaurCanvas(config) {
             worldX,
             worldY,
             result: window.taurLastResult,
-            form,
             placementFromJoint,
             anchorJointOnPlacement,
             jointLocalPosition,
@@ -77,30 +75,22 @@ function initTaurCanvas(config) {
         const showRider = document.getElementById('show_rider')?.checked;
         const lBodyDef = layerDef('lBody');
 
-        const [upperX, upperY] = jointWorldPosition(
-            lBodyDef, 'upper_attach', 'floor', centerX, groundY
-        );
-        const [tailX, tailY] = jointWorldPosition(
-            lBodyDef, 'tail_attach', 'floor', centerX, groundY
-        );
+        const lBodyPlacement = scaled('lBody', 'floor', centerX, groundY);
+        const placements = [lBodyPlacement];
 
-        const placements = [
-            {
-                layerKey: 'lBody',
-                visible: true,
-                ...placementFromJoint(
-                    lBodyDef, layers.lBody, 'floor', centerX, groundY,
-                    { layerKey: 'lBody' }
-                ),
-            },
-            scaled('uBody', 'lower_attach', upperX, upperY),
-            scaled('tail', 'body_attach', tailX, tailY),
-        ];
+        function lBodyJointWorld(jointName) {
+            const [lx, ly] = jointLocalPosition(lBodyDef, jointName);
+            return placementLocalToWorld(lBodyPlacement, lx, ly);
+        }
+
+        const [upperX, upperY] = lBodyJointWorld('upper_attach');
+        const [tailX, tailY] = lBodyJointWorld('tail_attach');
+
+        placements.push(scaled('uBody', 'lower_attach', upperX, upperY));
+        placements.push(scaled('tail', 'body_attach', tailX, tailY));
 
         if (showRider && hasJoint('lBody', 'rider_attach') && hasJoint('rider', 'seat_attach')) {
-            const lBodyPlacement = placements.find((p) => p.layerKey === 'lBody');
-            const [rx, ry] = jointLocalPosition(lBodyDef, 'rider_attach');
-            const [riderX, riderY] = placementLocalToWorld(lBodyPlacement, rx, ry);
+            const [riderX, riderY] = lBodyJointWorld('rider_attach');
             placements.push(scaled('rider', 'seat_attach', riderX, riderY));
         } else if (showRider) {
             console.warn(

@@ -1,77 +1,62 @@
 /**
- * Manual dimension entry (just for vixi testing mostly)
+ * For manual dimension entry
  */
 const ManualAlgorithm = (() => {
     const DIMENSION_FIELDS = [
-        ['manual_tfh', 'TFH'],
-        ['manual_th', 'TH'],
-        ['manual_the', 'THe'],
-        ['manual_tto', 'TTo'],
-        ['manual_tl', 'TL'],
-        ['manual_tt', 'TT'],
+        ['manual_upper_body_height', 'TFH'],
+        ['manual_lower_body_height', 'TH'],
+        ['manual_tail_length', 'TT'],
     ];
 
+    const RIDER_FIELD = ['rider_height', 'RH'];
+
+    // If show rider is checked, include the rider height field
+    function activeFields(form) {
+        return form?.elements?.show_rider?.checked
+            ? [...DIMENSION_FIELDS, RIDER_FIELD]
+            : DIMENSION_FIELDS;
+    }
+
     function calculate(values) {
-        return { ...values };
+        const result = {
+            TFH: values.TFH,
+            TH: values.TH,
+            TT: values.TT,
+        };
+        if (values.RH != null) {
+            result.RH = values.RH;
+        }
+        return result;
     }
 
     function parseFormInputs(form) {
         const values = {};
-        for (const [field, key] of DIMENSION_FIELDS) {
+        for (const [field, key] of activeFields(form)) {
             values[key] = SizeDiffUnits.parseFormLengthInput(form, field);
         }
         return values;
     }
 
-    function validateForm(form) {
-        const formData = new FormData(form);
-        for (const [field] of DIMENSION_FIELDS) {
-            if (!formData.get(field)) {
-                return field;
-            }
-        }
-        return null;
-    }
-
-    function calculateFromForm(form) {
-        const missing = validateForm(form);
-        if (missing) {
-            throw new Error(`Please fill in all manual dimensions. Missing: ${missing}`);
-        }
-
-        const values = parseFormInputs(form);
-        for (const [, key] of DIMENSION_FIELDS) {
-            if (values[key] == null || Number.isNaN(values[key])) {
-                throw new Error(`Invalid number for ${key}`);
-            }
-        }
-
-        return { raw: calculate(values) };
-    }
+    const core = TaurAlgorithmForm.createFormAlgorithm({
+        requiredFieldNames: (form) => activeFields(form).map(([field]) => field),
+        parseFormInputs,
+        calculate,
+        missingMessage: 'Please fill in all manual dimensions.',
+    });
 
     function fillFromResult(result) {
-        const mapping = {
-            manual_tfh: result.TFH,
-            manual_th: result.TH,
-            manual_the: result.THe,
-            manual_tto: result.TTo,
-            manual_tl: result.TL,
-            manual_tt: result.TT,
-        };
-        for (const [fieldId, value] of Object.entries(mapping)) {
+        const mapping = Object.fromEntries([...DIMENSION_FIELDS, RIDER_FIELD]);
+        for (const [fieldId, key] of Object.entries(mapping)) {
             const input = document.getElementById(fieldId);
-            if (input && value != null && !Number.isNaN(value)) {
-                input.value = SizeDiffUnits.formatInches(value);
+            if (input && result[key] != null && !Number.isNaN(result[key])) {
+                input.value = SizeDiffUnits.formatInches(result[key]);
             }
         }
     }
 
     return {
-        calculate,
-        calculateFromForm,
-        validateForm,
+        ...core,
         fillFromResult,
-        requiredFieldNames: () => DIMENSION_FIELDS.map(([field]) => field),
     };
 })();
 

@@ -19,8 +19,19 @@ const TaurAlgorithms = (() => {
             'species_length', 'species_tail_length',
         ],
         manual: [
-            'manual_tfh', 'manual_th', 'manual_the', 'manual_tto', 'manual_tl', 'manual_tt',
+            'manual_upper_body_height', 'manual_lower_body_height',
+            'manual_tail_length',
         ],
+    };
+
+    /** Dimensions the canvas art layers consume. */
+    const DISPLAY_KEYS = ['TFH', 'TH', 'TT', 'RH'];
+
+    const DISPLAY_LABELS = {
+        TFH: 'Upper Body Height',
+        TH: 'Lower Body Height',
+        TT: 'Tail Length',
+        RH: 'Rider Height',
     };
 
     function algorithmMode(algorithmId) {
@@ -51,12 +62,31 @@ const TaurAlgorithms = (() => {
         return [...FORM_FIELDS.shared, ...FORM_FIELDS[mode]];
     }
 
+    function showRider(form) {
+        return Boolean(form?.elements?.show_rider?.checked);
+    }
+
+    /** Attach rider height when the rider is shown. Canvas reads RH from the result. */
+    function finalizeResult(result, form) {
+        if (!showRider(form)) {
+            return result;
+        }
+
+        const riderHeight = result.RH ?? SizeDiffUnits.parseFormLengthInput(form, 'rider_height');
+        if (riderHeight == null || Number.isNaN(riderHeight)) {
+            return result;
+        }
+
+        return { ...result, RH: riderHeight };
+    }
+
     function calculateFromForm(form) {
         const impl = get(currentId(form));
         if (!impl) {
             throw new Error(`Unknown algorithm: ${currentId(form)}`);
         }
-        return impl.calculateFromForm(form);
+        const { raw } = impl.calculateFromForm(form);
+        return { raw: finalizeResult(raw, form) };
     }
 
     function validateForm(form) {
@@ -69,7 +99,7 @@ const TaurAlgorithms = (() => {
 
     function requiredFieldNames(form) {
         const impl = get(currentId(form));
-        return impl?.requiredFieldNames?.() ?? [];
+        return impl?.requiredFieldNames?.(form) ?? [];
     }
 
     function panelMatchesAlgorithm(panel, algorithmId) {
@@ -94,9 +124,25 @@ const TaurAlgorithms = (() => {
         });
     }
 
+    function formatDisplayDimensions(result) {
+        const fmt = SizeDiffUnits.formatInches;
+        const formatted = {};
+        for (const key of DISPLAY_KEYS) {
+            if (result[key] == null) {
+                continue;
+            }
+            formatted[key] = `${fmt(result[key])} (${DISPLAY_LABELS[key]})`;
+        }
+        return formatted;
+    }
+
     function formatResults(result, algorithmId = 'volnar', form = null) {
         const fmt = SizeDiffUnits.formatInches;
         const ratio = SizeDiffUnits.formatRatio;
+
+        if (algorithmId === 'manual') {
+            return formatDisplayDimensions(result);
+        }
 
         const formatted = {
             TFH: `${fmt(result.TFH)} (Taur Full Height)`,
@@ -107,11 +153,8 @@ const TaurAlgorithms = (() => {
             TH: `${fmt(result.TH)} (Taur Height)`,
         };
 
-        if (form?.elements?.show_rider?.checked) {
-            const riderHeight = SizeDiffUnits.parseFormLengthInput(form, 'rider_height');
-            if (riderHeight != null) {
-                formatted.RH = `${fmt(riderHeight)} (Rider Height)`;
-            }
+        if (result.RH != null) {
+            formatted.RH = `${fmt(result.RH)} (Rider Height)`;
         }
 
         if (algorithmId === 'volnar') {
@@ -133,11 +176,15 @@ const TaurAlgorithms = (() => {
         calculateFromForm,
         validateForm,
         formatResults,
+        finalizeResult,
         currentId,
         get,
         shareFieldNames,
         requiredFieldNames,
         missingRequiredFields,
+        panelMatchesAlgorithm,
+        DISPLAY_KEYS,
+        DISPLAY_LABELS,
         FORM_FIELDS,
     };
 })();

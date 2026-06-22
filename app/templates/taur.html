@@ -93,6 +93,7 @@
                 <div class="taur-form-group">
                     <label for="species">Species:</label>
                     <select id="species" name="species">
+                        <option value="generic" selected>Generic</option>
                         {% for specie in species %}
                         <option value="{{ specie }}">{{ specie.replace('_', ' ').title() }}</option>
                         {% endfor %}
@@ -126,36 +127,21 @@
                 </div>
 
                 <div id="manual-inputs" class="taur-algorithm-panel taur-panel-hidden" data-algorithm-panel="manual">
-                    <p class="taur-manual-hint">Set each major dimension in feet and inches (e.g. 9'0&quot;) or cm (e.g. 274cm).</p>
+                    <p class="taur-manual-hint">Set upper body height, lower body height, and tail length. Rider height is only needed when showing a rider. Feet and inches (e.g. 9'0&quot;) or cm (e.g. 274cm).</p>
 
                     <div class="taur-form-group taur-half">
-                        <label for="manual_tfh">TFH (full height):</label>
-                        <input type="text" id="manual_tfh" name="manual_tfh" placeholder="e.g., 9'0&quot;" />
+                        <label for="manual_upper_body_height">Upper Body Height:</label>
+                        <input type="text" id="manual_upper_body_height" name="manual_upper_body_height" placeholder="e.g., 9'0&quot;" />
                     </div>
 
                     <div class="taur-form-group taur-half">
-                        <label for="manual_th">TH (leg height):</label>
-                        <input type="text" id="manual_th" name="manual_th" placeholder="e.g., 4'6&quot;" />
+                        <label for="manual_lower_body_height">Lower Body Height:</label>
+                        <input type="text" id="manual_lower_body_height" name="manual_lower_body_height" placeholder="e.g., 4'6&quot;" />
                     </div>
 
                     <div class="taur-form-group taur-half">
-                        <label for="manual_the">THe (head):</label>
-                        <input type="text" id="manual_the" name="manual_the" placeholder="e.g., 1'2&quot;" />
-                    </div>
-
-                    <div class="taur-form-group taur-half">
-                        <label for="manual_tto">TTo (torso):</label>
-                        <input type="text" id="manual_tto" name="manual_tto" placeholder="e.g., 3'4&quot;" />
-                    </div>
-
-                    <div class="taur-form-group taur-half">
-                        <label for="manual_tl">TL (body length):</label>
-                        <input type="text" id="manual_tl" name="manual_tl" placeholder="e.g., 6'0&quot;" />
-                    </div>
-
-                    <div class="taur-form-group taur-half">
-                        <label for="manual_tt">TT (tail):</label>
-                        <input type="text" id="manual_tt" name="manual_tt" placeholder="e.g., 3'0&quot;" />
+                        <label for="manual_tail_length">Tail Length:</label>
+                        <input type="text" id="manual_tail_length" name="manual_tail_length" placeholder="e.g., 3'0&quot;" />
                     </div>
                 </div>
 
@@ -180,7 +166,7 @@
                 </div>
 
                 <div class="taur-form-group taur-rider-height" id="rider-height-group" hidden>
-                    <label for="rider_height">Rider Height (RH): <span class="info-icon"
+                    <label for="rider_height">Rider Height: <span class="info-icon"
                             title="Feet and inches (e.g. 6'4&quot;) or cm (e.g. 193cm). Reference art is sized for 8'4&quot;">ℹ️</span></label>
                     <input type="text" id="rider_height" name="rider_height" placeholder="e.g., 6'4&quot;" />
                 </div>
@@ -214,6 +200,7 @@
     </script>
     <script src="{{ url_for('static', filename='js/size_diff/units.js') }}"></script>
     <script src="{{ url_for('static', filename='js/size_diff/compositor.js') }}"></script>
+    <script src="{{ url_for('taur_calculator_asset', filename='taur_algorithm_form.js') }}"></script>
     <script src="{{ url_for('taur_calculator_asset', filename='volnars_algorithm.js') }}"></script>
     <script src="{{ url_for('taur_calculator_asset', filename='snows_algorithm.js') }}"></script>
     <script src="{{ url_for('taur_calculator_asset', filename='manual_algorithm.js') }}"></script>

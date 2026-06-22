@@ -57,7 +57,7 @@ function initTaurForm(config = {}) {
         const missing = new Set(TaurAlgorithms.missingRequiredFields(form));
 
         form.querySelectorAll(
-            '#calculated-inputs input, #calculated-inputs select, #manual-inputs input'
+            '#calculated-inputs input, #calculated-inputs select, #manual-inputs input, #rider-height-group input'
         ).forEach((input) => {
             input.classList.remove('taur-field-missing');
         });
@@ -108,15 +108,14 @@ function initTaurForm(config = {}) {
         debounceTimer = setTimeout(applyFormState, 120);
     }
 
-    function panelMatchesAlgorithm(panel, algorithmId) {
-        return panel.dataset.algorithmPanel.split(/\s+/).includes(algorithmId);
-    }
-
     function updateAlgorithmControls() {
         const algo = algorithmSelect.value;
 
         algorithmPanels.forEach((panel) => {
-            panel.classList.toggle('taur-panel-hidden', !panelMatchesAlgorithm(panel, algo));
+            panel.classList.toggle(
+                'taur-panel-hidden',
+                !TaurAlgorithms.panelMatchesAlgorithm(panel, algo)
+            );
         });
 
         if (algo === 'manual' && window.taurLastResult) {
@@ -154,15 +153,55 @@ function initTaurForm(config = {}) {
         redrawCanvas();
     }
 
-    function applySpeciesDefaults() {
-        const data = speciesData[document.getElementById('species')?.value];
+    const SPECIES_LENGTH_FIELDS = [
+        ['species_height', 'species_height'],
+        ['species_length', 'species_length'],
+        ['species_tail_length', 'species_tail_length'],
+    ];
+
+    function isGenericSpecies(speciesValue) {
+        return !speciesValue || speciesValue === 'generic';
+    }
+
+    function setSpeciesFieldLocked(input, locked) {
+        if (!input) {
+            return;
+        }
+        input.readOnly = locked;
+        input.classList.toggle('taur-field-locked', locked);
+    }
+
+    function updateSpeciesControls() {
+        const speciesValue = document.getElementById('species')?.value ?? 'generic';
+        const weightField = document.getElementById('species_weight');
+
+        if (isGenericSpecies(speciesValue)) {
+            for (const [fieldId] of SPECIES_LENGTH_FIELDS) {
+                setSpeciesFieldLocked(document.getElementById(fieldId), false);
+            }
+            setSpeciesFieldLocked(weightField, false);
+            return;
+        }
+
+        const data = speciesData[speciesValue];
         if (!data) {
             return;
         }
-        document.getElementById('species_height').value = data.species_height || '';
-        document.getElementById('species_length').value = data.species_length || '';
-        document.getElementById('species_tail_length').value = data.species_tail_length || '';
-        document.getElementById('species_weight').value = data.species_weight || '';
+
+        for (const [fieldId, dataKey] of SPECIES_LENGTH_FIELDS) {
+            const input = document.getElementById(fieldId);
+            if (!input) {
+                continue;
+            }
+            const inches = data[dataKey];
+            input.value = inches ? SizeDiffUnits.formatInches(inches) : '';
+            setSpeciesFieldLocked(input, true);
+        }
+
+        if (weightField) {
+            weightField.value = data.species_weight || '';
+            setSpeciesFieldLocked(weightField, Boolean(data.species_weight));
+        }
     }
 
     function populateFromUrl() {
@@ -211,19 +250,15 @@ function initTaurForm(config = {}) {
         }
         if (name === 'algorithm') {
             updateAlgorithmControls();
+            updateRiderControls();
             scheduleApply();
             return;
         }
         scheduleApply();
     });
 
-    algorithmSelect.addEventListener('change', () => {
-        updateAlgorithmControls();
-        scheduleApply();
-    });
-
     document.getElementById('species')?.addEventListener('change', () => {
-        applySpeciesDefaults();
+        updateSpeciesControls();
         scheduleApply();
     });
 
@@ -243,10 +278,7 @@ function initTaurForm(config = {}) {
     updateAlgorithmControls();
     updateMeasurementControls();
     updateRiderControls();
-
-    if (!fromUrl) {
-        applySpeciesDefaults();
-    }
+    updateSpeciesControls();
 
     applyFormState();
 }

@@ -9,6 +9,10 @@ const SnowsAlgorithm = (() => {
         'species_tail_length',
     ];
 
+    const PARSED_KEYS = [
+        'anthroHeight', 'speciesHeight', 'speciesLength', 'speciesTailLength',
+    ];
+
     /**
      * Species avg size (hind legs): SL*0.9 + SH
      * TFH (2-thirds rule): AH*0.27*2 + AH*0.53
@@ -27,7 +31,7 @@ const SnowsAlgorithm = (() => {
         const TFH = AH * 0.27 * 2 + AH * 0.53;
         const humanTorsoOnAnimal = AH * 0.53 + SH;
 
-        const TH = speciesAvgSize;
+        const TH = speciesAvgSize; // Snows "average size"
         const THe = AH / 8;
         const TTo = AH * 0.53 - THe;
 
@@ -61,33 +65,12 @@ const SnowsAlgorithm = (() => {
         };
     }
 
-    function validateForm(form) {
-        const formData = new FormData(form);
-        for (const field of REQUIRED_FIELDS) {
-            if (!formData.get(field)) {
-                return field;
-            }
-        }
-        return null;
-    }
-
-    function calculateFromForm(form) {
-        const missing = validateForm(form);
-        if (missing) {
-            throw new Error(`Please fill in all required fields. Missing: ${missing}`);
-        }
-
-        const inputs = parseFormInputs(form);
-        for (const key of ['anthroHeight', 'speciesHeight', 'speciesLength', 'speciesTailLength']) {
-            if (inputs[key] == null || Number.isNaN(inputs[key])) {
-                throw new Error(`Invalid number for ${key}`);
-            }
-        }
-
-        return { raw: calculate(inputs) };
-    }
-
-    return { calculate, calculateFromForm, validateForm, requiredFieldNames: () => [...REQUIRED_FIELDS] };
+    return TaurAlgorithmForm.createFormAlgorithm({
+        requiredFieldNames: REQUIRED_FIELDS,
+        parseFormInputs,
+        calculate,
+        parsedKeys: PARSED_KEYS,
+    });
 })();
 
 if (typeof window !== 'undefined') {

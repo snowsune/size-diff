@@ -199,6 +199,13 @@
     box-shadow: 0 0 0 1px rgba(229, 85, 85, 0.35);
 }
 
+.taur-form-group input.taur-field-locked {
+    background: #1a1a1a;
+    color: #888;
+    border-color: #333;
+    cursor: not-allowed;
+}
+
 .taur-form-group input.taur-field-missing:focus,
 .taur-form-group select.taur-field-missing:focus {
     border-color: #f88;
