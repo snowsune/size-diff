@@ -41,6 +41,7 @@
                     <label for="algorithm">Algorithm:</label>
                     <select id="algorithm" name="algorithm">
                         <option value="volnar" selected>Volnar</option>
+                        <option value="snow">Snow</option>
                         <option value="manual">Manual</option>
                     </select>
                 </div>
@@ -50,17 +51,45 @@
                     <input type="text" id="name" name="name" placeholder="Character name" />
                 </div>
 
-                <div id="volnar-inputs" class="taur-algorithm-panel">
-                <div class="taur-form-group">
-                    <label for="measurement_type">Measurement Type: <span class="info-icon"
-                            title="Vitruvian: Default for mammals, the body height and upper limbs are scaled such that you can reach your own tail when bending over backwards. 
-                            Limb: For lizards/dragons and others where body length may not be symmetrical. Will use species length directly">ℹ️</span></label>
-                    <select id="measurement_type" name="measurement_type">
-                        <option value="vitruvian">Vitruvian (for mammals)</option>
-                        <option value="limb">Limb (for lizards/dragons and all else)</option>
-                    </select>
+                <div id="snow-inputs" class="taur-algorithm-panel taur-panel-hidden" data-algorithm-panel="snow">
+                    <p class="taur-manual-hint">
+                        Thank you snow!
+                    </p>
                 </div>
 
+                <div id="volnar-only-inputs" class="taur-algorithm-panel" data-algorithm-panel="volnar">
+                    <div class="taur-form-group">
+                        <label for="measurement_type">Measurement Type: <span class="info-icon"
+                                title="Vitruvian: Default for mammals, the body height and upper limbs are scaled such that you can reach your own tail when bending over backwards. 
+                                Limb: For lizards/dragons and others where body length may not be symmetrical. Will use species length directly">ℹ️</span></label>
+                        <select id="measurement_type" name="measurement_type">
+                            <option value="vitruvian">Vitruvian (for mammals)</option>
+                            <option value="limb">Limb (for lizards/dragons and all else)</option>
+                        </select>
+                    </div>
+
+                    <div class="taur-form-group taur-half">
+                        <label for="taur_full_height">Taur Full Height (TFH): <span class="info-icon"
+                                title="Pawpads to top of head, excluding horns/ears/antlers. Feet and inches (e.g. 9'0&quot;) or cm (e.g. 274cm)">ℹ️</span></label>
+                        <input type="text" id="taur_full_height" name="taur_full_height"
+                            placeholder="e.g., 9'0&quot;" />
+                    </div>
+
+                    <div class="taur-form-group taur-half">
+                        <label for="species_weight">Species Weight (SW): <span class="info-icon"
+                                title="Your species's weight, measured in pounds (NOT YOUR OC'S WEIGHT!)">ℹ️</span></label>
+                        <input type="number" step="0.1" id="species_weight" name="species_weight" placeholder="e.g., 150" />
+                    </div>
+
+                    <div class="taur-form-group">
+                        <label for="taur_length">Taur Length w/o Tail (TL) - Optional: <span class="info-icon"
+                                title="Leave empty to auto-calculate. Or use feet and inches (e.g. 6'0&quot;) or cm (e.g. 183cm)">ℹ️</span></label>
+                        <input type="text" id="taur_length" name="taur_length"
+                            placeholder="Leave empty for auto" />
+                    </div>
+                </div>
+
+                <div id="calculated-inputs" class="taur-algorithm-panel" data-algorithm-panel="volnar snow">
                 <div class="taur-form-group">
                     <label for="species">Species:</label>
                     <select id="species" name="species">
@@ -78,7 +107,7 @@
 
                 <div class="taur-form-group taur-half">
                     <label for="species_height">Species Height (SH): <span class="info-icon"
-                            title="Feet and inches (e.g. 3'0&quot;) or cm (e.g. 91cm)">ℹ️</span></label>
+                            title="Species height. Feet and inches (e.g. 3'0&quot;) or cm (e.g. 91cm)">ℹ️</span></label>
                     <input type="text" id="species_height" name="species_height" placeholder="e.g., 3'0&quot;" />
                 </div>
 
@@ -94,29 +123,9 @@
                     <input type="text" id="species_tail_length" name="species_tail_length"
                         placeholder="e.g., 2'0&quot;" />
                 </div>
-
-                <div class="taur-form-group taur-half">
-                    <label for="taur_full_height">Taur Full Height (TFH): <span class="info-icon"
-                            title="Pawpads to top of head, excluding horns/ears/antlers. Feet and inches (e.g. 9'0&quot;) or cm (e.g. 274cm)">ℹ️</span></label>
-                    <input type="text" id="taur_full_height" name="taur_full_height"
-                        placeholder="e.g., 9'0&quot;" />
                 </div>
 
-                <div class="taur-form-group taur-half">
-                    <label for="species_weight">Species Weight (SW): <span class="info-icon"
-                            title="Your species's weight, measured in pounds (NOT YOUR OC'S WEIGHT!)">ℹ️</span></label>
-                    <input type="number" step="0.1" id="species_weight" name="species_weight" placeholder="e.g., 150" />
-                </div>
-
-                <div class="taur-form-group">
-                    <label for="taur_length">Taur Length w/o Tail (TL) - Optional: <span class="info-icon"
-                            title="Leave empty to auto-calculate. Or use feet and inches (e.g. 6'0&quot;) or cm (e.g. 183cm)">ℹ️</span></label>
-                    <input type="text" id="taur_length" name="taur_length"
-                        placeholder="Leave empty for auto" />
-                </div>
-                </div>
-
-                <div id="manual-inputs" class="taur-algorithm-panel" hidden>
+                <div id="manual-inputs" class="taur-algorithm-panel taur-panel-hidden" data-algorithm-panel="manual">
                     <p class="taur-manual-hint">Set each major dimension in feet and inches (e.g. 9'0&quot;) or cm (e.g. 274cm).</p>
 
                     <div class="taur-form-group taur-half">
@@ -205,6 +214,9 @@
     </script>
     <script src="{{ url_for('static', filename='js/size_diff/units.js') }}"></script>
     <script src="{{ url_for('static', filename='js/size_diff/compositor.js') }}"></script>
+    <script src="{{ url_for('taur_calculator_asset', filename='volnars_algorithm.js') }}"></script>
+    <script src="{{ url_for('taur_calculator_asset', filename='snows_algorithm.js') }}"></script>
+    <script src="{{ url_for('taur_calculator_asset', filename='manual_algorithm.js') }}"></script>
     <script src="{{ url_for('taur_calculator_asset', filename='taur_algorithms.js') }}"></script>
     <script src="{{ url_for('taur_calculator_asset', filename='taur_measurements.js') }}"></script>
     <script src="{{ url_for('taur_calculator_asset', filename='taur_canvas.js') }}"></script>

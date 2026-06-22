@@ -3,8 +3,7 @@ function initTaurForm(config = {}) {
     const resultsEl = document.getElementById('taur-results');
     const resultsBody = document.getElementById('taur-results-body');
     const algorithmSelect = document.getElementById('algorithm');
-    const volnarPanel = document.getElementById('volnar-inputs');
-    const manualPanel = document.getElementById('manual-inputs');
+    const algorithmPanels = form.querySelectorAll('[data-algorithm-panel]');
     const shareEl = document.getElementById('taur-share');
     const shareUrlInput = document.getElementById('taur-share-url');
     const shareBtn = document.getElementById('taur-share-btn');
@@ -57,14 +56,19 @@ function initTaurForm(config = {}) {
     function updateRequiredFieldHighlights() {
         const missing = new Set(TaurAlgorithms.missingRequiredFields(form));
 
+        form.querySelectorAll(
+            '#calculated-inputs input, #calculated-inputs select, #manual-inputs input'
+        ).forEach((input) => {
+            input.classList.remove('taur-field-missing');
+        });
+
         for (const name of TaurAlgorithms.requiredFieldNames(form)) {
             const input = document.getElementById(name) || form.querySelector(`[name="${name}"]`);
             if (!input) {
                 continue;
             }
-            const panel = input.closest('.taur-algorithm-panel');
-            if (panel?.hidden) {
-                input.classList.remove('taur-field-missing');
+            const panel = input.closest('[data-algorithm-panel]');
+            if (panel?.classList.contains('taur-panel-hidden')) {
                 continue;
             }
             input.classList.toggle('taur-field-missing', missing.has(name));
@@ -104,12 +108,18 @@ function initTaurForm(config = {}) {
         debounceTimer = setTimeout(applyFormState, 120);
     }
 
-    function updateAlgorithmControls() {
-        const isManual = algorithmSelect.value === 'manual';
-        volnarPanel.hidden = isManual;
-        manualPanel.hidden = !isManual;
+    function panelMatchesAlgorithm(panel, algorithmId) {
+        return panel.dataset.algorithmPanel.split(/\s+/).includes(algorithmId);
+    }
 
-        if (isManual && window.taurLastResult) {
+    function updateAlgorithmControls() {
+        const algo = algorithmSelect.value;
+
+        algorithmPanels.forEach((panel) => {
+            panel.classList.toggle('taur-panel-hidden', !panelMatchesAlgorithm(panel, algo));
+        });
+
+        if (algo === 'manual' && window.taurLastResult) {
             ManualAlgorithm.fillFromResult(window.taurLastResult);
         }
 
@@ -196,6 +206,11 @@ function initTaurForm(config = {}) {
         }
         if (name === 'show_rider') {
             updateRiderControls();
+            scheduleApply();
+            return;
+        }
+        if (name === 'algorithm') {
+            updateAlgorithmControls();
             scheduleApply();
             return;
         }

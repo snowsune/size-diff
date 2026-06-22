@@ -238,12 +238,24 @@
 
 .taur-rider-height[hidden],
 .taur-rider-color[hidden],
-.taur-algorithm-panel[hidden] {
-    display: none;
+.taur-panel-hidden {
+    display: none !important;
 }
 
 .taur-algorithm-panel {
-    display: contents;
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(3px, 0.55vh, 7px) clamp(6px, 0.8vw, 10px);
+}
+
+.taur-algorithm-panel .taur-form-group:not(.taur-half),
+.taur-algorithm-panel .taur-manual-hint {
+    grid-column: 1 / -1;
+}
+
+.taur-algorithm-panel .taur-form-group.taur-half {
+    grid-column: span 1;
 }
 
 .taur-manual-hint {

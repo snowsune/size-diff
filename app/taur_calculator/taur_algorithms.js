@@ -1,196 +1,8 @@
 /**
- * Volnar's algorithm!! Implemented in JS
+ * Taur calculator algorithm registry and shared form helpers.
  */
-const VolnarsAlgorithm = (() => {
-    const REQUIRED_FIELDS = [
-        'anthro_height',
-        'species_height',
-        'species_length',
-        'species_tail_length',
-        'taur_full_height',
-        'species_weight',
-    ];
-
-    function calculate({
-        anthroHeight,
-        speciesHeight,
-        speciesLength,
-        speciesTailLength,
-        taurFullHeight,
-        speciesWeight,
-        taurLength = null,
-        measurementType = 'vitruvian',
-        customBodyParts = null,
-    }) {
-        const anthroLegs = anthroHeight * 4 / 8;
-        const anthroTorso = anthroHeight * 3 / 8;
-        const anthroHead = anthroHeight * 1 / 8;
-
-        let taurHeight;
-        let taurLengthCalc;
-
-        if (measurementType === 'limb') {
-            taurHeight = anthroLegs;
-            taurLengthCalc = taurLength ?? speciesLength;
-        } else {
-            taurLengthCalc = (2 * anthroTorso) - anthroHead;
-            taurHeight = anthroHeight > 0
-                ? speciesHeight * (taurFullHeight / anthroHeight)
-                : 0;
-        }
-
-        const taurRatio = speciesHeight > 0 ? taurHeight / speciesHeight : 0;
-        const anthroRatio = anthroHeight > 0 ? taurFullHeight / anthroHeight : 0;
-
-        const cbpResult = {};
-        if (customBodyParts) {
-            for (const [part, value] of Object.entries(customBodyParts)) {
-                cbpResult[part] = value * anthroRatio;
-            }
-        }
-
-        const taurTorso = anthroTorso * anthroRatio;
-        const taurHead = anthroHead * anthroRatio;
-        const taurTail = speciesTailLength != null ? speciesTailLength * taurRatio : 0;
-        const taurWeight = speciesWeight * (anthroRatio ** 3);
-
-        return {
-            TH: taurHeight,
-            TFH: taurFullHeight,
-            TL: taurLengthCalc,
-            TT: taurTail,
-            TTo: taurTorso,
-            THe: taurHead,
-            TW: taurWeight,
-            'TW-': taurWeight * 0.9,
-            'TW+': taurWeight * 1.1,
-            CBP: cbpResult,
-            AR: anthroRatio,
-            TR: taurRatio,
-        };
-    }
-
-    function parseFormInputs(form) {
-        const formData = new FormData(form);
-        const length = (name) => SizeDiffUnits.parseFormLengthInput(form, name);
-        const taurLengthRaw = formData.get('taur_length');
-        return {
-            measurementType: formData.get('measurement_type') || 'vitruvian',
-            anthroHeight: length('anthro_height'),
-            speciesHeight: length('species_height'),
-            speciesLength: length('species_length'),
-            speciesTailLength: length('species_tail_length'),
-            taurFullHeight: length('taur_full_height'),
-            speciesWeight: parseFloat(formData.get('species_weight')),
-            taurLength: taurLengthRaw ? length('taur_length') : null,
-        };
-    }
-
-    function validateForm(form) {
-        const formData = new FormData(form);
-        for (const field of REQUIRED_FIELDS) {
-            if (!formData.get(field)) {
-                return field;
-            }
-        }
-        return null;
-    }
-
-    function calculateFromForm(form) {
-        const missing = validateForm(form);
-        if (missing) {
-            throw new Error(`Please fill in all required fields. Missing: ${missing}`);
-        }
-
-        const inputs = parseFormInputs(form);
-        for (const key of ['anthroHeight', 'speciesHeight', 'speciesLength', 'speciesTailLength', 'taurFullHeight', 'speciesWeight']) {
-            if (inputs[key] == null || Number.isNaN(inputs[key])) {
-                throw new Error(`Invalid number for ${key}`);
-            }
-        }
-
-        return { raw: calculate(inputs) };
-    }
-
-    return { calculate, calculateFromForm, validateForm, requiredFieldNames: () => [...REQUIRED_FIELDS] };
-})();
-
-const ManualAlgorithm = (() => {
-    const DIMENSION_FIELDS = [
-        ['manual_tfh', 'TFH'],
-        ['manual_th', 'TH'],
-        ['manual_the', 'THe'],
-        ['manual_tto', 'TTo'],
-        ['manual_tl', 'TL'],
-        ['manual_tt', 'TT'],
-    ];
-
-    function calculate(values) {
-        return { ...values };
-    }
-
-    function parseFormInputs(form) {
-        const values = {};
-        for (const [field, key] of DIMENSION_FIELDS) {
-            values[key] = SizeDiffUnits.parseFormLengthInput(form, field);
-        }
-        return values;
-    }
-
-    function validateForm(form) {
-        const formData = new FormData(form);
-        for (const [field] of DIMENSION_FIELDS) {
-            if (!formData.get(field)) {
-                return field;
-            }
-        }
-        return null;
-    }
-
-    function calculateFromForm(form) {
-        const missing = validateForm(form);
-        if (missing) {
-            throw new Error(`Please fill in all manual dimensions. Missing: ${missing}`);
-        }
-
-        const values = parseFormInputs(form);
-        for (const [, key] of DIMENSION_FIELDS) {
-            if (values[key] == null || Number.isNaN(values[key])) {
-                throw new Error(`Invalid number for ${key}`);
-            }
-        }
-
-        return { raw: calculate(values) };
-    }
-
-    function fillFromResult(result) {
-        const mapping = {
-            manual_tfh: result.TFH,
-            manual_th: result.TH,
-            manual_the: result.THe,
-            manual_tto: result.TTo,
-            manual_tl: result.TL,
-            manual_tt: result.TT,
-        };
-        for (const [fieldId, value] of Object.entries(mapping)) {
-            const input = document.getElementById(fieldId);
-            if (input && value != null && !Number.isNaN(value)) {
-                input.value = SizeDiffUnits.formatInches(value);
-            }
-        }
-    }
-
-    return {
-        calculate,
-        calculateFromForm,
-        validateForm,
-        fillFromResult,
-        requiredFieldNames: () => DIMENSION_FIELDS.map(([field]) => field),
-    };
-})();
-
 const TaurAlgorithms = (() => {
-    const IMPLEMENTATIONS = { volnar: VolnarsAlgorithm, manual: ManualAlgorithm };
+    const IMPLEMENTATIONS = { volnar: VolnarsAlgorithm, snow: SnowsAlgorithm, manual: ManualAlgorithm };
 
     const FORM_FIELDS = {
         shared: [
@@ -202,10 +14,24 @@ const TaurAlgorithms = (() => {
             'species_length', 'species_tail_length', 'taur_full_height',
             'species_weight', 'taur_length',
         ],
+        snow: [
+            'species', 'anthro_height', 'species_height',
+            'species_length', 'species_tail_length',
+        ],
         manual: [
             'manual_tfh', 'manual_th', 'manual_the', 'manual_tto', 'manual_tl', 'manual_tt',
         ],
     };
+
+    function algorithmMode(algorithmId) {
+        if (algorithmId === 'manual') {
+            return 'manual';
+        }
+        if (algorithmId === 'snow') {
+            return 'snow';
+        }
+        return 'volnar';
+    }
 
     function fieldValue(form, name) {
         const el = form.elements?.[name] ?? form.querySelector(`[name="${name}"]`);
@@ -221,7 +47,7 @@ const TaurAlgorithms = (() => {
     }
 
     function shareFieldNames(algorithmId) {
-        const mode = algorithmId === 'manual' ? 'manual' : 'volnar';
+        const mode = algorithmMode(algorithmId);
         return [...FORM_FIELDS.shared, ...FORM_FIELDS[mode]];
     }
 
@@ -246,14 +72,22 @@ const TaurAlgorithms = (() => {
         return impl?.requiredFieldNames?.() ?? [];
     }
 
+    function panelMatchesAlgorithm(panel, algorithmId) {
+        return panel.dataset.algorithmPanel.split(/\s+/).includes(algorithmId);
+    }
+
     function missingRequiredFields(form) {
+        const algorithmId = currentId(form);
         return requiredFieldNames(form).filter((name) => {
             const el = form.elements?.[name] ?? form.querySelector(`[name="${name}"]`);
             if (!el) {
                 return false;
             }
-            const panel = el.closest('.taur-algorithm-panel');
-            if (panel?.hidden) {
+            const panel = el.closest('[data-algorithm-panel]');
+            if (panel && !panelMatchesAlgorithm(panel, algorithmId)) {
+                return false;
+            }
+            if (panel?.classList.contains('taur-panel-hidden')) {
                 return false;
             }
             return !String(el.value ?? '').trim();
@@ -285,6 +119,13 @@ const TaurAlgorithms = (() => {
             formatted.TW = `${result.TW.toFixed(2)} lbs (Taur Weight)`;
         }
 
+        if (algorithmId === 'snow') {
+            formatted.SAS = `${fmt(result.SAS)} (Species Avg Size)`;
+            formatted.HTA = `${fmt(result.HTA)} (Human Torso on Animal)`;
+            formatted.AR = `${ratio(result.AR)} (Anthropic Ratio)`;
+            formatted.TR = `${ratio(result.TR)} (Taur Ratio)`;
+        }
+
         return formatted;
     }
 
@@ -302,7 +143,5 @@ const TaurAlgorithms = (() => {
 })();
 
 if (typeof window !== 'undefined') {
-    window.VolnarsAlgorithm = VolnarsAlgorithm;
-    window.ManualAlgorithm = ManualAlgorithm;
     window.TaurAlgorithms = TaurAlgorithms;
 }
