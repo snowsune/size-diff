@@ -46,6 +46,30 @@
     line-height: 1.1;
 }
 
+/* Vol gets the credit XD */
+.taur-rock {
+    display: inline-block;
+    transform-origin: 50% 85%;
+    animation: taur-rock 2.4s ease-in-out infinite;
+}
+
+@keyframes taur-rock {
+    0%,
+    100% {
+        transform: rotate(-5deg);
+    }
+
+    50% {
+        transform: rotate(5deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .taur-rock {
+        animation: none;
+    }
+}
+
 .taur-header p {
     color: #fff;
     font-size: clamp(0.65rem, 1.2vh, 0.85rem);
