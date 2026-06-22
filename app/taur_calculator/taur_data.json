@@ -38,5 +38,33 @@
         "mount_attach": [979, 2017]
       }
     }
+  },
+  "measurements": {
+    "TFH": {
+      "start": ["uBody", 417, 80],
+      "end": { "floor": true, "alignX": "start" },
+      "offset": [-56, 0],
+      "reference": "TFH"
+    },
+    "THe": {
+      "start": ["uBody", 417, 80],
+      "end": ["uBody", 417, 400],
+      "reference": "THe"
+    },
+    "TTo": {
+      "start": ["uBody", 601, 865],
+      "end": ["uBody", 601, 400],
+      "reference": "TTo"
+    },
+    "TL": {
+      "start": ["lBody", 150, 691],
+      "end": ["lBody", 924, 691],
+      "reference": "TL"
+    },
+    "TT": {
+      "start": ["tail", 282, 668],
+      "end": ["tail", 1780, 668],
+      "reference": "TT"
+    }
   }
 }

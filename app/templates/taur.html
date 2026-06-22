@@ -26,40 +26,31 @@
 
 
 
-            <!-- REMOVE ME -->
-            {% if calculation_result %}
-            <div class="taur-results">
-                <h2 style="color: #f80; margin-bottom: 15px;">Calculation Results</h2>
+            <!-- Results filled client-side by taur_form.js -->
+            <div class="taur-results" id="taur-results" hidden>
+                <h2>Calculation Results</h2>
                 <div class="results-box">
-                    <table style="width:100%; border-collapse: collapse;">
-                        <tbody>
-                            {% for key, value in calculation_result.items() %}
-                            <tr>
-                                <td style="font-weight: bold; padding: 4px; border-bottom: 1px solid #222;">{{ key }}
-                                </td>
-                                <td style="padding: 4px; border-bottom: 1px solid #222;">
-                                    {% if value is string %}
-                                    {{ value.replace('\\u0027', "'") }}
-                                    {% elif value is mapping %}
-                                    { }
-                                    {% else %}
-                                    {{ value }}
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
+                    <table>
+                        <tbody id="taur-results-body"></tbody>
                     </table>
                 </div>
             </div>
-            {% endif %}
 
-            <form method="POST" class="taur-form" id="taur-form">
+            <form class="taur-form" id="taur-form">
+                <div class="taur-form-group">
+                    <label for="algorithm">Algorithm:</label>
+                    <select id="algorithm" name="algorithm">
+                        <option value="volnar" selected>Volnar</option>
+                        <option value="manual">Manual</option>
+                    </select>
+                </div>
+
                 <div class="taur-form-group">
                     <label for="name">Name:</label>
                     <input type="text" id="name" name="name" placeholder="Character name" />
                 </div>
 
+                <div id="volnar-inputs" class="taur-algorithm-panel">
                 <div class="taur-form-group">
                     <label for="measurement_type">Measurement Type: <span class="info-icon"
                             title="Vitruvian: Default for mammals, the body height and upper limbs are scaled such that you can reach your own tail when bending over backwards. 
@@ -123,10 +114,53 @@
                     <input type="number" step="0.1" id="taur_length" name="taur_length"
                         placeholder="Leave empty for auto" />
                 </div>
+                </div>
+
+                <div id="manual-inputs" class="taur-algorithm-panel" hidden>
+                    <p class="taur-manual-hint">Set each major dimension in inches to tune measurement lines and scaling.</p>
+
+                    <div class="taur-form-group taur-half">
+                        <label for="manual_tfh">TFH (full height):</label>
+                        <input type="number" step="0.1" id="manual_tfh" name="manual_tfh" placeholder="e.g., 108" />
+                    </div>
+
+                    <div class="taur-form-group taur-half">
+                        <label for="manual_th">TH (leg height):</label>
+                        <input type="number" step="0.1" id="manual_th" name="manual_th" placeholder="e.g., 54" />
+                    </div>
+
+                    <div class="taur-form-group taur-half">
+                        <label for="manual_the">THe (head):</label>
+                        <input type="number" step="0.1" id="manual_the" name="manual_the" placeholder="e.g., 14" />
+                    </div>
+
+                    <div class="taur-form-group taur-half">
+                        <label for="manual_tto">TTo (torso):</label>
+                        <input type="number" step="0.1" id="manual_tto" name="manual_tto" placeholder="e.g., 40" />
+                    </div>
+
+                    <div class="taur-form-group taur-half">
+                        <label for="manual_tl">TL (body length):</label>
+                        <input type="number" step="0.1" id="manual_tl" name="manual_tl" placeholder="e.g., 72" />
+                    </div>
+
+                    <div class="taur-form-group taur-half">
+                        <label for="manual_tt">TT (tail):</label>
+                        <input type="number" step="0.1" id="manual_tt" name="manual_tt" placeholder="e.g., 36" />
+                    </div>
+                </div>
 
                 <div class="taur-form-group">
                     <label for="taur_body_color">Body Color (lower, upper, tail):</label>
                     <input type="color" id="taur_body_color" name="taur_body_color" value="#ff0000" />
+                </div>
+
+                <div class="taur-form-group taur-rider-toggle">
+                    <label for="show_measurements">
+                        <input type="checkbox" id="show_measurements" name="show_measurements" value="1"
+                            {% if debug %}checked{% endif %} />
+                        Show measurement lines
+                    </label>
                 </div>
 
                 <div class="taur-form-group taur-rider-toggle">
@@ -147,7 +181,11 @@
                     <input type="color" id="taur_rider_color" name="taur_rider_color" value="#ff8800" />
                 </div>
 
-                <button type="submit">Calculate</button>
+                <button type="button" id="taur-share-btn">Share</button>
+                <div class="taur-share" id="taur-share" hidden>
+                    <input type="text" id="taur-share-url" readonly aria-label="Shareable link" />
+                    <button type="button" id="taur-share-copy">Copy</button>
+                </div>
             </form>
             <div class="back-link-container">
                 <a href="/" class="back-link">&larr; Back to Main Calculator</a>
@@ -161,88 +199,16 @@
             layerSources: {{ taur_layer_urls | tojson | safe }},
             debug: {{ debug | tojson }},
         };
+        window.taurFormConfig = {
+            speciesData: {{ species_data | tojson | safe }},
+        };
     </script>
+    <script src="{{ url_for('static', filename='js/size_diff/units.js') }}"></script>
     <script src="{{ url_for('static', filename='js/size_diff/compositor.js') }}"></script>
+    <script src="{{ url_for('taur_calculator_asset', filename='taur_algorithms.js') }}"></script>
+    <script src="{{ url_for('taur_calculator_asset', filename='taur_measurements.js') }}"></script>
     <script src="{{ url_for('taur_calculator_asset', filename='taur_canvas.js') }}"></script>
-    <script>
-        const showRiderCheckbox = document.getElementById('show_rider');
-        const riderHeightGroup = document.getElementById('rider-height-group');
-
-        function updateRiderControls() {
-            const showRider = showRiderCheckbox.checked;
-            riderHeightGroup.hidden = !showRider;
-            document.getElementById('rider-color-group').hidden = !showRider;
-            document.getElementById('taur-canvas')?.dispatchEvent(
-                new CustomEvent('compositor-redraw')
-            );
-        }
-
-        showRiderCheckbox.addEventListener('change', updateRiderControls);
-
-        // Species data for auto-population
-        const speciesData = {{ species_data | tojson | safe }};
-
-        // Handle species selection to auto-populate fields
-        document.getElementById('species').addEventListener('change', function () {
-            const selectedSpecies = this.value;
-            const data = speciesData[selectedSpecies];
-
-            if (data) {
-                document.getElementById('species_height').value = data.species_height || '';
-                document.getElementById('species_length').value = data.species_length || '';
-                document.getElementById('species_tail_length').value = data.species_tail_length || '';
-                document.getElementById('species_weight').value = data.species_weight || '';
-            }
-        });
-
-        // Trigger on page load if species is already selected (only if not loading from URL params)
-        {% if not form_data %}
-        document.getElementById('species').dispatchEvent(new Event('change'));
-        {% endif %}
-
-        document.getElementById('taur-form').addEventListener('submit', function (e) {
-            e.preventDefault();
-            const formData = new FormData(this);
-
-            // Validate required fields
-            const required = ['anthro_height', 'species_height', 'species_length', 'species_tail_length', 'taur_full_height', 'species_weight'];
-            for (const field of required) {
-                if (!formData.get(field)) {
-                    alert(`Please fill in all required fields. Missing: ${field}`);
-                    return;
-                }
-            }
-
-            // Build URL with parameters
-            const params = new URLSearchParams();
-            for (const [key, value] of formData.entries()) {
-                if (value) {
-                    params.append(key, value);
-                }
-            }
-
-            // Redirect to taur page with parameters
-            window.location.href = `/taur?${params.toString()}`;
-        });
-
-        // Populate form from URL parameters if present
-        {% if form_data %}
-        const urlParams = new URLSearchParams(window.location.search);
-        for (const [key, value] of urlParams.entries()) {
-            const input = document.getElementById(key) || document.querySelector(`[name="${key}"]`);
-            if (input) {
-                if (input.type === 'checkbox') {
-                    input.checked = value === '1' || value === 'on' || value === 'true';
-                } else {
-                    input.value = value;
-                }
-            }
-        }
-        updateRiderControls();
-        // Trigger species change to populate fields
-        document.getElementById('species').dispatchEvent(new Event('change'));
-        {% endif %}
-    </script>
+    <script src="{{ url_for('taur_calculator_asset', filename='taur_form.js') }}"></script>
 </body>
 
 </html>

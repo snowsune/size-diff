@@ -40,7 +40,6 @@ from app.utils.stats import StatsManager
 from app.utils.generate_image import render_image, get_dist_art_path
 from app.utils.art_paths import layer_asset_urls
 from app.utils.character import Character
-from app.utils.taur_calculator import calculate_taur
 from app.utils.taur_data import load_taur_data
 
 app = Flask(__name__)
@@ -339,7 +338,7 @@ def add_preset():
     return redirect(f"/?characters={characters_query}{settings_query}")
 
 
-@app.route("/taur", methods=["GET", "POST"])
+@app.route("/taur", methods=["GET"])
 def taur():
     """
     Taur calculator!
@@ -381,96 +380,11 @@ def taur():
                 "species_height": 0,
             }
 
-    if request.method == "POST":
-        # POST when handling a form submission - redirect with URL parameters
-        params = {}
-        for key in [
-            "name",
-            "measurement_type",
-            "species",
-            "anthro_height",
-            "species_height",
-            "species_length",
-            "species_tail_length",
-            "taur_full_height",
-            "species_weight",
-            "taur_length",
-            "show_rider",
-            "rider_height",
-            "taur_body_color",
-            "taur_rider_color",
-        ]:
-            value = request.form.get(key, "")
-            if value:
-                params[key] = value
-
-        query_string = "&".join([f"{k}={v}" for k, v in params.items()])
-        return redirect(f"/taur?{query_string}")
-
-    # Handle GET with calculation parameters
-    calculation_result = None
-    cleaned_calculation_result = {}
-    if request.args.get("anthro_height"):
-        try:
-            anthro_height = float(request.args.get("anthro_height", 0))
-            species_height = float(request.args.get("species_height", 0))
-            species_length = float(request.args.get("species_length", 0))
-            species_tail_length = float(request.args.get("species_tail_length", 0))
-            taur_full_height = float(request.args.get("taur_full_height", 0))
-            species_weight = float(request.args.get("species_weight", 0))
-            taur_length = request.args.get("taur_length")
-            measurement_type = request.args.get("measurement_type", "vitruvian")
-
-            taur_length_float = float(taur_length) if taur_length else None
-
-            calculation_result = calculate_taur(
-                anthro_height=anthro_height,
-                species_height=species_height,
-                species_length=species_length,
-                species_tail_length=species_tail_length,
-                taur_full_height=taur_full_height,
-                species_weight=species_weight,
-                taur_length=taur_length_float,
-                measurement_type=measurement_type,
-            )
-
-            cleaned_calculation_result["AR"] = (
-                f"{inches_to_feet_inches(calculation_result['AR'])} (Anthropic Ratio)"
-            )
-            cleaned_calculation_result["TH"] = (
-                f"{inches_to_feet_inches(calculation_result['TH'])} (Taur Height)"
-            )
-            cleaned_calculation_result["TFH"] = (
-                f"{inches_to_feet_inches(calculation_result['TFH'])} (Taur Full Height)"
-            )
-            cleaned_calculation_result["TL"] = (
-                f"{inches_to_feet_inches(calculation_result['TL'])} (Taur Length)"
-            )
-            cleaned_calculation_result["TT"] = (
-                f"{inches_to_feet_inches(calculation_result['TT'])} (Taur Tail Length)"
-            )
-            cleaned_calculation_result["TTo"] = (
-                f"{inches_to_feet_inches(calculation_result['TTo'])} (Taur Torso Length)"
-            )
-            cleaned_calculation_result["THe"] = (
-                f"{inches_to_feet_inches(calculation_result['THe'])} (Taur Head Length)"
-            )
-            cleaned_calculation_result["TW"] = (
-                f"{calculation_result['TW']:.2f} lbs (Taur Weight)"
-            )
-
-        except (ValueError, TypeError) as e:
-            logging.warning(f"Taur calculation error: {e}")
-            calculation_result = None
-            cleaned_calculation_result = None
-
     taur_data = TAUR_DATA
     return render_template(
         "taur.html",
         species=filtered_species,
         species_data=species_data_map,
-        calculation_result=cleaned_calculation_result,
-        form_data=dict(request.args) if request.args else None,
         taur_data=taur_data,
         taur_layer_urls={
             key: layer_asset_urls(

@@ -37,6 +37,21 @@ const SizeDiffCompositor = (() => {
         };
     }
 
+    function placementLocalToWorld(placement, localX, localY) {
+        const scale = placement.scale ?? 1;
+        const center = placement.scaleCenter;
+
+        if (scale === 1 || !center) {
+            return [placement.drawX + localX, placement.drawY + localY];
+        }
+
+        const [cx, cy] = center;
+        return [
+            placement.drawX + cx + (localX - cx) * scale,
+            placement.drawY + cy + (localY - cy) * scale,
+        ];
+    }
+
     function applyPlacementTransform(ctx, placement, draw) {
         const scale = placement.scale ?? 1;
         const center = placement.scaleCenter;
@@ -221,13 +236,149 @@ const SizeDiffCompositor = (() => {
             };
         }
 
+        function worldToDisplay(worldX, worldY) {
+            const vs = viewState;
+            if (!vs) {
+                return null;
+            }
+            return {
+                x: worldX * vs.scale + vs.offsetX,
+                y: worldY * vs.scale + vs.offsetY,
+            };
+        }
+
         return {
             update,
             getViewState,
             applyWorldTransform,
             clear,
             displayToWorld,
+            worldToDisplay,
         };
+    }
+
+    /**
+     * Scene scale: world pixels per real-world inch.
+     *
+     * Viewport `view.scale` is screen pixels per world pixel
+     * `pixelsPerInch` is world pixels per inch (figure calibration).
+     * Display inches per screen pixel: 1 / (pixelsPerInch * view.scale).
+     */
+    function createSceneScale(pixelsPerInch) {
+        const ppi = typeof pixelsPerInch === 'object'
+            ? pixelsPerInch.pixelsPerInch
+            : pixelsPerInch;
+
+        return {
+            pixelsPerInch: ppi,
+            inchesToWorld(inches) {
+                return SizeDiffUnits.inchesToWorld(inches, ppi);
+            },
+            worldToInches(distance) {
+                return SizeDiffUnits.worldToInches(distance, ppi);
+            },
+        };
+    }
+
+    createSceneScale.fromReference = (inches, worldDistance) => createSceneScale(
+        SizeDiffUnits.pixelsPerInchFromReference(inches, worldDistance)
+    );
+
+    /**
+     * Draw a dimension line between world-space start/end.
+     * Label shows code + formatted length (from pixel distance / pixelsPerInch).
+     */
+    function drawMeasurement(ctx, view, {
+        label,
+        start,
+        end,
+        pixelsPerInch,
+        color = '#444',
+        capLength = 8,
+        showValue = true,
+    }) {
+        if (!pixelsPerInch) {
+            return;
+        }
+
+        const vs = view.getViewState();
+        const [x0, y0] = start;
+        const [x1, y1] = end;
+        const dx = x1 - x0;
+        const dy = y1 - y0;
+        const length = Math.hypot(dx, dy);
+        if (length < 1) {
+            return;
+        }
+
+        const inches = SizeDiffUnits.worldToInches(length, pixelsPerInch);
+        const valueText = SizeDiffUnits.formatInches(inches);
+        const text = label
+            ? (showValue ? `${label}: ${valueText}` : label)
+            : valueText;
+
+        const cap = capLength / vs.scale;
+        const nx = (-dy / length) * cap;
+        const ny = (dx / length) * cap;
+
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2 / vs.scale;
+        ctx.beginPath();
+        ctx.moveTo(x0, y0);
+        ctx.lineTo(x1, y1);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(x0 - nx, y0 - ny);
+        ctx.lineTo(x0 + nx, y0 + ny);
+        ctx.moveTo(x1 - nx, y1 - ny);
+        ctx.lineTo(x1 + nx, y1 + ny);
+        ctx.stroke();
+
+        const midDisplay = view.worldToDisplay((x0 + x1) / 2, (y0 + y1) / 2);
+        if (!midDisplay) {
+            return;
+        }
+
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        const padding = 4;
+        const metrics = ctx.measureText(text);
+        const boxW = metrics.width + padding * 2;
+        const boxH = 16;
+        const boxX = midDisplay.x - boxW / 2;
+        const boxY = midDisplay.y - boxH - 2;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+        ctx.fillRect(boxX, boxY, boxW, boxH);
+        ctx.fillStyle = color;
+        ctx.fillText(text, midDisplay.x, midDisplay.y - 4);
+        ctx.restore();
+    }
+
+    /** Text annotation at a world-space point (for ratios, notes, etc.). */
+    function drawAnnotation(ctx, view, { label, x, y, color = '#444' }) {
+        const display = view.worldToDisplay(x, y);
+        if (!display) {
+            return;
+        }
+
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        const padding = 4;
+        const metrics = ctx.measureText(label);
+        const boxW = metrics.width + padding * 2;
+        const boxH = 16;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+        ctx.fillRect(display.x, display.y, boxW, boxH);
+        ctx.fillStyle = color;
+        ctx.fillText(label, display.x + padding, display.y + 2);
+        ctx.restore();
     }
 
     function drawLayerDebugHud(ctx, view, mouseDisplay, placements) {
@@ -355,8 +506,12 @@ const SizeDiffCompositor = (() => {
         jointWorldPosition,
         placementFromJoint,
         layerLocalCoords,
+        placementLocalToWorld,
         computePlacementBounds,
         drawLayer,
+        drawMeasurement,
+        drawAnnotation,
+        createSceneScale,
         maskPathFor,
         createCanvasView,
         attachLayerDebugHud,

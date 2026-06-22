@@ -78,6 +78,29 @@
     font-size: 0.85em;
 }
 
+.taur-results h2 {
+    color: #f80;
+    margin-bottom: 8px;
+    font-size: 1.05em;
+}
+
+.taur-results table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.taur-results td {
+    padding: 3px 4px;
+    border-bottom: 1px solid #222;
+    font-size: 0.92em;
+}
+
+.taur-results td:first-child {
+    font-weight: bold;
+    white-space: nowrap;
+    padding-right: 8px;
+}
+
 .taur-form {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -168,11 +191,25 @@
 }
 
 .taur-rider-height[hidden],
-.taur-rider-color[hidden] {
+.taur-rider-color[hidden],
+.taur-algorithm-panel[hidden] {
     display: none;
 }
 
-.taur-form button {
+.taur-algorithm-panel {
+    display: contents;
+}
+
+.taur-manual-hint {
+    grid-column: 1 / -1;
+    color: #aaa;
+    font-size: 0.85em;
+    margin: 0 0 4px;
+    line-height: 1.3;
+}
+
+.taur-form button,
+.taur-share button {
     padding: clamp(5px, 0.9vh, 9px) 12px;
     font-size: 1em;
     background: #f80;
@@ -184,8 +221,31 @@
     flex-shrink: 0;
 }
 
-.taur-form button:hover {
+.taur-form button:hover,
+.taur-share button:hover {
     background: #ffab40;
+}
+
+.taur-share {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 6px;
+    align-items: stretch;
+}
+
+.taur-share[hidden] {
+    display: none;
+}
+
+.taur-share input {
+    flex: 1;
+    min-width: 0;
+    padding: clamp(3px, 0.55vh, 7px) clamp(5px, 0.6vw, 8px);
+    font-size: 0.85em;
+    border: 1px solid #444;
+    border-radius: 4px;
+    background: #222;
+    color: #fff;
 }
 
 .back-link-container {

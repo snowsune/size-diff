@@ -2,8 +2,11 @@ function initTaurCanvas(config) {
     const {
         jointWorldPosition,
         placementFromJoint,
+        placementLocalToWorld,
         drawLayer,
+        drawMeasurement,
         createCanvasView,
+        createSceneScale,
         attachLayerDebugHud,
         loadImages,
         computePlacementBounds,
@@ -16,12 +19,6 @@ function initTaurCanvas(config) {
     const DEFAULT_BODY_COLOR = '#ff0000'; // Volnar red
     const DEFAULT_RIDER_COLOR = '#ff8800'; // Felix orange
     const TRIM_ART_COMMAND = 'python3 scripts/trim_art.py';
-    const LAYER_LABELS = {
-        lBody: 'LowerBody',
-        uBody: 'UpperBody',
-        tail: 'Tail',
-        rider: 'Rider',
-    };
 
     const view = createCanvasView(
         canvas,
@@ -63,18 +60,10 @@ function initTaurCanvas(config) {
         const showRider = document.getElementById('show_rider')?.checked;
 
         const [upperX, upperY] = jointWorldPosition(
-            layerDef('lBody'),
-            'upper_attach',
-            'floor',
-            centerX,
-            groundY
+            layerDef('lBody'), 'upper_attach', 'floor', centerX, groundY
         );
         const [tailX, tailY] = jointWorldPosition(
-            layerDef('lBody'),
-            'tail_attach',
-            'floor',
-            centerX,
-            groundY
+            layerDef('lBody'), 'tail_attach', 'floor', centerX, groundY
         );
 
         const placements = [
@@ -82,62 +71,38 @@ function initTaurCanvas(config) {
                 layerKey: 'lBody',
                 visible: true,
                 ...placementFromJoint(
-                    layerDef('lBody'),
-                    layers.lBody,
-                    'floor',
-                    centerX,
-                    groundY,
-                    { layerKey: 'lBody', label: LAYER_LABELS.lBody }
+                    layerDef('lBody'), layers.lBody, 'floor', centerX, groundY,
+                    { layerKey: 'lBody' }
                 ),
             },
             {
                 layerKey: 'uBody',
                 visible: true,
                 ...placementFromJoint(
-                    layerDef('uBody'),
-                    layers.uBody,
-                    'lower_attach',
-                    upperX,
-                    upperY,
-                    { layerKey: 'uBody', label: LAYER_LABELS.uBody }
+                    layerDef('uBody'), layers.uBody, 'lower_attach', upperX, upperY,
+                    { layerKey: 'uBody' }
                 ),
             },
             {
                 layerKey: 'tail',
                 visible: true,
                 ...placementFromJoint(
-                    layerDef('tail'),
-                    layers.tail,
-                    'body_attach',
-                    tailX,
-                    tailY,
-                    { layerKey: 'tail', label: LAYER_LABELS.tail }
+                    layerDef('tail'), layers.tail, 'body_attach', tailX, tailY,
+                    { layerKey: 'tail' }
                 ),
             },
         ];
 
         if (showRider) {
             const [riderX, riderY] = jointWorldPosition(
-                layerDef('uBody'),
-                'rider_attach',
-                'lower_attach',
-                upperX,
-                upperY
+                layerDef('uBody'), 'rider_attach', 'lower_attach', upperX, upperY
             );
             placements.push({
                 layerKey: 'rider',
                 visible: true,
                 ...placementFromJoint(
-                    layerDef('rider'),
-                    layers.rider,
-                    'mount_attach',
-                    riderX,
-                    riderY,
-                    {
-                        layerKey: 'rider',
-                        label: LAYER_LABELS.rider,
-                        scale: riderScale(),
-                    }
+                    layerDef('rider'), layers.rider, 'mount_attach', riderX, riderY,
+                    { layerKey: 'rider', scale: riderScale() }
                 ),
             });
         }
@@ -182,6 +147,29 @@ function initTaurCanvas(config) {
             drawLayer(ctx, image, placement, { color, mask });
         }
 
+        // Draw measurement lines if the checkbox is checked
+        const showLines = document.getElementById('show_measurements')?.checked ?? false;
+        if (showLines) {
+            const measurementScene = TaurMeasurements.buildScene({
+                measurementDefs: taurData.measurements ?? {},
+                placements: latestPlacements,
+                groundY,
+                result: window.taurLastResult,
+                placementLocalToWorld,
+                createSceneScale,
+            });
+
+            if (measurementScene?.scale.pixelsPerInch) {
+                view.applyWorldTransform(ctx);
+                for (const line of measurementScene.measurements) {
+                    drawMeasurement(ctx, view, {
+                        ...line,
+                        pixelsPerInch: measurementScene.scale.pixelsPerInch,
+                    });
+                }
+            }
+        }
+
         debugHud.draw(ctx);
     }
 
@@ -190,7 +178,7 @@ function initTaurCanvas(config) {
             const path = typeof source === 'string' ? source : source.path;
             console.error(
                 `Failed to load taur layer "${key}" (art/dist/${path}). ` +
-                `You must run \`${TRIM_ART_COMMAND}\` first to create dist images!`
+                `Run \`${TRIM_ART_COMMAND}\` first.`
             );
         },
     }).then((loaded) => {
@@ -199,24 +187,6 @@ function initTaurCanvas(config) {
     });
 
     canvas.addEventListener('compositor-redraw', drawScene);
-
-    const showRiderCheckbox = document.getElementById('show_rider');
-    if (showRiderCheckbox) {
-        showRiderCheckbox.addEventListener('change', drawScene);
-    }
-
-    const riderHeightInput = document.getElementById('rider_height');
-    if (riderHeightInput) {
-        riderHeightInput.addEventListener('input', drawScene);
-    }
-
-    for (const colorInputId of ['taur_body_color', 'taur_rider_color']) {
-        const colorInput = document.getElementById(colorInputId);
-        if (colorInput) {
-            colorInput.addEventListener('input', drawScene);
-        }
-    }
-
     window.addEventListener('resize', drawScene);
 }
 
