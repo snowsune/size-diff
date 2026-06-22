@@ -45,8 +45,49 @@ function initTaurForm(config = {}) {
             : `${window.location.origin}/taur`;
     }
 
-    function shareLink() {
+    async function uploadSharePreview(queryString) {
+        // For uploading share previews!
+        if (!window.taurLastResult || !window.taurExportSharePng || !queryString) {
+            return false;
+        }
+
+        const blob = await window.taurExportSharePng();
+        const body = new FormData();
+        body.append('query', queryString);
+        body.append('image', blob, 'preview.png');
+
+        const response = await fetch('/api/shares/taur', {
+            method: 'POST',
+            body,
+        });
+
+        if (!response.ok) {
+            const payload = await response.json().catch(() => ({}));
+            throw new Error(payload.error || 'Preview upload failed');
+        }
+
+        return true;
+    }
+
+    async function shareLink() {
         const url = buildShareUrl();
+        const queryString = new URL(url).search.slice(1);
+
+        shareBtn.disabled = true;
+        const previousLabel = shareBtn.textContent;
+        shareBtn.textContent = 'Sharing…';
+
+        try {
+            if (queryString) {
+                await uploadSharePreview(queryString);
+            }
+        } catch (err) {
+            console.warn('Share preview upload failed:', err);
+        } finally {
+            shareBtn.disabled = false;
+            shareBtn.textContent = previousLabel;
+        }
+
         window.history.replaceState(null, '', url.replace(window.location.origin, ''));
         shareUrlInput.value = url;
         shareEl.hidden = false;
@@ -262,10 +303,12 @@ function initTaurForm(config = {}) {
         scheduleApply();
     });
 
-    shareBtn?.addEventListener('click', shareLink);
+    shareBtn?.addEventListener('click', () => {
+        shareLink().catch((err) => console.warn('Share failed:', err));
+    });
     shareCopyBtn?.addEventListener('click', async () => {
-        shareLink();
         try {
+            await shareLink();
             await navigator.clipboard.writeText(shareUrlInput.value);
             shareCopyBtn.textContent = 'Copied!';
             setTimeout(() => { shareCopyBtn.textContent = 'Copy'; }, 1500);

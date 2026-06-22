@@ -22,6 +22,8 @@ function initTaurCanvas(config) {
     const DEFAULT_BODY_COLOR = '#ff0000';
     const DEFAULT_RIDER_COLOR = '#ff8800';
     const TRIM_ART_COMMAND = 'python3 scripts/trim_art.py';
+    const SHARE_EXPORT_WIDTH = 1200;
+    const SHARE_EXPORT_HEIGHT = 900;
 
     const { placeScaledLayer } = TaurMeasurements;
 
@@ -101,24 +103,13 @@ function initTaurCanvas(config) {
         return placements;
     }
 
-    const debugHud = attachLayerDebugHud(canvas, {
-        view,
-        enabled: () => debug,
-        getPlacements: () => latestPlacements,
-    });
-
-    function drawScene() {
-        try {
-            latestPlacements = buildPlacements();
-        } catch (err) {
-            console.error('Taur buildPlacements failed:', err);
-            return;
-        }
+    function renderScene(targetCanvas, targetView, targetCtx, { includeMeasurements, drawDebug }) {
+        const placements = buildPlacements();
         const centerX = taurData.canvas.width / 2;
 
         let contentBounds = unionBounds(
-            computePlacementBounds(latestPlacements),
-            computePlacementBounds(latestPlacements, { ignoreScale: true })
+            computePlacementBounds(placements),
+            computePlacementBounds(placements, { ignoreScale: true })
         );
         contentBounds = expandBounds(contentBounds, {
             left: 72,
@@ -127,53 +118,110 @@ function initTaurCanvas(config) {
             bottom: 8,
         });
 
-        view.update({
+        targetView.update({
             contentBounds,
             centerX,
             paddingX: 20,
             paddingY: 20,
             alignY: 'bottom',
         });
-        view.clear(ctx);
+        targetView.clear(targetCtx);
 
         const groundY = floorY();
         const logicalW = taurData.canvas.width;
 
-        ctx.strokeStyle = '#bbb';
-        ctx.lineWidth = 3 / view.getViewState().scale;
-        ctx.beginPath();
-        ctx.moveTo(0, groundY);
-        ctx.lineTo(logicalW, groundY);
-        ctx.stroke();
+        targetCtx.strokeStyle = '#bbb';
+        targetCtx.lineWidth = 3 / targetView.getViewState().scale;
+        targetCtx.beginPath();
+        targetCtx.moveTo(0, groundY);
+        targetCtx.lineTo(logicalW, groundY);
+        targetCtx.stroke();
 
-        for (const placement of latestPlacements) {
+        for (const placement of placements) {
             const image = layers[placement.layerKey];
             const mask = layers[`${placement.layerKey}_mask`] ?? null;
             const color = BODY_LAYER_KEYS.has(placement.layerKey)
                 ? bodyColor()
                 : riderColor();
-            drawLayer(ctx, image, placement, { color, mask });
+            drawLayer(targetCtx, image, placement, { color, mask });
         }
 
-        const showLines = document.getElementById('show_measurements')?.checked ?? false;
-        if (showLines && window.taurLastResult) {
+        if (includeMeasurements && window.taurLastResult) {
             const measurementScene = TaurMeasurements.buildScene({
                 measurementDefs: taurData.measurements ?? {},
-                placements: latestPlacements,
+                placements,
                 groundY,
                 result: window.taurLastResult,
                 placementLocalToWorld,
             });
 
             if (measurementScene) {
-                view.applyWorldTransform(ctx);
+                targetView.applyWorldTransform(targetCtx);
                 for (const line of measurementScene.measurements) {
-                    drawMeasurement(ctx, view, line);
+                    drawMeasurement(targetCtx, targetView, line);
                 }
             }
         }
 
-        debugHud.draw(ctx);
+        if (drawDebug) {
+            debugHud.draw(targetCtx);
+        }
+
+        return placements;
+    }
+
+    const debugHud = attachLayerDebugHud(canvas, {
+        view,
+        enabled: () => debug,
+        getPlacements: () => latestPlacements,
+    });
+
+    function drawScene() {
+        try {
+            latestPlacements = renderScene(canvas, view, ctx, {
+                includeMeasurements: document.getElementById('show_measurements')?.checked ?? false,
+                drawDebug: true,
+            });
+        } catch (err) {
+            console.error('Taur buildPlacements failed:', err);
+        }
+    }
+
+    function exportSharePng() {
+        const exportCanvas = document.createElement('canvas');
+        exportCanvas.width = SHARE_EXPORT_WIDTH;
+        exportCanvas.height = SHARE_EXPORT_HEIGHT;
+        exportCanvas.style.width = `${SHARE_EXPORT_WIDTH}px`;
+        exportCanvas.style.height = `${SHARE_EXPORT_HEIGHT}px`;
+        exportCanvas.style.position = 'fixed';
+        exportCanvas.style.left = '-10000px';
+        document.body.appendChild(exportCanvas);
+
+        const exportView = createCanvasView(
+            exportCanvas,
+            taurData.canvas.width,
+            taurData.canvas.height
+        );
+        const exportCtx = exportCanvas.getContext('2d');
+
+        try {
+            renderScene(exportCanvas, exportView, exportCtx, {
+                includeMeasurements: false,
+                drawDebug: false,
+            });
+        } finally {
+            document.body.removeChild(exportCanvas);
+        }
+
+        return new Promise((resolve, reject) => {
+            exportCanvas.toBlob((blob) => {
+                if (blob) {
+                    resolve(blob);
+                } else {
+                    reject(new Error('Failed to export preview image'));
+                }
+            }, 'image/png');
+        });
     }
 
     loadImages(layerSources, {
@@ -191,6 +239,7 @@ function initTaurCanvas(config) {
 
     canvas.addEventListener('compositor-redraw', drawScene);
     window.addEventListener('resize', drawScene);
+    window.taurExportSharePng = exportSharePng;
 }
 
 if (window.taurCanvasConfig) {

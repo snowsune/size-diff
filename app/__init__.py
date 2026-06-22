@@ -41,6 +41,8 @@ from app.utils.generate_image import render_image, get_dist_art_path
 from app.utils.art_paths import layer_asset_urls
 from app.utils.character import Character
 from app.utils.taur_data import load_taur_data
+from app.shares import register_share_routes
+from app.shares.storage import share_id_from_request_args, taur_preview_exists
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -88,6 +90,12 @@ species_list = [
 ]
 
 
+TAUR_SPECIES_NAMES = [
+    s
+    for s in species_list
+    if s not in ["taur_(generic)", "preset_species", "rexouium"]
+]
+
 TAUR_DATA = load_taur_data()
 TAUR_CALCULATOR_DIR = os.path.join(os.path.dirname(__file__), "taur_calculator")
 
@@ -104,6 +112,7 @@ def register_taur_calculator_routes(application):
 
 
 register_taur_calculator_routes(app)
+register_share_routes(app, species_names=TAUR_SPECIES_NAMES)
 
 
 @app.route("/art/<path:rel_path>")
@@ -346,11 +355,7 @@ def taur():
     Collaboration with Volnar <3
     """
     # Filter out some ones we dont want to show/dont have data
-    filtered_species = [
-        s
-        for s in species_list
-        if s not in ["taur_(generic)", "preset_species", "rexouium"]
-    ]
+    filtered_species = TAUR_SPECIES_NAMES
 
     # Load species data for auto-population
     species_data_map = {}
@@ -381,6 +386,15 @@ def taur():
             }
 
     taur_data = TAUR_DATA
+    share_id = share_id_from_request_args(
+        request.args,
+        species_names=set(filtered_species),
+    )
+    preview_url = (
+        url_for("serve_taur_share", share_id=share_id, _external=True)
+        if share_id and taur_preview_exists(share_id)
+        else None
+    )
     return render_template(
         "taur.html",
         species=filtered_species,
@@ -394,10 +408,12 @@ def taur():
             for key, layer in taur_data["layers"].items()
         },
         debug=app.debug or os.getenv("GIT_COMMIT") is None,
+        preview_url=preview_url,
     )
 
 
 # For WSGI
 def create_app():
     register_taur_calculator_routes(app)
+    register_share_routes(app, species_names=TAUR_SPECIES_NAMES)
     return app
