@@ -67,7 +67,7 @@ function initTaurForm(config = {}) {
             const algorithmId = TaurAlgorithms.currentId(form);
             const { raw } = TaurAlgorithms.calculateFromForm(form);
             window.taurLastResult = raw;
-            renderResults(TaurAlgorithms.formatResults(raw, algorithmId));
+            renderResults(TaurAlgorithms.formatResults(raw, algorithmId, form));
             redrawCanvas();
         } catch {
             resultsEl.hidden = true;
@@ -147,6 +147,7 @@ function initTaurForm(config = {}) {
             return;
         }
         if (name === 'show_rider') {
+            scheduleApply();
             return;
         }
         scheduleApply();

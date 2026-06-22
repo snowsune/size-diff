@@ -72,17 +72,17 @@ const VolnarsAlgorithm = (() => {
 
     function parseFormInputs(form) {
         const formData = new FormData(form);
-        const parse = SizeDiffUnits.parseLengthInput;
+        const length = (name) => SizeDiffUnits.parseFormLengthInput(form, name);
         const taurLengthRaw = formData.get('taur_length');
         return {
             measurementType: formData.get('measurement_type') || 'vitruvian',
-            anthroHeight: parse(formData.get('anthro_height')),
-            speciesHeight: parse(formData.get('species_height')),
-            speciesLength: parse(formData.get('species_length')),
-            speciesTailLength: parse(formData.get('species_tail_length')),
-            taurFullHeight: parse(formData.get('taur_full_height')),
+            anthroHeight: length('anthro_height'),
+            speciesHeight: length('species_height'),
+            speciesLength: length('species_length'),
+            speciesTailLength: length('species_tail_length'),
+            taurFullHeight: length('taur_full_height'),
             speciesWeight: parseFloat(formData.get('species_weight')),
-            taurLength: taurLengthRaw ? parse(taurLengthRaw) : null,
+            taurLength: taurLengthRaw ? length('taur_length') : null,
         };
     }
 
@@ -104,7 +104,7 @@ const VolnarsAlgorithm = (() => {
 
         const inputs = parseFormInputs(form);
         for (const key of ['anthroHeight', 'speciesHeight', 'speciesLength', 'speciesTailLength', 'taurFullHeight', 'speciesWeight']) {
-            if (Number.isNaN(inputs[key])) {
+            if (inputs[key] == null || Number.isNaN(inputs[key])) {
                 throw new Error(`Invalid number for ${key}`);
             }
         }
@@ -130,11 +130,9 @@ const ManualAlgorithm = (() => {
     }
 
     function parseFormInputs(form) {
-        const formData = new FormData(form);
-        const parse = SizeDiffUnits.parseLengthInput;
         const values = {};
         for (const [field, key] of DIMENSION_FIELDS) {
-            values[key] = parse(formData.get(field));
+            values[key] = SizeDiffUnits.parseFormLengthInput(form, field);
         }
         return values;
     }
@@ -157,7 +155,7 @@ const ManualAlgorithm = (() => {
 
         const values = parseFormInputs(form);
         for (const [, key] of DIMENSION_FIELDS) {
-            if (Number.isNaN(values[key])) {
+            if (values[key] == null || Number.isNaN(values[key])) {
                 throw new Error(`Invalid number for ${key}`);
             }
         }
@@ -177,7 +175,7 @@ const ManualAlgorithm = (() => {
         for (const [fieldId, value] of Object.entries(mapping)) {
             const input = document.getElementById(fieldId);
             if (input && value != null && !Number.isNaN(value)) {
-                input.value = value;
+                input.value = SizeDiffUnits.formatInches(value);
             }
         }
     }
@@ -237,7 +235,7 @@ const TaurAlgorithms = (() => {
         return impl.validateForm(form);
     }
 
-    function formatResults(result, algorithmId = 'volnar') {
+    function formatResults(result, algorithmId = 'volnar', form = null) {
         const fmt = SizeDiffUnits.formatInches;
         const ratio = SizeDiffUnits.formatRatio;
 
@@ -249,6 +247,13 @@ const TaurAlgorithms = (() => {
             TT: `${fmt(result.TT)} (Taur Tail Length)`,
             TH: `${fmt(result.TH)} (Taur Height)`,
         };
+
+        if (form?.elements?.show_rider?.checked) {
+            const riderHeight = SizeDiffUnits.parseFormLengthInput(form, 'rider_height');
+            if (riderHeight != null) {
+                formatted.RH = `${fmt(riderHeight)} (Rider Height)`;
+            }
+        }
 
         if (algorithmId === 'volnar') {
             formatted.AR = `${ratio(result.AR)} (Anthropic Ratio)`;

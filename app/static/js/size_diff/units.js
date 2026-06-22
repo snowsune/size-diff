@@ -99,6 +99,23 @@ const SizeDiffUnits = (() => {
         return Number.isNaN(numeric) ? NaN : numeric;
     }
 
+    /** Read a named form field and parse it as a length in inches. */
+    function parseFormLengthInput(form, fieldName) {
+        const el = form?.elements?.[fieldName] ?? form?.querySelector(`[name="${fieldName}"]`);
+        const raw = el?.value;
+        if (raw == null || !String(raw).trim()) {
+            return null;
+        }
+        const inches = parseLengthInput(raw);
+        return Number.isNaN(inches) ? null : inches;
+    }
+
+    /** Format a form length field for display; returns empty string when unset. */
+    function formatFormLengthInput(form, fieldName, options) {
+        const inches = parseFormLengthInput(form, fieldName);
+        return inches == null ? '' : formatInches(inches, options);
+    }
+
     /** World-pixel distance for a real-world inch count. */
     function inchesToWorld(inches, pixelsPerInch) {
         return inches * pixelsPerInch;
@@ -130,6 +147,8 @@ const SizeDiffUnits = (() => {
         formatInches,
         formatRatio,
         parseLengthInput,
+        parseFormLengthInput,
+        formatFormLengthInput,
         inchesToWorld,
         worldToInches,
         pixelsPerInchFromReference,

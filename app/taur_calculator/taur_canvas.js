@@ -1,24 +1,30 @@
 function initTaurCanvas(config) {
     const {
         jointWorldPosition,
+        jointLocalPosition,
         placementFromJoint,
         placementLocalToWorld,
+        anchorJointOnPlacement,
         drawLayer,
         drawMeasurement,
         createCanvasView,
-        createSceneScale,
         attachLayerDebugHud,
         loadImages,
         computePlacementBounds,
+        unionBounds,
+        expandBounds,
     } = window.SizeDiffCompositor;
 
     const canvas = document.getElementById('taur-canvas');
     const ctx = canvas.getContext('2d');
+    const form = document.getElementById('taur-form');
     const { taurData, layerSources, debug = false } = config;
     const BODY_LAYER_KEYS = new Set(['lBody', 'uBody', 'tail']);
-    const DEFAULT_BODY_COLOR = '#ff0000'; // Volnar red
-    const DEFAULT_RIDER_COLOR = '#ff8800'; // Felix orange
+    const DEFAULT_BODY_COLOR = '#ff0000';
+    const DEFAULT_RIDER_COLOR = '#ff8800';
     const TRIM_ART_COMMAND = 'python3 scripts/trim_art.py';
+
+    const { placeScaledLayer } = TaurMeasurements;
 
     const view = createCanvasView(
         canvas,
@@ -45,13 +51,20 @@ function initTaurCanvas(config) {
         return document.getElementById('taur_rider_color')?.value || DEFAULT_RIDER_COLOR;
     }
 
-    function riderScale() {
-        const raw = document.getElementById('rider_height')?.value;
-        const height = parseFloat(raw);
-        if (!raw || Number.isNaN(height)) {
-            return 1;
-        }
-        return height / 100;
+    function scaled(layerKey, anchorJoint, worldX, worldY) {
+        return placeScaledLayer({
+            layerKey,
+            layerDef: layerDef(layerKey),
+            image: layers[layerKey],
+            anchorJoint,
+            worldX,
+            worldY,
+            result: window.taurLastResult,
+            form,
+            placementFromJoint,
+            anchorJointOnPlacement,
+            jointLocalPosition,
+        });
     }
 
     function buildPlacements() {
@@ -75,36 +88,15 @@ function initTaurCanvas(config) {
                     { layerKey: 'lBody' }
                 ),
             },
-            {
-                layerKey: 'uBody',
-                visible: true,
-                ...placementFromJoint(
-                    layerDef('uBody'), layers.uBody, 'lower_attach', upperX, upperY,
-                    { layerKey: 'uBody' }
-                ),
-            },
-            {
-                layerKey: 'tail',
-                visible: true,
-                ...placementFromJoint(
-                    layerDef('tail'), layers.tail, 'body_attach', tailX, tailY,
-                    { layerKey: 'tail' }
-                ),
-            },
+            scaled('uBody', 'lower_attach', upperX, upperY),
+            scaled('tail', 'body_attach', tailX, tailY),
         ];
 
         if (showRider) {
-            const [riderX, riderY] = jointWorldPosition(
-                layerDef('uBody'), 'rider_attach', 'lower_attach', upperX, upperY
-            );
-            placements.push({
-                layerKey: 'rider',
-                visible: true,
-                ...placementFromJoint(
-                    layerDef('rider'), layers.rider, 'mount_attach', riderX, riderY,
-                    { layerKey: 'rider', scale: riderScale() }
-                ),
-            });
+            const lBodyPlacement = placements.find((p) => p.layerKey === 'lBody');
+            const [rx, ry] = jointLocalPosition(layerDef('lBody'), 'rider_attach');
+            const [riderX, riderY] = placementLocalToWorld(lBodyPlacement, rx, ry);
+            placements.push(scaled('rider', 'seat_attach', riderX, riderY));
         }
 
         return placements;
@@ -118,12 +110,24 @@ function initTaurCanvas(config) {
 
     function drawScene() {
         latestPlacements = buildPlacements();
-        const contentBounds = computePlacementBounds(latestPlacements);
+        const centerX = taurData.canvas.width / 2;
+
+        let contentBounds = unionBounds(
+            computePlacementBounds(latestPlacements),
+            computePlacementBounds(latestPlacements, { ignoreScale: true })
+        );
+        contentBounds = expandBounds(contentBounds, {
+            left: 72,
+            top: 48,
+            right: 48,
+            bottom: 8,
+        });
 
         view.update({
             contentBounds,
-            paddingX: 12,
-            paddingY: 12,
+            centerX,
+            paddingX: 20,
+            paddingY: 20,
             alignY: 'bottom',
         });
         view.clear(ctx);
@@ -147,7 +151,6 @@ function initTaurCanvas(config) {
             drawLayer(ctx, image, placement, { color, mask });
         }
 
-        // Draw measurement lines if the checkbox is checked
         const showLines = document.getElementById('show_measurements')?.checked ?? false;
         if (showLines) {
             const measurementScene = TaurMeasurements.buildScene({
@@ -156,16 +159,12 @@ function initTaurCanvas(config) {
                 groundY,
                 result: window.taurLastResult,
                 placementLocalToWorld,
-                createSceneScale,
             });
 
-            if (measurementScene?.scale.pixelsPerInch) {
+            if (measurementScene) {
                 view.applyWorldTransform(ctx);
                 for (const line of measurementScene.measurements) {
-                    drawMeasurement(ctx, view, {
-                        ...line,
-                        pixelsPerInch: measurementScene.scale.pixelsPerInch,
-                    });
+                    drawMeasurement(ctx, view, line);
                 }
             }
         }

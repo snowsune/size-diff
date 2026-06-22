@@ -26,14 +26,25 @@ const SizeDiffCompositor = (() => {
             width: image ? image.width : 0,
             height: image ? image.height : 0,
             scale: meta.scale ?? 1,
-            scaleCenter: layerDef.scale_center ?? null,
+            scaleCenter: meta.scaleCenter ?? layerDef.scale_center ?? null,
         };
     }
 
     function layerLocalCoords(worldX, worldY, placement) {
+        const scale = placement.scale ?? 1;
+        const center = placement.scaleCenter;
+
+        if (scale === 1 || !center) {
+            return {
+                x: Math.round(worldX - placement.drawX),
+                y: Math.round(worldY - placement.drawY),
+            };
+        }
+
+        const [cx, cy] = center;
         return {
-            x: Math.round(worldX - placement.drawX),
-            y: Math.round(worldY - placement.drawY),
+            x: Math.round(cx + (worldX - placement.drawX - cx) / scale),
+            y: Math.round(cy + (worldY - placement.drawY - cy) / scale),
         };
     }
 
@@ -50,6 +61,14 @@ const SizeDiffCompositor = (() => {
             placement.drawX + cx + (localX - cx) * scale,
             placement.drawY + cy + (localY - cy) * scale,
         ];
+    }
+
+    function anchorJointOnPlacement(placement, layerDef, jointName, worldX, worldY) {
+        const [localX, localY] = jointLocalPosition(layerDef, jointName);
+        const [currentX, currentY] = placementLocalToWorld(placement, localX, localY);
+        placement.drawX += worldX - currentX;
+        placement.drawY += worldY - currentY;
+        return placement;
     }
 
     function applyPlacementTransform(ctx, placement, draw) {
@@ -112,7 +131,7 @@ const SizeDiffCompositor = (() => {
         });
     }
 
-    function computePlacementBounds(placements) {
+    function computePlacementBounds(placements, { ignoreScale = false } = {}) {
         let minX = Infinity;
         let minY = Infinity;
         let maxX = -Infinity;
@@ -123,7 +142,7 @@ const SizeDiffCompositor = (() => {
                 continue;
             }
 
-            const scale = placement.scale ?? 1;
+            const scale = ignoreScale ? 1 : (placement.scale ?? 1);
             let left = placement.drawX;
             let top = placement.drawY;
             let right = placement.drawX + placement.width;
@@ -148,6 +167,33 @@ const SizeDiffCompositor = (() => {
         }
 
         return { minX, minY, maxX, maxY };
+    }
+
+    function unionBounds(a, b) {
+        if (!a) {
+            return b;
+        }
+        if (!b) {
+            return a;
+        }
+        return {
+            minX: Math.min(a.minX, b.minX),
+            minY: Math.min(a.minY, b.minY),
+            maxX: Math.max(a.maxX, b.maxX),
+            maxY: Math.max(a.maxY, b.maxY),
+        };
+    }
+
+    function expandBounds(bounds, { left = 0, top = 0, right = 0, bottom = 0 } = {}) {
+        if (!bounds) {
+            return bounds;
+        }
+        return {
+            minX: bounds.minX - left,
+            minY: bounds.minY - top,
+            maxX: bounds.maxX + right,
+            maxY: bounds.maxY + bottom,
+        };
     }
 
     function maskPathFor(artPath) {
@@ -180,7 +226,20 @@ const SizeDiffCompositor = (() => {
                     (displayH - padY * 2) / contentH
                 );
 
-                offsetX = (displayW - contentW * scale) / 2 - minX * scale;
+                const centerX = fitOptions.centerX;
+                if (centerX != null) {
+                    const halfLeft = Math.max(centerX - minX, 1);
+                    const halfRight = Math.max(maxX - centerX, 1);
+                    const scaleAnchor = Math.min(
+                        (displayW / 2 - padX) / halfLeft,
+                        (displayW / 2 - padX) / halfRight
+                    );
+                    scale = Math.min(scale, scaleAnchor);
+                    offsetX = displayW / 2 - centerX * scale;
+                } else {
+                    offsetX = (displayW - contentW * scale) / 2 - minX * scale;
+                }
+
                 if (fitOptions.alignY === 'bottom') {
                     offsetY = displayH - padY - maxY * scale;
                 } else {
@@ -286,21 +345,19 @@ const SizeDiffCompositor = (() => {
 
     /**
      * Draw a dimension line between world-space start/end.
-     * Label shows code + formatted length (from pixel distance / pixelsPerInch).
+     * Pass `inches` for the label when the value comes from the calculator;
+     * otherwise falls back to pixel distance / pixelsPerInch.
      */
     function drawMeasurement(ctx, view, {
         label,
         start,
         end,
-        pixelsPerInch,
+        inches = null,
+        pixelsPerInch = null,
         color = '#444',
         capLength = 8,
         showValue = true,
     }) {
-        if (!pixelsPerInch) {
-            return;
-        }
-
         const vs = view.getViewState();
         const [x0, y0] = start;
         const [x1, y1] = end;
@@ -311,8 +368,16 @@ const SizeDiffCompositor = (() => {
             return;
         }
 
-        const inches = SizeDiffUnits.worldToInches(length, pixelsPerInch);
-        const valueText = SizeDiffUnits.formatInches(inches);
+        let valueText;
+        if (inches != null) {
+            valueText = SizeDiffUnits.formatInches(inches);
+        } else if (pixelsPerInch) {
+            valueText = SizeDiffUnits.formatInches(
+                SizeDiffUnits.worldToInches(length, pixelsPerInch)
+            );
+        } else {
+            return;
+        }
         const text = label
             ? (showValue ? `${label}: ${valueText}` : label)
             : valueText;
@@ -396,7 +461,7 @@ const SizeDiffCompositor = (() => {
             .map((placement) => {
                 const local = layerLocalCoords(world.x, world.y, placement);
                 const label = placement.label ?? placement.layerKey ?? 'Layer';
-                return `${label}: x=${local.x} y=${local.y}`;
+                return `${label}: ${local.x}, ${local.y} px`;
             });
 
         const padding = 10;
@@ -507,7 +572,10 @@ const SizeDiffCompositor = (() => {
         placementFromJoint,
         layerLocalCoords,
         placementLocalToWorld,
+        anchorJointOnPlacement,
         computePlacementBounds,
+        unionBounds,
+        expandBounds,
         drawLayer,
         drawMeasurement,
         drawAnnotation,
