@@ -407,18 +407,26 @@ function lineupDrawBudget(host) {
  *   exportWidth?: number,
  *   exportHeight?: number,
  * }} config
+ * @param {{
+ *   maxWidth?: number,
+ *   maxHeight?: number,
+ *   padding?: number,
+ *   lightbox?: boolean,
+ * }} [opts]
  */
-export async function renderLineup(host, config) {
+export async function renderLineup(host, config, opts = {}) {
   host.replaceChildren();
   host.classList.add("lineup-host");
 
-  const { maxWidth, maxHeight } = lineupDrawBudget(host);
+  const budget = lineupDrawBudget(host);
+  const maxWidth = opts.maxWidth ?? budget.maxWidth;
+  const maxHeight = opts.maxHeight ?? budget.maxHeight;
   const scaleHeight = Boolean(config.scaleHeight);
 
   const canvas = createScaleCanvas(host, {
     maxWidth,
     maxHeight,
-    padding: 20,
+    padding: opts.padding ?? 20,
     gapInches: 2,
     background: "#ffffff",
     showGrid: true,
@@ -443,12 +451,84 @@ export async function renderLineup(host, config) {
     });
   }
 
-  layoutCharacterControls(canvas);
-  uploadLineupPreview(canvas, config).catch((err) => {
-    console.warn("preview upload failed:", err);
-  });
+  if (!opts.lightbox) {
+    layoutCharacterControls(canvas);
+    uploadLineupPreview(canvas, config).catch((err) => {
+      console.warn("preview upload failed:", err);
+    });
+    enableLineupLightbox(canvas, config);
+  }
 
   return canvas;
+}
+
+/** Click the lineup canvas to open a bigger fullscreen view. */
+function enableLineupLightbox(canvas, config) {
+  const el = canvas?.canvas;
+  if (!el) return;
+  el.style.cursor = "zoom-in";
+  el.title = "Click for a larger view";
+  el.addEventListener("click", () => {
+    openLineupLightbox(config).catch((err) => {
+      console.warn("lightbox failed:", err);
+    });
+  });
+}
+
+function closeLineupLightbox() {
+  const overlay = document.getElementById("lineup-lightbox");
+  if (!overlay) return;
+  overlay.remove();
+  document.body.classList.remove("lineup-lightbox-open");
+  window.removeEventListener("keydown", lightboxKeyHandler);
+}
+
+function lightboxKeyHandler(event) {
+  if (event.key === "Escape") closeLineupLightbox();
+}
+
+/**
+ * @param {Parameters<typeof renderLineup>[1]} config
+ */
+async function openLineupLightbox(config) {
+  closeLineupLightbox();
+
+  const overlay = document.createElement("div");
+  overlay.id = "lineup-lightbox";
+  overlay.className = "lineup-lightbox";
+  overlay.innerHTML = `
+    <div class="lineup-lightbox-panel" role="dialog" aria-modal="true" aria-label="Larger size comparison">
+      <button type="button" class="lineup-lightbox-close" aria-label="Close">Close</button>
+      <div class="lineup-lightbox-scroll">
+        <div id="lineup-lightbox-host" class="lineup-host"></div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  document.body.classList.add("lineup-lightbox-open");
+
+  overlay.addEventListener("click", (event) => {
+    if (event.target === overlay) closeLineupLightbox();
+  });
+  overlay
+    .querySelector(".lineup-lightbox-close")
+    ?.addEventListener("click", closeLineupLightbox);
+  window.addEventListener("keydown", lightboxKeyHandler);
+
+  const host = /** @type {HTMLElement} */ (
+    document.getElementById("lineup-lightbox-host")
+  );
+  host.textContent = "Drawing…";
+
+  const maxWidth = Math.min(2400, Math.max(900, window.innerWidth - 48));
+  const maxHeight = Math.min(1400, Math.max(500, window.innerHeight - 96));
+
+  await renderLineup(host, config, {
+    lightbox: true,
+    maxWidth,
+    maxHeight,
+    padding: 36,
+  });
 }
 
 /** Park each control column under that character's origin on the canvas. */

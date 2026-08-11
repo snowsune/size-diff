@@ -135,6 +135,56 @@ button:hover {
   image-rendering: auto;
 }
 
+.lineup-lightbox-open {
+  overflow: hidden;
+}
+
+.lineup-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.82);
+}
+
+.lineup-lightbox-panel {
+  position: relative;
+  max-width: min(96vw, 2400px);
+  max-height: 94vh;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.lineup-lightbox-scroll {
+  overflow: auto;
+  max-height: calc(94vh - 2.5rem);
+  border-radius: 6px;
+  background: #111;
+}
+
+.lineup-lightbox-close {
+  align-self: flex-end;
+  margin: 0;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.95em;
+  background: #333;
+  color: #fff;
+}
+
+.lineup-lightbox-close:hover {
+  background: #555;
+}
+
+.lineup-lightbox .lineup-host {
+  min-width: 0;
+  padding: 0.5rem;
+  background: #111;
+}
+
 .character-controls {
   position: relative;
   width: 100%;

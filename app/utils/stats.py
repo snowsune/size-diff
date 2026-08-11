@@ -22,7 +22,7 @@ class StatsManager:
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
-            # Create the stats table with unique visitor IPs and date tracking
+            # images_generated is leftover
             cursor.execute(
                 """
                 CREATE TABLE IF NOT EXISTS stats (
@@ -40,7 +40,6 @@ class StatsManager:
                 )
             """
             )
-            # Ensure an entry for today exists
             today = datetime.now().strftime("%Y-%m-%d")
             cursor.execute(
                 """
@@ -51,28 +50,12 @@ class StatsManager:
             )
             conn.commit()
 
-    def increment_images_generated(self):
-        """Increment the images generated count for the current day."""
-        today = datetime.now().strftime("%Y-%m-%d")
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                """
-                UPDATE stats SET images_generated = images_generated + 1
-                WHERE date = ?
-            """,
-                (today,),
-            )
-            conn.commit()
-
     def register_visitor(self, ip_address: str):
         try:
-            """Register a unique visitor based on IP for the current day."""
             today = datetime.now().strftime("%Y-%m-%d")
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
                 try:
-                    # Attempt to insert new visitor record; if it fails, the IP already exists for today
                     cursor.execute(
                         "INSERT INTO visitors (ip, date) VALUES (?, ?)",
                         (ip_address, today),
@@ -85,7 +68,6 @@ class StatsManager:
                         (today,),
                     )
                 except sqlite3.IntegrityError as e:
-                    # IP is already recorded for today; no need to update unique_visitors
                     logging.warn(f"Integrity error {e} when recording IP")
                     pass
                 conn.commit()
@@ -98,15 +80,10 @@ class StatsManager:
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "SELECT unique_visitors, images_generated FROM stats WHERE date = ?",
+                "SELECT unique_visitors FROM stats WHERE date = ?",
                 (today,),
             )
             stats = cursor.fetchone()
             if stats:
-                return {
-                    "unique_visitors": stats[0],
-                    "images_generated": stats[1],
-                }
-            else:
-                # If no entry for today, return zeros
-                return {"unique_visitors": 0, "images_generated": 0}
+                return {"unique_visitors": stats[0]}
+            return {"unique_visitors": 0}

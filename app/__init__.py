@@ -12,9 +12,6 @@ from flask import (
 import os
 import logging
 
-from flask_caching import Cache
-from functools import wraps
-
 from app.utils.calculate_heights import convert_to_inches
 from app.utils.parse_data import (
     extract_characters,
@@ -45,10 +42,6 @@ app = Flask(__name__)
 app.secret_key = os.urandom(24)
 stats_manager = StatsManager("/var/size-diff/stats.db")
 
-# Cache
-cache = Cache(app, config={"CACHE_TYPE": "simple"})
-cache_stats = {"hits": 0, "misses": 0}
-
 
 def _truthy_arg(value, default=False):
     if value is None:
@@ -72,27 +65,6 @@ PAINTERS_CANVAS_ROOT = os.path.join(
 OG_PLACEHOLDER = os.path.join(
     os.path.dirname(__file__), "static", "images", "og-placeholder.png"
 )
-
-
-def cache_with_stats(timeout, query_string=False):
-    """Track cache performance while caching responses."""
-
-    def decorator(f):
-        @wraps(f)
-        def wrapped(*args, **kwargs):
-            cache_key = f"{request.path}?{request.query_string.decode('utf-8')}"
-            cached_response = cache.get(cache_key)
-            if cached_response:
-                cache_stats["hits"] += 1
-                return cached_response
-            cache_stats["misses"] += 1
-            response = f(*args, **kwargs)
-            cache.set(cache_key, response, timeout=timeout)
-            return response
-
-        return wrapped
-
-    return decorator
 
 
 # Sets up logging
@@ -235,7 +207,6 @@ def upload_lineup_share():
         return jsonify({"error": "preview too small / wrong size"}), 400
 
     save_lineup_preview(share_id, png_bytes)
-    stats_manager.increment_images_generated()
 
     return jsonify(
         {
@@ -352,7 +323,6 @@ def index():
     return render_template(
         "index.html",
         stats=stats,
-        cache_performance=f"{cache_stats['hits']}/{cache_stats['misses']}",
         species=species_list,
         characters_list=characters_list,
         characters_query=characters_query,
