@@ -59,7 +59,6 @@ function heightMarkLabel(char, scaleHeight) {
     Math.abs(char.anthroHeightInches - char.heightInches) > 0.05;
 
   if (scaled) {
-    // species size goes under the anthro line, closer to the dashed mark
     return `${species} ${anthro}\n(${speciesSize})`;
   }
   return `${species} ${anthro}`;
@@ -500,8 +499,6 @@ async function uploadLineupPreview(canvas, config) {
   const frameHeight = config.exportHeight || 630;
 
   const blob = await canvas.exportPngBlob({
-    maxWidth: frameWidth - 48,
-    maxHeight: frameHeight - 48,
     pixelRatio: 1,
     frameWidth,
     frameHeight,
