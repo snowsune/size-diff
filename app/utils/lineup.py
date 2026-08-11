@@ -5,6 +5,25 @@ from flask import url_for
 from app.utils.calculate_heights import calculate_height_offset
 
 
+def _art_json_url(stem: str) -> str:
+    """Species yaml stores art stems without .json; browser loads the sidecar."""
+    return url_for("serve_art", rel_path=f"{stem}.json")
+
+
+def _lineup_composite(recipe: dict | None) -> dict | None:
+    """Turn yaml composite recipe into URLs the browser can fetch."""
+    if not recipe or not recipe.get("base"):
+        return None
+    parts = []
+    for part in recipe.get("parts") or []:
+        art = part.get("art")
+        joint = part.get("joint")
+        if not art or not joint:
+            continue
+        parts.append({"joint": joint, "jsonUrl": _art_json_url(art)})
+    return {"base": _art_json_url(recipe["base"]), "parts": parts}
+
+
 def build_lineup(characters, use_species_scaling: bool = False) -> list[dict]:
     """
     Run species height math + art paths for each character.
@@ -25,17 +44,19 @@ def build_lineup(characters, use_species_scaling: bool = False) -> list[dict]:
         if inches == 12:
             feet += 1
             inches = 0
-        lineup.append(
-            {
-                "name": adjusted.name,
-                "species": adjusted.species,
-                "heightInches": float(adjusted.feral_height),
-                "anthroHeightInches": anthro,
-                "feet": feet,
-                "inches": inches,
-                "imageUrl": url_for("serve_art", rel_path=adjusted.image),
-                "color": color,
-                "earsOffset": float(adjusted.ears_offset or 0),
-            }
-        )
+        entry = {
+            "name": adjusted.name,
+            "species": adjusted.species,
+            "heightInches": float(adjusted.feral_height),
+            "anthroHeightInches": anthro,
+            "feet": feet,
+            "inches": inches,
+            "imageUrl": url_for("serve_art", rel_path=adjusted.image),
+            "color": color,
+            "earsOffset": float(adjusted.ears_offset or 0),
+        }
+        composite = _lineup_composite(getattr(adjusted, "composite", None))
+        if composite:
+            entry["composite"] = composite
+        lineup.append(entry)
     return lineup

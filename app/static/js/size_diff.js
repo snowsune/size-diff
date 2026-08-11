@@ -6,6 +6,7 @@ import {
   Sprite,
   tintMask,
   loadSprite,
+  attachAt,
   createScaleCanvas,
   formatHeightInches,
 } from "/lib/painters-canvas/src/index.js";
@@ -168,14 +169,18 @@ export async function spriteFromArt(image, opts) {
 }
 
 /**
- * Authored JSON often has `head` + `top-of-head` but ScaleCanvas wants `top`.
- * Fill in the blanks so we dont explode.
+ * Authored JSON often has `head` / `top_of_head` but ScaleCanvas wants `top`
+ * and `top-of-head`. Fill in the blanks so we dont explode.
  *
  * @param {Sprite} sprite
  * @returns {Sprite}
  */
 function ensureScaleJoints(sprite) {
   const joints = { ...sprite.joints };
+
+  if (!joints["top-of-head"] && joints.top_of_head) {
+    joints["top-of-head"] = { ...joints.top_of_head };
+  }
 
   if (!joints.top) {
     if (joints["top-of-head"]) {
@@ -207,23 +212,133 @@ function ensureScaleJoints(sprite) {
 }
 
 /**
- * Try the .json next to the png. If that flops, invent joints from the image.
+ * Crop transparent padding and shift joints. Keeps 3000x3000 taur plates usable.
+ * @param {Sprite} sprite
+ * @param {number} [pad=2]
+ * @returns {Promise<Sprite>}
+ */
+async function trimSprite(sprite, pad = 2) {
+  const width = sprite.width;
+  const height = sprite.height;
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return sprite;
+  ctx.drawImage(sprite.image, 0, 0);
+  const { data } = ctx.getImageData(0, 0, width, height);
+
+  let minX = width;
+  let minY = height;
+  let maxX = -1;
+  let maxY = -1;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (data[(y * width + x) * 4 + 3] > 8) {
+        if (x < minX) minX = x;
+        if (y < minY) minY = y;
+        if (x > maxX) maxX = x;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  if (maxX < minX) return sprite;
+
+  minX = Math.max(0, minX - pad);
+  minY = Math.max(0, minY - pad);
+  maxX = Math.min(width - 1, maxX + pad);
+  maxY = Math.min(height - 1, maxY + pad);
+  const tw = maxX - minX + 1;
+  const th = maxY - minY + 1;
+  if (tw >= width && th >= height) return sprite;
+
+  const out = document.createElement("canvas");
+  out.width = tw;
+  out.height = th;
+  const octx = out.getContext("2d");
+  if (!octx) return sprite;
+  octx.drawImage(canvas, minX, minY, tw, th, 0, 0, tw, th);
+
+  const image = new Image();
+  image.src = out.toDataURL("image/png");
+  if (image.decode) await image.decode();
+  else {
+    await new Promise((resolve, reject) => {
+      image.onload = resolve;
+      image.onerror = () => reject(new Error("trimSprite(): decode failed"));
+    });
+  }
+
+  /** @type {Record<string, { x: number, y: number }>} */
+  const joints = {};
+  for (const [name, pt] of Object.entries(sprite.joints)) {
+    joints[name] = { x: pt.x - minX, y: pt.y - minY };
+  }
+
+  return new Sprite({
+    name: sprite.name,
+    image,
+    joints,
+    color: sprite.color,
+  });
+}
+
+/**
+ * Stick composite parts together (e.g. taur body + torso + tail).
+ *
+ * @param {{ base: string, parts: { joint: string, jsonUrl: string }[] }} recipe
+ * @param {string | null} color
+ * @returns {Promise<Sprite>}
+ */
+async function loadCompositeSprite(recipe, color) {
+  const tint = color ? { color } : {};
+  let sprite = await loadSprite(recipe.base, tint);
+  for (const part of recipe.parts || []) {
+    sprite = await attachAt(
+      sprite,
+      await loadSprite(part.jsonUrl, tint),
+      part.joint,
+    );
+  }
+  sprite = await trimSprite(sprite);
+  sprite = ensureScaleJoints(
+    new Sprite({
+      name: sprite.name,
+      image: sprite.image,
+      joints: sprite.joints,
+      color,
+    }),
+  );
+  if (color) sprite = await withThickenedLines(sprite, 1);
+  return sprite;
+}
+
+/**
+ * Composite recipe from the server, else single-image sprite JSON, else invent joints.
  *
  * @param {LineupCharacter} char
  */
 export async function loadCharacterSprite(char) {
-  const jsonUrl = char.imageUrl.replace(/\.[^.]+$/, ".json");
   const color = char.color
     ? char.color.startsWith("#")
       ? char.color
       : `#${char.color}`
     : null;
 
+  if (char.composite?.base) {
+    try {
+      return await loadCompositeSprite(char.composite, color);
+    } catch (err) {
+      console.warn("composite failed, falling back to single image:", err);
+    }
+  }
+
+  const jsonUrl = char.imageUrl.replace(/\.[^.]+$/, ".json");
+
   try {
     let sprite = ensureScaleJoints(
-      await loadSprite(jsonUrl, color ? { color } : {}),
+      await trimSprite(await loadSprite(jsonUrl, color ? { color } : {})),
     );
-    // tinted line art gets the 1px fatten pass too
     if (color) {
       sprite = await withThickenedLines(sprite, 1);
     }
@@ -261,6 +376,7 @@ function loadImage(url) {
  *   imageUrl: string,
  *   color: string | null,
  *   earsOffset: number,
+ *   composite?: { base: string, parts: { joint: string, jsonUrl: string }[] },
  * }} LineupCharacter
  */
 
@@ -303,7 +419,7 @@ export async function renderLineup(host, config) {
   const canvas = createScaleCanvas(host, {
     maxWidth,
     maxHeight,
-    padding: 28,
+    padding: 20,
     gapInches: 2,
     background: "#ffffff",
     showGrid: true,

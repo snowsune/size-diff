@@ -136,6 +136,7 @@ def calculate_height_offset(
         image=gender_data["image"],
         ears_offset=gender_data["ears_offset"],
         color=getattr(character, "color", None),
+        composite=gender_data.get("composite"),
     )
 
     # URL override wins; otherwise grab the species yaml tint if present

@@ -30,6 +30,7 @@ class Character:
         ears_offset: float = 0.0,
         visual_height: Optional[float] = None,
         color: Optional[str] = None,
+        composite: Optional[dict] = None,
     ):
         self.name = name
         self.species = species
@@ -43,6 +44,8 @@ class Character:
         # Optional override from the share URL; species yaml fills in later if missing
         self.color = normalize_hex_color(color)
         self.visual_height = visual_height
+        # Optional Painter's Canvas attachAt recipe from species yaml
+        self.composite = composite
 
     def get_species_name(self) -> str:
         return self.species.replace("_", " ").title()
