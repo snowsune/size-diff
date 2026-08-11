@@ -12,8 +12,7 @@
     <!-- Open Graph tags -->
     <meta property="og:title" content="Vixi's Anthro Size Diff Calculator" />
     <meta property="og:description" content="Compare your anthro sizes!" />
-    <meta property="og:image"
-        content="{{ url_for('static', filename='images/og-placeholder.png', _external=True) }}" />
+    <meta property="og:image" content="{{ preview_url }}" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:url" content="https://size-diff.kitsunehosting.net/" />
@@ -23,8 +22,7 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Vixi's Anthro Size Diff Calculator" />
     <meta name="twitter:description" content="Compare your anthro sizes!" />
-    <meta name="twitter:image"
-        content="{{ url_for('static', filename='images/og-placeholder.png', _external=True) }}" />
+    <meta name="twitter:image" content="{{ preview_url }}" />
 </head>
 
 <body>
@@ -288,20 +286,52 @@
 
         {% if characters_list %}
         <div class="image-container">
-            <div id="size-diff-canvas" class="lineup-host" aria-label="Size comparison"></div>
+            <div class="lineup-scroll">
+                <div class="lineup-stack">
+                    <div id="size-diff-canvas" class="lineup-host" aria-label="Size comparison"></div>
+                    <div class="character-controls" id="character-controls">
+                    {% for entry in lineup %}
+                    {% set i = loop.index0 %}
+                    <div class="character-control" data-slot-index="{{ i }}">
+                        <div class="control-name">{{ entry.name }}</div>
+                        <form class="control-form" method="get" action="{{ url_for('update_character', index=i) }}">
+                            <input type="hidden" name="characters" value="{{ characters_query }}">
+                            {% if not measure_ears %}<input type="hidden" name="measure_ears" value="false">{% endif %}
+                            {% if scale_height %}<input type="hidden" name="scale_height" value="true">{% endif %}
+                            <label class="control-field">
+                                <span>Height</span>
+                                <span class="height-inputs">
+                                    <input type="number" name="feet" min="0" max="40" step="1" value="{{ entry.feet }}" aria-label="{{ entry.name }} feet">
+                                    <span class="unit">'</span>
+                                    <input type="number" name="inches" min="0" max="11.99" step="0.5" value="{{ entry.inches }}" aria-label="{{ entry.name }} inches">
+                                    <span class="unit">"</span>
+                                </span>
+                            </label>
+                            <label class="control-field">
+                                <span>Color</span>
+                                <input type="color" name="color" value="{{ entry.color or '#888888' }}" aria-label="{{ entry.name }} color">
+                            </label>
+                            <div class="control-actions">
+                                <button type="submit" class="control-apply">Apply</button>
+                                <a class="control-remove" href="/remove/{{ i }}?characters={{ characters_query }}{{ settings_query }}">Remove</a>
+                            </div>
+                        </form>
+                    </div>
+                    {% endfor %}
+                    </div>
+                </div>
+            </div>
             <script type="application/json" id="size-diff-lineup">
-                {{ {"characters": lineup, "measureToHead": measure_ears, "scaleHeight": scale_height} | tojson }}
+                {{ {
+                    "characters": lineup,
+                    "measureToHead": measure_ears,
+                    "scaleHeight": scale_height,
+                    "charactersQuery": characters_query,
+                    "exportWidth": share_export_width,
+                    "exportHeight": share_export_height,
+                } | tojson }}
             </script>
             <script type="module" src="{{ url_for('static', filename='js/size_diff.js') }}"></script>
-
-            <div class="remove-buttons">
-                {% for char in characters_list %}
-                <a href="{{ url_for('remove_character', index=loop.index0, characters=characters_query, measure_ears=measure_ears, scale_height=scale_height) }}"
-                    class="remove-btn">
-                    Remove {{ char["name"] }}
-                </a>
-                {% endfor %}
-            </div>
         </div>
 
         <!-- Takes you to the about page -->

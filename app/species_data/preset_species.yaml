@@ -51,3 +51,8 @@ presets:
     gender: male
     height: 120
     description: Cute demon doggo!
+  - name: Hunner
+    species: mouse
+    gender: male
+    height: 50
+    description: Sweet mouse artist!

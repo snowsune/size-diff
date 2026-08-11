@@ -7,6 +7,7 @@ from flask import (
     redirect,
     url_for,
     flash,
+    jsonify,
 )
 import os
 import logging
@@ -24,8 +25,21 @@ from app.utils.parse_data import (
 )
 from app.utils.stats import StatsManager
 from app.utils.art_paths import get_art_image_path
-from app.utils.character import Character
+from app.utils.character import Character, normalize_hex_color
 from app.utils.lineup import build_lineup
+from app.shares import (
+    EXPORT_HEIGHT,
+    EXPORT_WIDTH,
+    MAX_PNG_BYTES,
+    allow_upload,
+    canonicalize_lineup_query,
+    lineup_png_path,
+    lineup_preview_exists,
+    looks_like_png,
+    preview_looks_valid,
+    save_lineup_preview,
+    share_id_for_query,
+)
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -34,6 +48,21 @@ stats_manager = StatsManager("/var/size-diff/stats.db")
 # Cache
 cache = Cache(app, config={"CACHE_TYPE": "simple"})
 cache_stats = {"hits": 0, "misses": 0}
+
+
+def _truthy_arg(value, default=False):
+    if value is None:
+        return default
+    return str(value).strip().lower() in ("1", "true", "yes", "on")
+
+
+def _settings_query(measure_ears: bool, scale_height: bool) -> str:
+    settings_query = ""
+    if not measure_ears:
+        settings_query += "&measure_ears=false"
+    if scale_height:
+        settings_query += "&scale_height=true"
+    return settings_query
 
 # Painter's Canvas lives in node_modules (npm install from github)
 _PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -81,6 +110,38 @@ species_list = [
 ]
 
 
+def _lineup_share_id_from_args(args) -> str | None:
+    characters = (args.get("characters") or "").strip()
+    if not characters:
+        return None
+    measure_ears = args.get("measure_ears", "true") != "false"
+    # generate-image used to pass True/False capitalized; accept both
+    raw_scale = args.get("scale_height", "false")
+    scale_height = str(raw_scale).lower() in ("true", "1", "yes")
+    canonical = canonicalize_lineup_query(
+        characters,
+        measure_ears=measure_ears,
+        scale_height=scale_height,
+    )
+    return share_id_for_query(canonical)
+
+
+def _generate_image_url(
+    characters: str,
+    *,
+    measure_ears: bool = True,
+    scale_height: bool = False,
+    external: bool = False,
+) -> str:
+    """Public preview URL: same query params as the page, not a hash."""
+    kwargs = {"characters": characters}
+    if not measure_ears:
+        kwargs["measure_ears"] = "false"
+    if scale_height:
+        kwargs["scale_height"] = "true"
+    return url_for("generate_image", _external=external, **kwargs)
+
+
 @app.route("/lib/painters-canvas/<path:filename>")
 def painters_canvas_asset(filename):
     """Serve Painter's Canvas ESM from node_modules. Thats it. No vendor copy."""
@@ -105,16 +166,108 @@ def serve_art(rel_path):
     return send_file(resolved, max_age=31536000)
 
 
-@app.route("/generate-image")
-def generate_image():
+@app.route("/shares/lineup/<share_id>.png")
+def serve_lineup_share(share_id):
     """
-    Old OG preview URL. No Pillow, no lineup render.
-    Just a static placeholder until real share exports exist.
+    Legacy hash URL. Kept so old Discord embeds dont die.
+    Prefer /generate-image?characters=... for new links.
     """
+    try:
+        path = lineup_png_path(share_id)
+    except ValueError:
+        return "Not found", 404
+    if path.is_file():
+        return send_file(path, mimetype="image/png", max_age=31536000)
     return send_file(
         OG_PLACEHOLDER,
         mimetype="image/png",
-        max_age=31536000,
+        max_age=60,
+        download_name="preview.png",
+    )
+
+
+@app.route("/api/shares/lineup", methods=["POST"])
+def upload_lineup_share():
+    """
+    Browser draws the lineup with Painter's Canvas, then POSTs the png here.
+    Share id is derived from the lineup query so Discord can find it later.
+    """
+    ip = request.headers.get("X-Real-IP", request.remote_addr) or "unknown"
+    if not allow_upload(ip):
+        return jsonify({"error": "slow down a sec"}), 429
+
+    characters = (request.form.get("characters") or "").strip()
+    if not characters:
+        return jsonify({"error": "missing characters"}), 400
+
+    measure_ears = request.form.get("measure_ears", "true") != "false"
+    scale_height = request.form.get("scale_height", "false") == "true"
+    canonical = canonicalize_lineup_query(
+        characters,
+        measure_ears=measure_ears,
+        scale_height=scale_height,
+    )
+    share_id = share_id_for_query(canonical)
+
+    # already have a real preview? keep it. tiny junk gets overwritten below.
+    if lineup_preview_exists(share_id):
+        return jsonify(
+            {
+                "share_id": share_id,
+                "preview_url": _generate_image_url(
+                    characters,
+                    measure_ears=measure_ears,
+                    scale_height=scale_height,
+                ),
+                "cached": True,
+            }
+        )
+
+    upload = request.files.get("preview")
+    if upload is None:
+        return jsonify({"error": "missing preview"}), 400
+    png_bytes = upload.read(MAX_PNG_BYTES + 1)
+    if len(png_bytes) > MAX_PNG_BYTES:
+        return jsonify({"error": "preview too big"}), 400
+    if not looks_like_png(png_bytes):
+        return jsonify({"error": "not a png"}), 400
+    if not preview_looks_valid(png_bytes):
+        return jsonify({"error": "preview too small / wrong size"}), 400
+
+    save_lineup_preview(share_id, png_bytes)
+    stats_manager.increment_images_generated()
+
+    return jsonify(
+        {
+            "share_id": share_id,
+            "preview_url": _generate_image_url(
+                characters,
+                measure_ears=measure_ears,
+                scale_height=scale_height,
+            ),
+            "cached": False,
+        }
+    )
+
+
+@app.route("/generate-image")
+def generate_image():
+    """
+    OG / Discord preview. Same ?characters= query as the page.
+    Serves the client-rendered cache when we have one, else the placeholder.
+    """
+    share_id = _lineup_share_id_from_args(request.args)
+    if share_id and lineup_preview_exists(share_id):
+        return send_file(
+            lineup_png_path(share_id),
+            mimetype="image/png",
+            max_age=31536000,
+            download_name="preview.png",
+        )
+    return send_file(
+        OG_PLACEHOLDER,
+        mimetype="image/png",
+        max_age=60,
         download_name="preview.png",
     )
 
@@ -180,18 +333,21 @@ def index():
 
         # Redirect with updated query string
         characters_query = generate_characters_query_string(characters_list)
-
-        # Add settings to query string if enabled
-        settings_query = f"&measure_ears=false" if not measure_ears else ""
-        settings_query += f"&scale_height=true" if scale_height else ""
-
-        return redirect(f"/?characters={characters_query}{settings_query}")
+        return redirect(
+            f"/?characters={characters_query}{_settings_query(measure_ears, scale_height)}"
+        )
 
     # Could prolly move this somewhere else?
-    settings_query = f"&measure_ears=false" if not measure_ears else ""
-    settings_query += f"&scale_height=true" if scale_height else ""
+    settings_query = _settings_query(measure_ears, scale_height)
 
     lineup = build_lineup(characters_list, use_species_scaling=scale_height)
+    characters_query = generate_characters_query_string(characters_list)
+    preview_url = _generate_image_url(
+        characters_query,
+        measure_ears=measure_ears,
+        scale_height=scale_height,
+        external=True,
+    )
 
     return render_template(
         "index.html",
@@ -199,11 +355,14 @@ def index():
         cache_performance=f"{cache_stats['hits']}/{cache_stats['misses']}",
         species=species_list,
         characters_list=characters_list,
-        characters_query=generate_characters_query_string(characters_list),
+        characters_query=characters_query,
         settings_query=settings_query,
         measure_ears=measure_ears,
         scale_height=scale_height,
         lineup=lineup,
+        preview_url=preview_url,
+        share_export_width=EXPORT_WIDTH,
+        share_export_height=EXPORT_HEIGHT,
         version=os.getenv("GIT_COMMIT", "ERR_NO_REVISION"),
         server_url=os.getenv("SERVER_URL", "https://nextcloud.kitsunehosting.net/"),
         presets=presets,
@@ -222,8 +381,48 @@ def remove_character(index):
     # Remove the character at the specified index
     updated_query = remove_character_from_query(characters_list, index)
 
-    # Redirect to the updated URL with the character removed
-    return redirect(f"/?characters={updated_query}")
+    measure_ears = _truthy_arg(request.args.get("measure_ears"), default=True)
+    scale_height = _truthy_arg(request.args.get("scale_height"), default=False)
+    return redirect(f"/?characters={updated_query}{_settings_query(measure_ears, scale_height)}")
+
+
+@app.route("/update/<int:index>", methods=["GET", "POST"])
+def update_character(index):
+    """Tweak one character's anthro height and/or color, keep the rest of the lineup."""
+    characters = request.args.get("characters") or request.form.get("characters") or ""
+    characters_list = extract_characters(characters)
+
+    if not (0 <= index < len(characters_list)):
+        flash("Could not find that character to update.", "error")
+        return redirect(url_for("index"))
+
+    src = request.form if request.method == "POST" else request.args
+
+    feet_raw = src.get("feet")
+    inches_raw = src.get("inches")
+    if feet_raw is not None or inches_raw is not None:
+        try:
+            feet = float(feet_raw or 0)
+            inches = float(inches_raw or 0)
+            characters_list[index].height = max(1.0, feet * 12.0 + inches)
+        except ValueError:
+            flash("Height needs to be numbers (feet + inches).", "error")
+            return redirect(request.referrer or url_for("index"))
+
+    if "color" in src:
+        characters_list[index].color = normalize_hex_color(src.get("color"))
+
+    updated_query = generate_characters_query_string(characters_list)
+
+    measure_ears = _truthy_arg(
+        src.get("measure_ears", request.args.get("measure_ears")),
+        default=True,
+    )
+    scale_height = _truthy_arg(
+        src.get("scale_height", request.args.get("scale_height")),
+        default=False,
+    )
+    return redirect(f"/?characters={updated_query}{_settings_query(measure_ears, scale_height)}")
 
 
 # The about page
@@ -265,15 +464,11 @@ def add_preset():
             )
     # Build the new query string
     characters_query = generate_characters_query_string(characters_list)
-    # Preserve settings if present
-    measure_ears = request.args.get("measure_ears")
-    scale_height = request.args.get("scale_height")
-    settings_query = ""
-    if measure_ears == "false":
-        settings_query += "&measure_ears=false"
-    if scale_height == "true":
-        settings_query += "&scale_height=true"
-    return redirect(f"/?characters={characters_query}{settings_query}")
+    measure_ears = _truthy_arg(request.args.get("measure_ears"), default=True)
+    scale_height = _truthy_arg(request.args.get("scale_height"), default=False)
+    return redirect(
+        f"/?characters={characters_query}{_settings_query(measure_ears, scale_height)}"
+    )
 
 
 # For WSGI

@@ -17,12 +17,22 @@ def build_lineup(characters, use_species_scaling: bool = False) -> list[dict]:
             char, use_species_scaling=use_species_scaling
         )
         color = getattr(adjusted, "color", None)
+        if color and not str(color).startswith("#"):
+            color = f"#{color}"
+        anthro = float(adjusted.height)
+        feet = int(anthro // 12)
+        inches = int(round(anthro % 12))
+        if inches == 12:
+            feet += 1
+            inches = 0
         lineup.append(
             {
                 "name": adjusted.name,
                 "species": adjusted.species,
                 "heightInches": float(adjusted.feral_height),
-                "anthroHeightInches": float(adjusted.height),
+                "anthroHeightInches": anthro,
+                "feet": feet,
+                "inches": inches,
                 "imageUrl": url_for("serve_art", rel_path=adjusted.image),
                 "color": color,
                 "earsOffset": float(adjusted.ears_offset or 0),

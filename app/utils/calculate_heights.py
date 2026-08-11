@@ -135,13 +135,15 @@ def calculate_height_offset(
         gender=character.gender,
         image=gender_data["image"],
         ears_offset=gender_data["ears_offset"],
+        color=getattr(character, "color", None),
     )
 
-    # MESSY inject color here thanks!
-    try:
-        _char.color = gender_data["color"]
-    except:
-        pass
+    # URL override wins; otherwise grab the species yaml tint if present
+    if not _char.color:
+        try:
+            _char.color = gender_data["color"]
+        except Exception:
+            pass
 
     # Return
     return _char

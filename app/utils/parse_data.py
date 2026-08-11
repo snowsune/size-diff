@@ -1,12 +1,12 @@
 import logging
-from app.utils.character import Character
+from app.utils.character import Character, normalize_hex_color
 from app.utils.species_lookup import load_species_data
 from app.utils.calculate_heights import calculate_height_offset
 
 
 def extract_characters(query_string: str) -> list:
     """
-    Extracts species, gender, height, and name from the query string.
+    Extracts species, gender, height, name, and optional color from the query string.
     Returns a list of Character instances with defaults for missing values.
     """
 
@@ -18,16 +18,23 @@ def extract_characters(query_string: str) -> list:
     if query_string:
         for char_data in query_string.split(" "):
             try:
-                # Unpack with default values for any missing fields
-                species, gender, height, name = (
-                    char_data.split(",") + ["unknown", "unknown", "60", "unknown"]
-                )[:4]
+                parts = char_data.split(",")
+                # species,gender,height,name[,color]
+                padded = parts + ["unknown", "unknown", "60", "unknown"]
+                species, gender, height, name = padded[:4]
+                color = normalize_hex_color(parts[4]) if len(parts) >= 5 else None
 
                 # Ensure height is a float, with a default if missing or invalid
                 height = float(height) if height.replace(".", "", 1).isdigit() else 0.0
 
                 characters_list.append(
-                    Character(name=name, species=species, height=height, gender=gender)
+                    Character(
+                        name=name,
+                        species=species,
+                        height=height,
+                        gender=gender,
+                        color=color,
+                    )
                 )
 
             except ValueError as e:

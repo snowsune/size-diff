@@ -1,4 +1,17 @@
 from typing import Optional
+import re
+
+_HEX_COLOR_RE = re.compile(r"^#?[0-9a-fA-F]{6}$")
+
+
+def normalize_hex_color(value: Optional[str]) -> Optional[str]:
+    """Return RRGGBB (no hash) or None if it doesnt look like a color."""
+    if not value:
+        return None
+    text = str(value).strip()
+    if not _HEX_COLOR_RE.match(text):
+        return None
+    return text.lstrip("#").lower()
 
 
 class Character:
@@ -16,6 +29,7 @@ class Character:
         image: str = "",
         ears_offset: float = 0.0,
         visual_height: Optional[float] = None,
+        color: Optional[str] = None,
     ):
         self.name = name
         self.species = species
@@ -26,7 +40,8 @@ class Character:
         # Image generation atributes
         self.image = image
         self.ears_offset = ears_offset
-        self.color = None
+        # Optional override from the share URL; species yaml fills in later if missing
+        self.color = normalize_hex_color(color)
         self.visual_height = visual_height
 
     def get_species_name(self) -> str:
@@ -37,4 +52,11 @@ class Character:
 
     def to_query_string(self) -> str:
         """Converts the character attributes into a query string format."""
-        return f"{self.species},{self.gender},{self.height},{self.name}"
+        height = self.height
+        if isinstance(height, float) and height.is_integer():
+            height = int(height)
+        base = f"{self.species},{self.gender},{height},{self.name}"
+        color = normalize_hex_color(self.color)
+        if color:
+            return f"{base},{color}"
+        return base

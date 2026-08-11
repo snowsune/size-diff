@@ -7,7 +7,6 @@ import {
   tintMask,
   loadSprite,
   createScaleCanvas,
-  ScaleCanvas,
   formatHeightInches,
 } from "/lib/painters-canvas/src/index.js";
 
@@ -74,15 +73,8 @@ function heightMarkLabel(char, scaleHeight) {
  * @returns {Promise<HTMLImageElement>}
  */
 async function thickenLines(source, radius = 1) {
-  const width =
-    /** @type {any} */ (source).naturalWidth ??
-    /** @type {any} */ (source).videoWidth ??
-    /** @type {any} */ (source).width;
-  const height =
-    /** @type {any} */ (source).naturalHeight ??
-    /** @type {any} */ (source).videoHeight ??
-    /** @type {any} */ (source).height;
-
+  const width = /** @type {any} */ (source).naturalWidth || /** @type {any} */ (source).width;
+  const height = /** @type {any} */ (source).naturalHeight || /** @type {any} */ (source).height;
   if (!(width > 0 && height > 0)) {
     throw new Error("thickenLines(): source has no dimensions yet");
   }
@@ -97,7 +89,6 @@ async function thickenLines(source, radius = 1) {
   for (let dy = -r; dy <= r; dy++) {
     for (let dx = -r; dx <= r; dx++) {
       if (dx === 0 && dy === 0) continue;
-      // round-ish kernel so we dont get weird square blobs on the corners
       if (dx * dx + dy * dy > r * r + 0.25) continue;
       ctx.drawImage(source, dx, dy);
     }
@@ -106,9 +97,8 @@ async function thickenLines(source, radius = 1) {
 
   const image = new Image();
   image.src = canvas.toDataURL("image/png");
-  if (image.decode) {
-    await image.decode();
-  } else {
+  if (image.decode) await image.decode();
+  else {
     await new Promise((resolve, reject) => {
       image.onload = resolve;
       image.onerror = () => reject(new Error("thickenLines(): failed to decode"));
@@ -275,25 +265,45 @@ function loadImage(url) {
  */
 
 /**
+ * Fit the lineup into the viewport: as wide as the screen allows, but short
+ * enough that the per-character controls stay on-screen without a long scroll.
+ * @param {HTMLElement} host
+ */
+function lineupDrawBudget(host) {
+  const gutter = 24;
+  const controlsH = Math.max(
+    document.getElementById("character-controls")?.offsetHeight || 0,
+    140,
+  );
+  const leftover = window.innerHeight - host.getBoundingClientRect().top - controlsH - gutter;
+  const maxHeight = Math.round(Math.min(480, Math.max(240, leftover)));
+  const viewportW = Math.max(host.clientWidth || 0, window.innerWidth || 0) - gutter;
+  const maxWidth = Math.round(Math.min(2400, Math.max(viewportW, 900)));
+  return { maxWidth, maxHeight };
+}
+
+/**
  * @param {HTMLElement} host
  * @param {{
  *   characters: LineupCharacter[],
  *   measureToHead: boolean,
  *   scaleHeight: boolean,
+ *   charactersQuery?: string,
+ *   exportWidth?: number,
+ *   exportHeight?: number,
  * }} config
  */
 export async function renderLineup(host, config) {
   host.replaceChildren();
   host.classList.add("lineup-host");
 
-  // phones get a real draw width; css scrolls sideways instead of squishing everyone
-  const drawWidth = Math.min(1800, Math.max(host.clientWidth || 0, 1100));
+  const { maxWidth, maxHeight } = lineupDrawBudget(host);
   const scaleHeight = Boolean(config.scaleHeight);
 
   const canvas = createScaleCanvas(host, {
-    maxWidth: drawWidth,
-    maxHeight: 900,
-    padding: 44,
+    maxWidth,
+    maxHeight,
+    padding: 28,
     gapInches: 2,
     background: "#ffffff",
     showGrid: true,
@@ -302,117 +312,98 @@ export async function renderLineup(host, config) {
 
   const measure = config.measureToHead ? "top-of-head" : "top";
 
-  /** @type {{ sprite: Sprite, char: LineupCharacter }[]} */
-  const placed = [];
-
   for (const char of config.characters) {
     const sprite = await loadCharacterSprite(char);
-
-    let useMeasure = measure;
-    if (useMeasure === "top-of-head" && !sprite.hasJoint("top-of-head")) {
-      useMeasure = "top";
-    }
+    const useMeasure =
+      measure === "top-of-head" && !sprite.hasJoint("top-of-head")
+        ? "top"
+        : measure;
 
     canvas.put(sprite, {
       heightInches: char.heightInches,
       measure: useMeasure,
       heightMark: true,
       label: heightMarkLabel(char, scaleHeight),
+      caption: char.name,
     });
-    placed.push({ sprite, char });
   }
 
-  drawNameLabels(canvas, placed);
-  const _render = canvas.render.bind(canvas);
-  canvas.render = function patchedRender() {
-    _render();
-    drawNameLabels(canvas, placed);
-    return canvas;
-  };
+  layoutCharacterControls(canvas);
+  uploadLineupPreview(canvas, config).catch((err) => {
+    console.warn("preview upload failed:", err);
+  });
 
   return canvas;
 }
 
+/** Park each control column under that character's origin on the canvas. */
+function layoutCharacterControls(canvas) {
+  const row = document.getElementById("character-controls");
+  if (!row || !canvas?.canvas) return;
+
+  const width = canvas.canvas.clientWidth || 0;
+  const stack = row.closest(".lineup-stack");
+  if (width) {
+    row.style.width = `${width}px`;
+    if (stack instanceof HTMLElement) stack.style.width = `${width}px`;
+  }
+
+  const slots = canvas.slots || [];
+  const cards = [...row.querySelectorAll(".character-control")];
+  if (!slots.length || slots.length !== cards.length) {
+    row.classList.remove("is-placed");
+    return;
+  }
+
+  row.classList.add("is-placed");
+  let tallest = 0;
+  cards.forEach((card, i) => {
+    card.style.left = `${slots[i].centerX}px`;
+    tallest = Math.max(tallest, card.offsetHeight);
+  });
+  row.style.minHeight = `${tallest}px`;
+}
+
 /**
- * Names go under the feet. Species / sizes live up on the height marks.
+ * Draw the lineup into a 1200x630 frame and POST it so crawlers can see it.
  *
  * @param {ScaleCanvas} canvas
- * @param {{ sprite: Sprite, char: LineupCharacter }[]} placed
+ * @param {{
+ *   charactersQuery?: string,
+ *   measureToHead?: boolean,
+ *   scaleHeight?: boolean,
+ *   exportWidth?: number,
+ *   exportHeight?: number,
+ * }} config
  */
-function drawNameLabels(canvas, placed) {
-  if (!placed.length || canvas.items.length === 0) return;
+async function uploadLineupPreview(canvas, config) {
+  const characters = config.charactersQuery;
+  if (!characters || typeof canvas.exportPngBlob !== "function") return;
 
-  const ctx = canvas.ctx;
-  const pad = canvas.padding;
-  const labelGutter = canvas.showGrid ? 36 : 0;
-  const contentLeft = pad + labelGutter;
-  const metrics = canvas.items.map((item) => ScaleCanvas.worldMetrics(item));
+  const frameWidth = config.exportWidth || 1200;
+  const frameHeight = config.exportHeight || 630;
 
-  let totalWidthInches = 0;
-  for (let i = 0; i < metrics.length; i++) {
-    totalWidthInches += metrics[i].widthInches;
-    if (i < metrics.length - 1) totalWidthInches += canvas.gapInches;
+  const blob = await canvas.exportPngBlob({
+    maxWidth: frameWidth - 48,
+    maxHeight: frameHeight - 48,
+    pixelRatio: 1,
+    frameWidth,
+    frameHeight,
+    frameBackground: "#ffffff",
+  });
+
+  const body = new FormData();
+  body.set("characters", characters);
+  body.set("measure_ears", config.measureToHead === false ? "false" : "true");
+  body.set("scale_height", config.scaleHeight ? "true" : "false");
+  body.set("preview", blob, "preview.png");
+
+  const res = await fetch("/api/shares/lineup", { method: "POST", body });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`upload failed (${res.status}): ${text}`);
   }
-
-  let maxAbove = 0;
-  let maxBelow = 0;
-  for (const m of metrics) {
-    maxAbove = Math.max(maxAbove, m.aboveOriginInches);
-    maxBelow = Math.max(maxBelow, m.belowOriginInches);
-  }
-
-  const totalHeightInches = maxAbove + maxBelow;
-  const innerMaxW = Math.max(1, canvas.maxWidth - pad * 2 - labelGutter);
-  const innerMaxH = Math.max(1, canvas.maxHeight - pad * 2);
-  const ppi = Math.min(
-    innerMaxW / totalWidthInches,
-    innerMaxH / totalHeightInches,
-  );
-  const groundY = pad + maxAbove * ppi;
-
-  // make a little room under the ground line for names
-  const labelRoom = 36;
-  const need = groundY + labelRoom;
-  const dpr = canvas.pixelRatio || 1;
-  const cssW = canvas.canvas.width / dpr;
-  const cssH = canvas.canvas.height / dpr;
-  if (cssH < need) {
-    const prev = ctx.getImageData(0, 0, canvas.canvas.width, canvas.canvas.height);
-    canvas._setCanvasSize(cssW, need);
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.putImageData(prev, 0, 0);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.imageSmoothingEnabled = true;
-    if ("imageSmoothingQuality" in ctx) {
-      ctx.imageSmoothingQuality = "high";
-    }
-    ctx.fillStyle = canvas.background || "#ffffff";
-    ctx.fillRect(0, cssH, cssW, need - cssH);
-  }
-
-  ctx.save();
-  ctx.font = "bold 13px sans-serif";
-  ctx.textBaseline = "top";
-  ctx.textAlign = "center";
-
-  let cursorX = contentLeft;
-  for (let i = 0; i < canvas.items.length; i++) {
-    const m = metrics[i];
-    const { char } = placed[i];
-    const originCanvasX = cursorX + m.originXInches * ppi;
-
-    ctx.fillStyle = char.color
-      ? char.color.startsWith("#")
-        ? char.color
-        : `#${char.color}`
-      : "#222";
-    ctx.fillText(char.name, originCanvasX, groundY + 8);
-
-    cursorX += m.widthInches * ppi;
-    if (i < canvas.items.length - 1) cursorX += canvas.gapInches * ppi;
-  }
-
-  ctx.restore();
+  return res.json();
 }
 
 /**
@@ -424,7 +415,14 @@ export async function bootLineup(hostId = "size-diff-canvas") {
   const raw = document.getElementById("size-diff-lineup");
   if (!host || !raw) return null;
 
-  /** @type {{ characters: LineupCharacter[], measureToHead: boolean, scaleHeight: boolean }} */
+  /** @type {{
+   *   characters: LineupCharacter[],
+   *   measureToHead: boolean,
+   *   scaleHeight: boolean,
+   *   charactersQuery?: string,
+   *   exportWidth?: number,
+   *   exportHeight?: number,
+   * }} */
   const config = JSON.parse(raw.textContent || "{}");
   if (!config.characters?.length) {
     host.textContent = "No characters to draw.";
