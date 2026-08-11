@@ -1,0 +1,10 @@
+{
+  "name": "Side_Taur_Hight_Refrence_TAIL_Volnar_for_Vixi",
+  "image": "Side_Taur_Hight_Refrence_TAIL_Volnar_for_Vixi.png",
+  "joints": {
+    "tail": {
+      "x": 1482,
+      "y": 1483
+    }
+  }
+}

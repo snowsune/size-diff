@@ -1,5 +1,5 @@
 male:
-  image: "Chrissy/missing.png"
+  image: "missing.png"
   ears_offset: 0
   species_length: 96
   species_tail_length: 30
@@ -11,7 +11,7 @@ male:
       height: 50
 
 female:
-  image: "Chrissy/missing.png"
+  image: "missing.png"
   ears_offset: 0
   species_length: 96
   species_tail_length: 30

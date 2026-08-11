@@ -6,3 +6,4 @@ cache
 art/dist/
 __pycache__
 data/shares/
+node_modules/

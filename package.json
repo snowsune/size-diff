@@ -1,0 +1,8 @@
+{
+  "name": "size-diff",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "painters-canvas": "git+https://github.com/snowsune/PaintersCanvas.git"
+  }
+}

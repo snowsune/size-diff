@@ -11,7 +11,7 @@ male:
       height: 7
 
 female:
-  image: "Chrissy/missing.png"
+  image: "missing.png"
   ears_offset: 0
   species_length: 20
   species_tail_length: 14

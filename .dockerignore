@@ -1,0 +1,10 @@
+node_modules
+.git
+__pycache__
+*.pyc
+.env
+art/dist
+data/shares
+Pipfile*
+cache
+*.sqlite3

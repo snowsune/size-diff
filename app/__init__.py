@@ -4,54 +4,45 @@ from flask import (
     request,
     send_file,
     send_from_directory,
-    jsonify,
     redirect,
     url_for,
     flash,
-    make_response,
 )
 import os
-import io
-import random
 import logging
-
-from PIL import Image
-
-from concurrent.futures import ThreadPoolExecutor
 
 from flask_caching import Cache
 from functools import wraps
 
-from app.utils.species_lookup import load_species_data
-from app.utils.calculate_heights import (
-    calculate_height_offset,
-    convert_to_inches,
-    inches_to_feet_inches,
-)
+from app.utils.calculate_heights import convert_to_inches
 from app.utils.parse_data import (
     extract_characters,
-    filter_valid_characters,
     generate_characters_query_string,
     remove_character_from_query,
     load_preset_characters,
     get_default_characters,
 )
 from app.utils.stats import StatsManager
-from app.utils.generate_image import render_image, get_dist_art_path
-from app.utils.art_paths import layer_asset_urls
+from app.utils.art_paths import get_art_image_path
 from app.utils.character import Character
-from app.utils.taur_data import load_taur_data
-from app.shares import register_share_routes
-from app.shares.storage import share_id_from_request_args, taur_preview_exists
+from app.utils.lineup import build_lineup
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 stats_manager = StatsManager("/var/size-diff/stats.db")
-executor = ThreadPoolExecutor(max_workers=4)
 
 # Cache
 cache = Cache(app, config={"CACHE_TYPE": "simple"})
 cache_stats = {"hits": 0, "misses": 0}
+
+# Painter's Canvas lives in node_modules (npm install from github)
+_PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+PAINTERS_CANVAS_ROOT = os.path.join(
+    _PROJECT_ROOT, "node_modules", "painters-canvas"
+)
+OG_PLACEHOLDER = os.path.join(
+    os.path.dirname(__file__), "static", "images", "og-placeholder.png"
+)
 
 
 def cache_with_stats(timeout, query_string=False):
@@ -90,111 +81,46 @@ species_list = [
 ]
 
 
-TAUR_SPECIES_NAMES = [
-    s
-    for s in species_list
-    if s not in ["taur_(generic)", "preset_species", "rexouium"]
-]
-
-TAUR_DATA = load_taur_data()
-TAUR_CALCULATOR_DIR = os.path.join(os.path.dirname(__file__), "taur_calculator")
-
-
-def register_taur_calculator_routes(application):
-    if "taur_calculator_asset" in application.view_functions:
-        return
-
-    @application.route(
-        "/taur-calculator/<path:filename>", endpoint="taur_calculator_asset"
-    )
-    def taur_calculator_asset(filename):
-        return send_from_directory(TAUR_CALCULATOR_DIR, filename)
-
-
-register_taur_calculator_routes(app)
-register_share_routes(app, species_names=TAUR_SPECIES_NAMES)
+@app.route("/lib/painters-canvas/<path:filename>")
+def painters_canvas_asset(filename):
+    """Serve Painter's Canvas ESM from node_modules. Thats it. No vendor copy."""
+    return send_from_directory(PAINTERS_CANVAS_ROOT, filename)
 
 
 @app.route("/art/<path:rel_path>")
 def serve_art(rel_path):
-    """Serve trimmed art assets from art/dist/."""
-    file_path = get_dist_art_path(rel_path)
-    art_dist_root = os.path.abspath(os.path.join("art", "dist"))
-    resolved = os.path.abspath(file_path)
+    """Serve trimmed art from art/dist/, fall back to art/."""
+    file_path = get_art_image_path(rel_path)
+    art_roots = [
+        os.path.abspath(os.path.join("art", "dist")),
+        os.path.abspath("art"),
+    ]
 
-    if not resolved.startswith(art_dist_root + os.sep) or not os.path.isfile(resolved):
+    resolved = os.path.abspath(file_path)
+    if not any(resolved.startswith(root + os.sep) for root in art_roots):
+        return "Not found", 404
+    if not os.path.isfile(resolved):
         return "Not found", 404
 
     return send_file(resolved, max_age=31536000)
 
 
 @app.route("/generate-image")
-@cache_with_stats(timeout=31536000, query_string=True)
 def generate_image():
-    # Get characters
-    characters = request.args.get("characters", "")
-    characters_list = extract_characters(characters)
-
-    # Get settings
-    measure_ears = request.args.get("measure_ears", True) == "True"
-    scale_height = request.args.get("scale_height", True) == "True"
-
-    # Get height
-    size = int(request.args.get("size", "400"))
-
-    # Record we've generated a new image!
-    stats_manager.increment_images_generated()
-
-    def generate_and_save():
-        if len(characters_list) == 0:
-            logging.warn("Asked to generate an empty image!")
-
-            # Generate an empty image
-            image = Image.new("RGB", (int(size * 1.4), size))
-            pixels = image.load()
-
-            for i in range(image.size[0]):
-                for j in range(image.size[1]):
-                    pixels[i, j] = (
-                        random.randint(0, 255),
-                        random.randint(0, 255),
-                        random.randint(0, 255),
-                    )
-        else:
-            image = render_image(
-                characters_list,
-                size,
-                measure_to_ears=measure_ears,
-                use_species_scaling=scale_height,
-            )
-
-        # Save image to a BytesIO object
-        img_io = io.BytesIO()
-        image.save(img_io, "PNG")
-        img_io.seek(0)
-        return img_io
-
-    # Submit the task to the executor
-    future = executor.submit(generate_and_save)
-
-    try:
-        img_io = future.result(timeout=30)  # Wait for up to 30 seconds
-    except TimeoutError:
-        return "Image generation timed out", 504
-
-    # Create a response with the image and set Content-Type to image/png
-    response = make_response(img_io.read())
-    response.headers.set("Content-Type", "image/png")
-    response.headers.set("Content-Disposition", "inline", filename="preview.png")
-    response.headers.set("Cache-Control", "public, max-age=31536000")
-
-    return response
+    """
+    Old OG preview URL. No Pillow, no lineup render.
+    Just a static placeholder until real share exports exist.
+    """
+    return send_file(
+        OG_PLACEHOLDER,
+        mimetype="image/png",
+        max_age=31536000,
+        download_name="preview.png",
+    )
 
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    species = species_list  # Assuming species_list is defined elsewhere
-
     # Extract characters from query string
     characters = request.args.get("characters", "")
     characters_list = extract_characters(characters)
@@ -265,6 +191,8 @@ def index():
     settings_query = f"&measure_ears=false" if not measure_ears else ""
     settings_query += f"&scale_height=true" if scale_height else ""
 
+    lineup = build_lineup(characters_list, use_species_scaling=scale_height)
+
     return render_template(
         "index.html",
         stats=stats,
@@ -275,6 +203,7 @@ def index():
         settings_query=settings_query,
         measure_ears=measure_ears,
         scale_height=scale_height,
+        lineup=lineup,
         version=os.getenv("GIT_COMMIT", "ERR_NO_REVISION"),
         server_url=os.getenv("SERVER_URL", "https://nextcloud.kitsunehosting.net/"),
         presets=presets,
@@ -347,73 +276,6 @@ def add_preset():
     return redirect(f"/?characters={characters_query}{settings_query}")
 
 
-@app.route("/taur", methods=["GET"])
-def taur():
-    """
-    Taur calculator!
-
-    Collaboration with Volnar <3
-    """
-    # Filter out some ones we dont want to show/dont have data
-    filtered_species = TAUR_SPECIES_NAMES
-
-    # Load species data for auto-population
-    species_data_map = {}
-    for species_name in filtered_species:
-        try:
-            data = load_species_data(species_name)
-            # Extract species_length, species_tail_length, species_weight from male section
-            # and get a default species_height from the first data point
-            if "male" in data:
-                male_data = data["male"]
-                species_data_map[species_name] = {
-                    "species_length": male_data.get("species_length", 0),
-                    "species_tail_length": male_data.get("species_tail_length", 0),
-                    "species_weight": male_data.get("species_weight", 0),
-                    "species_height": (
-                        male_data.get("data", [{}])[0].get("height", 0)
-                        if male_data.get("data")
-                        else 0
-                    ),
-                }
-        except Exception as e:
-            logging.warning(f"Failed to load species data for {species_name}: {e}")
-            species_data_map[species_name] = {
-                "species_length": 0,
-                "species_tail_length": 0,
-                "species_weight": 0,
-                "species_height": 0,
-            }
-
-    taur_data = TAUR_DATA
-    share_id = share_id_from_request_args(
-        request.args,
-        species_names=set(filtered_species),
-    )
-    preview_url = (
-        url_for("serve_taur_share", share_id=share_id, _external=True)
-        if share_id and taur_preview_exists(share_id)
-        else None
-    )
-    return render_template(
-        "taur.html",
-        species=filtered_species,
-        species_data=species_data_map,
-        taur_data=taur_data,
-        taur_layer_urls={
-            key: layer_asset_urls(
-                layer["path"],
-                lambda path: url_for("serve_art", rel_path=path),
-            )
-            for key, layer in taur_data["layers"].items()
-        },
-        debug=app.debug or os.getenv("GIT_COMMIT") is None,
-        preview_url=preview_url,
-    )
-
-
 # For WSGI
 def create_app():
-    register_taur_calculator_routes(app)
-    register_share_routes(app, species_names=TAUR_SPECIES_NAMES)
     return app
