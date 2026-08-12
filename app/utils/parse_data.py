@@ -1,5 +1,8 @@
 import logging
+import yaml
+
 from app.utils.character import Character, normalize_hex_color
+from app.utils.paths import PRESETS_PATH
 
 
 def extract_characters(query_string: str) -> list:
@@ -46,16 +49,24 @@ def generate_characters_query_string(characters_list: list) -> str:
     return "+".join(char.to_query_string() for char in characters_list)
 
 
+def _character_from_preset(preset: dict) -> Character:
+    return Character(
+        name=preset["name"],
+        species=preset["species"],
+        height=float(preset["height"]),
+        gender=preset["gender"],
+        color=preset.get("color"),
+    )
+
+
 def load_preset_characters():
     """
-    Loads preset characters from the preset_species.yaml file.
-    Returns a list of dicts with keys: name, species, gender, height, description.
+    Loads preset characters from data/presets.yaml.
+    Keys: name, species, gender, height, optional description/color/default.
     """
-    import yaml
-
     try:
-        with open("app/species_data/preset_species.yaml", "r") as f:
-            data = yaml.safe_load(f)
+        with open(PRESETS_PATH, "r") as f:
+            data = yaml.safe_load(f) or {}
         return data.get("presets", [])
     except Exception as e:
         logging.warning(f"Could not load preset characters: {e}")
@@ -63,9 +74,14 @@ def load_preset_characters():
 
 
 def get_default_characters():
-    """Returns the default list of Character objects for the app."""
-    return [
-        Character(name="Vixi", species="arctic_fox", height=62, gender="female"),
-        Character(name="Randal", species="red_fox", height=66, gender="male"),
-        Character(name="Ky-Li", species="canine", height=88, gender="female"),
+    """Defaults are presets marked default: true (file order)."""
+    defaults = [
+        _character_from_preset(p)
+        for p in load_preset_characters()
+        if p.get("default")
     ]
+    if defaults:
+        return defaults
+    # Fallback if yaml forgot the flags
+    logging.warning("No default: true presets found; using first three presets")
+    return [_character_from_preset(p) for p in load_preset_characters()[:3]]

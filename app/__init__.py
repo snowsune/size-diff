@@ -25,6 +25,8 @@ from app.utils.stats import StatsManager
 from app.utils.art_paths import get_art_image_path
 from app.utils.character import Character, normalize_hex_color
 from app.utils.lineup import build_lineup_payload
+from app.utils.species_lookup import list_species_names
+from app.utils.paths import SPECIES_DATA_DIR
 from app.shares import (
     EXPORT_HEIGHT,
     EXPORT_WIDTH,
@@ -72,12 +74,7 @@ else:
     logging.basicConfig(level=logging.INFO)
 
 # Load species list on startup
-species_data_folder = "app/species_data"
-species_list = [
-    f.replace(".yaml", "")
-    for f in os.listdir(species_data_folder)
-    if f.endswith(".yaml")
-]
+species_list = list_species_names()
 
 
 def _lineup_share_id_from_args(args) -> str | None:
@@ -297,10 +294,18 @@ def index():
 
     # Load presets for the dropdown
     presets = load_preset_characters()
-    preset_map = {
-        f"{p['name'].replace('_', ' ').title()} --- {p['species'].replace('_', ' ').title()}, {p['gender']}, {p.get('description', '')}": f"{p['species']},{p['gender']},{p['height']},{p['name']}"
-        for p in presets
-    }
+    preset_map = {}
+    for p in presets:
+        label = (
+            f"{p['name'].replace('_', ' ').title()} --- "
+            f"{p['species'].replace('_', ' ').title()}, {p['gender']}, "
+            f"{p.get('description', '')}"
+        )
+        query = f"{p['species']},{p['gender']},{p['height']},{p['name']}"
+        color = normalize_hex_color(p.get("color"))
+        if color:
+            query = f"{query},{color}"
+        preset_map[label] = query
 
     if request.method == "POST":
         # Get species, name, and gender from form data
@@ -434,7 +439,7 @@ def update_character(index):
 @app.route("/about")
 def about():
     # Load a YAML file to display on the page
-    yaml_file_path = os.path.join("app/species_data", "red_fox.yaml")
+    yaml_file_path = SPECIES_DATA_DIR / "red_fox.yaml"
     with open(yaml_file_path, "r") as yaml_file:
         yaml_content = yaml_file.read()
 
@@ -456,15 +461,16 @@ def add_preset():
         characters_list = get_default_characters()
     # Add the new preset
     if preset_val:
-        # Parse the preset string (species,gender,height,name)
+        # species,gender,height,name[,color]
         parts = preset_val.split(",")
-        if len(parts) == 4:
+        if len(parts) >= 4:
             characters_list.append(
                 Character(
                     name=parts[3],
                     species=parts[0],
                     height=float(parts[2]),
                     gender=parts[1],
+                    color=parts[4] if len(parts) >= 5 else None,
                 )
             )
     measure_ears = _truthy_arg(request.args.get("measure_ears"), default=True)

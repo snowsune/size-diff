@@ -356,6 +356,38 @@ a {
   margin-bottom: 0.4rem;
 }
 
+.share-hint {
+  font-size: 0.85em;
+  color: #666;
+  font-weight: normal;
+}
+
+.share-copy {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  background: #f7f7f7;
+  color: #1a4a6e;
+  font: inherit;
+  font-size: 0.95em;
+  cursor: pointer;
+  word-break: break-all;
+}
+
+.share-copy:hover {
+  background: #eef5fb;
+  border-color: #8ab;
+}
+
+.share-copy.is-copied {
+  background: #e7f6ea;
+  border-color: #6a9;
+  color: #1a5c2e;
+}
+
 .back-link {
   font-size: 2em;
 }

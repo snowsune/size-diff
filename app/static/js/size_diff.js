@@ -756,11 +756,43 @@ function rebuildCharacterControls(config) {
 }
 
 function updateShareLink(pagePath) {
-  const link = document.querySelector(".share-link a");
-  if (!link || !pagePath) return;
+  const btn = document.querySelector(".share-copy");
+  if (!btn || !pagePath) return;
   const url = new URL(pagePath, window.location.origin).href;
-  link.href = url;
-  link.textContent = url;
+  btn.dataset.url = url;
+  if (!btn.classList.contains("is-copied")) {
+    btn.textContent = url;
+  }
+}
+
+/** @type {ReturnType<typeof setTimeout> | null} */
+let shareCopiedTimer = null;
+
+async function copyShareLink(btn) {
+  const url = btn.dataset.url || window.location.href;
+  try {
+    await navigator.clipboard.writeText(url);
+  } catch {
+    // Older browsers fallback (and also locally)
+    const field = document.createElement("textarea");
+    field.value = url;
+    field.setAttribute("readonly", "");
+    field.style.position = "fixed";
+    field.style.left = "-9999px";
+    document.body.appendChild(field);
+    field.select();
+    document.execCommand("copy");
+    field.remove();
+  }
+
+  btn.classList.add("is-copied");
+  btn.textContent = "Copied!";
+  if (shareCopiedTimer) clearTimeout(shareCopiedTimer);
+  shareCopiedTimer = setTimeout(() => {
+    btn.classList.remove("is-copied");
+    btn.textContent = btn.dataset.url || url;
+    shareCopiedTimer = null;
+  }, 1400);
 }
 
 function syncSettingsCheckboxes(config) {
@@ -792,9 +824,13 @@ function ensureLineupShell() {
   form?.after(container);
 
   if (!document.querySelector(".share-link")) {
+    const url = window.location.href;
     const share = document.createElement("div");
     share.className = "share-link";
-    share.innerHTML = `<p>Share this lineup:</p><a href="${window.location.href}">${window.location.href}</a>`;
+    share.innerHTML = `
+      <p>Share this lineup: <span class="share-hint">(click to copy)</span></p>
+      <button type="button" class="share-copy" data-url="${url}" title="Copy lineup link">${url}</button>
+    `;
     container.after(share);
   }
   return container;
@@ -912,6 +948,40 @@ function scheduleControlFormCommit(form) {
 
 function wireSoftNav() {
   document.addEventListener(
+    "click",
+    (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const btn = target.closest(".share-copy");
+      if (btn instanceof HTMLButtonElement) {
+        event.preventDefault();
+        copyShareLink(btn).catch((err) => console.warn("copy failed:", err));
+        return;
+      }
+
+      const remove = target.closest("a.control-remove");
+      if (remove instanceof HTMLAnchorElement) {
+        event.preventDefault();
+        mutateLineup(remove.href)
+          .then((data) => applyLineupState(data))
+          .catch(showSoftNavError);
+        return;
+      }
+
+      const presetBtn = target.closest("#preset-add-btn");
+      if (presetBtn) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        const input = document.getElementById("preset-autocomplete");
+        softAddPreset(input instanceof HTMLInputElement ? input.value : "").catch(
+          showSoftNavError,
+        );
+      }
+    },
+    true,
+  );
+
+  document.addEventListener(
     "input",
     (event) => {
       const target = event.target;
@@ -973,33 +1043,6 @@ function wireSoftNav() {
             return applyLineupState(data);
           })
           .catch(showSoftNavError);
-      }
-    },
-    true,
-  );
-
-  document.addEventListener(
-    "click",
-    (event) => {
-      const target = event.target;
-      if (!(target instanceof Element)) return;
-      const remove = target.closest("a.control-remove");
-      if (remove instanceof HTMLAnchorElement) {
-        event.preventDefault();
-        mutateLineup(remove.href)
-          .then((data) => applyLineupState(data))
-          .catch(showSoftNavError);
-        return;
-      }
-
-      const presetBtn = target.closest("#preset-add-btn");
-      if (presetBtn) {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        const input = document.getElementById("preset-autocomplete");
-        softAddPreset(input instanceof HTMLInputElement ? input.value : "").catch(
-          showSoftNavError,
-        );
       }
     },
     true,
@@ -1072,6 +1115,11 @@ async function softAddPreset(val) {
 
   const data = await mutateLineup(`/add-preset?${params.toString()}`);
   await applyLineupState(data);
+
+  const input = document.getElementById("preset-autocomplete");
+  if (input instanceof HTMLInputElement) input.value = "";
+  const presetBtn = document.getElementById("preset-add-btn");
+  if (presetBtn instanceof HTMLButtonElement) presetBtn.disabled = true;
 }
 
 /**

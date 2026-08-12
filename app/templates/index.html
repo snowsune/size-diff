@@ -328,8 +328,8 @@
         </div>
 
         <div class="share-link">
-            <p>Share this lineup:</p>
-            <a href="{{ request.url }}">{{ request.url }}</a>
+            <p>Share this lineup: <span class="share-hint">(click to copy)</span></p>
+            <button type="button" class="share-copy" data-url="{{ page_url }}" title="Copy lineup link">{{ page_url }}</button>
         </div>
         {% endif %}
     </div>
