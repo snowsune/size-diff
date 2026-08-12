@@ -279,7 +279,6 @@ button:hover {
   margin-top: 0.15rem;
 }
 
-.control-apply,
 .control-remove {
   flex: 1;
   margin-top: 0;
@@ -288,18 +287,6 @@ button:hover {
   text-align: center;
   border-radius: 5px;
   text-decoration: none;
-}
-
-.control-apply {
-  background-color: #2a6f97;
-  color: #fff;
-}
-
-.control-apply:hover {
-  background-color: #3a8fbf;
-}
-
-.control-remove {
   background-color: #611212;
   color: #fff;
   display: inline-block;

@@ -111,22 +111,12 @@
                 </label>
             </div>
 
-            <!-- Switch script -->
-            <script>
-                document.getElementById('measure_ears').addEventListener('change', function () {
-                    this.form.submit();
-                });
-
-                document.getElementById('scale_height').addEventListener('change', function () {
-                    this.form.submit();
-                });
-            </script>
-
         </form>
 
         <script>
             // Use presetMap passed from Flask as a JSON object
             const presetMap = {{ preset_map | tojson | safe }};
+            window.sizeDiffPresetMap = presetMap;
             const presetNames = Object.keys(presetMap);
             const input = document.getElementById('preset-autocomplete');
             const suggestionsBox = document.getElementById('preset-suggestions');
@@ -203,10 +193,10 @@
                 });
             }
             document.getElementById('preset-add-btn').onclick = function () {
+                // Soft-nav captures this click when size_diff.js loaded; this is no-JS fallback.
                 var val = input.value;
                 var presetVal = presetMap[val] || null;
                 if (!presetVal) {
-                    // Try to match ignoring case
                     for (const key in presetMap) {
                         if (key.toLowerCase().startsWith(val.toLowerCase())) {
                             presetVal = presetMap[key];
@@ -217,13 +207,12 @@
                 if (!presetVal) return;
                 var url = new URL(window.location.href);
                 var chars = url.searchParams.get('characters') || '';
-                var base = '/add-preset?';
                 var params = new URLSearchParams();
                 params.set('preset', presetVal);
                 if (chars) params.set('characters', chars);
                 if (url.searchParams.get('measure_ears') === 'false') params.set('measure_ears', 'false');
                 if (url.searchParams.get('scale_height') === 'true') params.set('scale_height', 'true');
-                window.location.href = base + params.toString();
+                window.location.href = '/add-preset?' + params.toString();
             };
             // Optional: allow Enter key in input to trigger add
             input.addEventListener('keydown', function (e) {
@@ -312,7 +301,6 @@
                                 <input type="color" name="color" value="{{ entry.color or '#888888' }}" aria-label="{{ entry.name }} color">
                             </label>
                             <div class="control-actions">
-                                <button type="submit" class="control-apply">Apply</button>
                                 <a class="control-remove" href="/remove/{{ i }}?characters={{ characters_query }}{{ settings_query }}">Remove</a>
                             </div>
                         </form>

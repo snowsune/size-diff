@@ -18,14 +18,13 @@ from app.utils.calculate_heights import convert_to_inches
 from app.utils.parse_data import (
     extract_characters,
     generate_characters_query_string,
-    remove_character_from_query,
     load_preset_characters,
     get_default_characters,
 )
 from app.utils.stats import StatsManager
 from app.utils.art_paths import get_art_image_path
 from app.utils.character import Character, normalize_hex_color
-from app.utils.lineup import build_lineup
+from app.utils.lineup import build_lineup_payload
 from app.shares import (
     EXPORT_HEIGHT,
     EXPORT_WIDTH,
@@ -101,6 +100,34 @@ def _as_https(url: str) -> str:
     if url.startswith("http://"):
         return "https://" + url[len("http://") :]
     return url
+
+
+def _wants_json() -> bool:
+    """Soft-nav requests use ?format=json (header is a backup)."""
+    return (
+        request.args.get("format") == "json"
+        or request.headers.get("X-Size-Diff-Soft") == "1"
+    )
+
+
+def _lineup_state(characters_list, measure_ears: bool, scale_height: bool) -> dict:
+    if not characters_list:
+        characters_list = get_default_characters()
+    characters_query = generate_characters_query_string(characters_list)
+    return build_lineup_payload(
+        characters_list,
+        measure_ears=measure_ears,
+        scale_height=scale_height,
+        characters_query=characters_query,
+    )
+
+
+def _finish_lineup(characters_list, measure_ears: bool, scale_height: bool):
+    """Redirect for normal browsers; JSON for soft-nav fetches."""
+    payload = _lineup_state(characters_list, measure_ears, scale_height)
+    if _wants_json():
+        return jsonify(payload)
+    return redirect(payload["pagePath"])
 
 
 def _generate_image_url(
@@ -237,6 +264,16 @@ def generate_image():
     return "Preview not ready", 404
 
 
+@app.route("/api/lineup")
+def api_lineup():
+    """Lineup JSON for soft-nav redraws (same blob the page embeds)."""
+    characters = request.args.get("characters", "")
+    characters_list = extract_characters(characters)
+    measure_ears = _truthy_arg(request.args.get("measure_ears"), default=True)
+    scale_height = _truthy_arg(request.args.get("scale_height"), default=False)
+    return jsonify(_lineup_state(characters_list, measure_ears, scale_height))
+
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     # Extract characters from query string
@@ -286,7 +323,8 @@ def index():
             try:
                 anthro_height = convert_to_inches(height)
             except Exception as e:
-                # Flash onscreen if error
+                if _wants_json():
+                    return jsonify({"error": str(e)}), 400
                 flash(str(e), "error")
                 return redirect(url_for("index"))
 
@@ -297,16 +335,14 @@ def index():
             characters_list.append(new_character)
 
         # Redirect with updated query string
-        characters_query = generate_characters_query_string(characters_list)
-        return redirect(
-            f"/?characters={characters_query}{_settings_query(measure_ears, scale_height)}"
-        )
+        return _finish_lineup(characters_list, measure_ears, scale_height)
 
     # Could prolly move this somewhere else?
     settings_query = _settings_query(measure_ears, scale_height)
 
-    lineup = build_lineup(characters_list, use_species_scaling=scale_height)
-    characters_query = generate_characters_query_string(characters_list)
+    payload = _lineup_state(characters_list, measure_ears, scale_height)
+    lineup = payload["characters"]
+    characters_query = payload["charactersQuery"]
     preview_url = _generate_image_url(
         characters_query,
         measure_ears=measure_ears,
@@ -344,11 +380,13 @@ def remove_character(index):
     logging.info(f"Remove path saw {characters} arg")
 
     # Remove the character at the specified index
-    updated_query = remove_character_from_query(characters_list, index)
+    updated_list = list(characters_list)
+    if 0 <= index < len(updated_list):
+        del updated_list[index]
 
     measure_ears = _truthy_arg(request.args.get("measure_ears"), default=True)
     scale_height = _truthy_arg(request.args.get("scale_height"), default=False)
-    return redirect(f"/?characters={updated_query}{_settings_query(measure_ears, scale_height)}")
+    return _finish_lineup(updated_list, measure_ears, scale_height)
 
 
 @app.route("/update/<int:index>", methods=["GET", "POST"])
@@ -358,6 +396,8 @@ def update_character(index):
     characters_list = extract_characters(characters)
 
     if not (0 <= index < len(characters_list)):
+        if _wants_json():
+            return jsonify({"error": "Could not find that character to update."}), 404
         flash("Could not find that character to update.", "error")
         return redirect(url_for("index"))
 
@@ -371,13 +411,13 @@ def update_character(index):
             inches = float(inches_raw or 0)
             characters_list[index].height = max(1.0, feet * 12.0 + inches)
         except ValueError:
+            if _wants_json():
+                return jsonify({"error": "Height needs to be numbers (feet + inches)."}), 400
             flash("Height needs to be numbers (feet + inches).", "error")
             return redirect(request.referrer or url_for("index"))
 
     if "color" in src:
         characters_list[index].color = normalize_hex_color(src.get("color"))
-
-    updated_query = generate_characters_query_string(characters_list)
 
     measure_ears = _truthy_arg(
         src.get("measure_ears", request.args.get("measure_ears")),
@@ -387,7 +427,7 @@ def update_character(index):
         src.get("scale_height", request.args.get("scale_height")),
         default=False,
     )
-    return redirect(f"/?characters={updated_query}{_settings_query(measure_ears, scale_height)}")
+    return _finish_lineup(characters_list, measure_ears, scale_height)
 
 
 # The about page
@@ -427,13 +467,9 @@ def add_preset():
                     gender=parts[1],
                 )
             )
-    # Build the new query string
-    characters_query = generate_characters_query_string(characters_list)
     measure_ears = _truthy_arg(request.args.get("measure_ears"), default=True)
     scale_height = _truthy_arg(request.args.get("scale_height"), default=False)
-    return redirect(
-        f"/?characters={characters_query}{_settings_query(measure_ears, scale_height)}"
-    )
+    return _finish_lineup(characters_list, measure_ears, scale_height)
 
 
 # For WSGI

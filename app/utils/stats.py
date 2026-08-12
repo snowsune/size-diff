@@ -22,7 +22,6 @@ class StatsManager:
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
-            # images_generated is leftover
             cursor.execute(
                 """
                 CREATE TABLE IF NOT EXISTS stats (

@@ -1,8 +1,11 @@
 """Build the JSON blob the browser needs to draw a lineup."""
 
+from urllib.parse import urlencode
+
 from flask import url_for
 
 from app.utils.calculate_heights import calculate_height_offset
+from app.shares import EXPORT_HEIGHT, EXPORT_WIDTH
 
 
 def _art_json_url(stem: str) -> str:
@@ -47,6 +50,7 @@ def build_lineup(characters, use_species_scaling: bool = False) -> list[dict]:
         entry = {
             "name": adjusted.name,
             "species": adjusted.species,
+            "gender": adjusted.gender,
             "heightInches": float(adjusted.feral_height),
             "anthroHeightInches": anthro,
             "feet": feet,
@@ -60,3 +64,27 @@ def build_lineup(characters, use_species_scaling: bool = False) -> list[dict]:
             entry["composite"] = composite
         lineup.append(entry)
     return lineup
+
+
+def build_lineup_payload(
+    characters,
+    *,
+    measure_ears: bool,
+    scale_height: bool,
+    characters_query: str,
+) -> dict:
+    """Same JSON the page embeds, plus a path for soft-nav pushState."""
+    params = [("characters", characters_query)]
+    if not measure_ears:
+        params.append(("measure_ears", "false"))
+    if scale_height:
+        params.append(("scale_height", "true"))
+    return {
+        "characters": build_lineup(characters, use_species_scaling=scale_height),
+        "measureToHead": measure_ears,
+        "scaleHeight": scale_height,
+        "charactersQuery": characters_query,
+        "exportWidth": EXPORT_WIDTH,
+        "exportHeight": EXPORT_HEIGHT,
+        "pagePath": "/?" + urlencode(params),
+    }

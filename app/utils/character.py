@@ -28,7 +28,6 @@ class Character:
         feral_height: float = 0.0,
         image: str = "",
         ears_offset: float = 0.0,
-        visual_height: Optional[float] = None,
         color: Optional[str] = None,
         composite: Optional[dict] = None,
     ):
@@ -37,21 +36,10 @@ class Character:
         self.height = height
         self.gender = gender
         self.feral_height = feral_height
-
-        # Image generation atributes
         self.image = image
         self.ears_offset = ears_offset
-        # Optional override from the share URL; species yaml fills in later if missing
         self.color = normalize_hex_color(color)
-        self.visual_height = visual_height
-        # Optional Painter's Canvas attachAt recipe from species yaml
         self.composite = composite
-
-    def get_species_name(self) -> str:
-        return self.species.replace("_", " ").title()
-
-    def __repr__(self) -> str:
-        return f"Character(name={self.name}, species={self.species}, gender={self.gender}, height={self.height}, image={self.image})"
 
     def to_query_string(self) -> str:
         """Converts the character attributes into a query string format."""
