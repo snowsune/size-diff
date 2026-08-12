@@ -17,9 +17,6 @@ RUN npm install --omit=dev
 
 COPY . .
 
-# Trim art for serving
-RUN python3 scripts/trim_art.py
-
 EXPOSE 5000
 
 ARG GIT_COMMIT

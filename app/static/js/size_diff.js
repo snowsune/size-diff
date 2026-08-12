@@ -419,8 +419,6 @@ function loadImage(url) {
  *   measureToHead: boolean,
  *   scaleHeight: boolean,
  *   charactersQuery?: string,
- *   exportWidth?: number,
- *   exportHeight?: number,
  *   pagePath?: string,
  * }} LineupConfig
  */
@@ -503,9 +501,6 @@ export async function renderLineup(host, config, opts = {}) {
 
   if (!opts.lightbox) {
     layoutCharacterControls(canvas);
-    uploadLineupPreview(canvas, config).catch((err) => {
-      console.warn("preview upload failed:", err);
-    });
     enableLineupLightbox(canvas, config);
   }
 
@@ -607,40 +602,6 @@ function layoutCharacterControls(canvas) {
     tallest = Math.max(tallest, card.offsetHeight);
   });
   row.style.minHeight = `${tallest}px`;
-}
-
-/**
- * Draw the lineup into a 1200x630 frame and POST it so crawlers can see it.
- *
- * @param {any} canvas
- * @param {LineupConfig} config
- */
-async function uploadLineupPreview(canvas, config) {
-  const characters = config.charactersQuery;
-  if (!characters || typeof canvas.exportPngBlob !== "function") return;
-
-  const frameWidth = config.exportWidth || 1200;
-  const frameHeight = config.exportHeight || 630;
-
-  const blob = await canvas.exportPngBlob({
-    pixelRatio: 1,
-    frameWidth,
-    frameHeight,
-    frameBackground: "#ffffff",
-  });
-
-  const body = new FormData();
-  body.set("characters", characters);
-  body.set("measure_ears", config.measureToHead === false ? "false" : "true");
-  body.set("scale_height", config.scaleHeight ? "true" : "false");
-  body.set("preview", blob, "preview.png");
-
-  const res = await fetch("/api/shares/lineup", { method: "POST", body });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`upload failed (${res.status}): ${text}`);
-  }
-  return res.json();
 }
 
 /** @param {LineupConfig} config */

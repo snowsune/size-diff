@@ -27,19 +27,6 @@ from app.utils.character import Character, normalize_hex_color
 from app.utils.lineup import build_lineup_payload
 from app.utils.species_lookup import list_species_names
 from app.utils.paths import SPECIES_DATA_DIR
-from app.shares import (
-    EXPORT_HEIGHT,
-    EXPORT_WIDTH,
-    MAX_PNG_BYTES,
-    allow_upload,
-    canonicalize_lineup_query,
-    lineup_png_path,
-    lineup_preview_exists,
-    looks_like_png,
-    normalize_characters_query,
-    save_lineup_preview,
-    share_id_for_query,
-)
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -77,22 +64,6 @@ else:
 species_list = list_species_names()
 
 
-def _lineup_share_id_from_args(args) -> str | None:
-    characters = normalize_characters_query(args.get("characters") or "")
-    if not characters:
-        return None
-    measure_ears = args.get("measure_ears", "true") != "false"
-    # generate-image used to pass True/False capitalized; accept both
-    raw_scale = args.get("scale_height", "false")
-    scale_height = str(raw_scale).lower() in ("true", "1", "yes")
-    canonical = canonicalize_lineup_query(
-        characters,
-        measure_ears=measure_ears,
-        scale_height=scale_height,
-    )
-    return share_id_for_query(canonical)
-
-
 def _as_https(url: str) -> str:
     if url.startswith("http://"):
         return "https://" + url[len("http://") :]
@@ -127,23 +98,6 @@ def _finish_lineup(characters_list, measure_ears: bool, scale_height: bool):
     return redirect(payload["pagePath"])
 
 
-def _generate_image_url(
-    characters: str,
-    *,
-    measure_ears: bool = True,
-    scale_height: bool = False,
-    external: bool = False,
-) -> str:
-    """Public preview URL: same query params as the page, not a hash."""
-    kwargs = {"characters": characters}
-    if not measure_ears:
-        kwargs["measure_ears"] = "false"
-    if scale_height:
-        kwargs["scale_height"] = "true"
-    url = url_for("generate_image", _external=external, **kwargs)
-    return _as_https(url) if external else url
-
-
 @app.route("/lib/painters-canvas/<path:filename>")
 def painters_canvas_asset(filename):
     """Serve Painter's Canvas ESM from node_modules. Thats it. No vendor copy."""
@@ -152,113 +106,15 @@ def painters_canvas_asset(filename):
 
 @app.route("/art/<path:rel_path>")
 def serve_art(rel_path):
-    """Serve trimmed art from art/dist/, fall back to art/."""
+    """Serve art from art/."""
     file_path = get_art_image_path(rel_path)
-    art_roots = [
-        os.path.abspath(os.path.join("art", "dist")),
-        os.path.abspath("art"),
-    ]
-
+    art_root = os.path.abspath("art")
     resolved = os.path.abspath(file_path)
-    if not any(resolved.startswith(root + os.sep) for root in art_roots):
+    if not resolved.startswith(art_root + os.sep):
         return "Not found", 404
     if not os.path.isfile(resolved):
         return "Not found", 404
-
     return send_file(resolved, max_age=31536000)
-
-
-@app.route("/shares/lineup/<share_id>.png")
-def serve_lineup_share(share_id):
-    """
-    Legacy hash URL. Kept so old Discord embeds dont die.
-    Prefer /generate-image?characters=... for new links.
-    """
-    try:
-        path = lineup_png_path(share_id)
-    except ValueError:
-        return "Not found", 404
-    if path.is_file():
-        return send_file(path, mimetype="image/png", max_age=31536000)
-    return "Preview not ready", 404
-
-
-@app.route("/api/shares/lineup", methods=["POST"])
-def upload_lineup_share():
-    """
-    Browser draws the lineup with Painter's Canvas, then POSTs the png here.
-    Share id is derived from the lineup query so Discord can find it later.
-    """
-    ip = request.headers.get("X-Real-IP", request.remote_addr) or "unknown"
-    if not allow_upload(ip):
-        return jsonify({"error": "slow down a sec"}), 429
-
-    characters = normalize_characters_query(request.form.get("characters") or "")
-    if not characters:
-        return jsonify({"error": "missing characters"}), 400
-
-    measure_ears = request.form.get("measure_ears", "true") != "false"
-    scale_height = request.form.get("scale_height", "false") == "true"
-    canonical = canonicalize_lineup_query(
-        characters,
-        measure_ears=measure_ears,
-        scale_height=scale_height,
-    )
-    share_id = share_id_for_query(canonical)
-
-    # already have a real preview? keep it. tiny junk gets overwritten below.
-    if lineup_preview_exists(share_id):
-        return jsonify(
-            {
-                "share_id": share_id,
-                "preview_url": _generate_image_url(
-                    characters,
-                    measure_ears=measure_ears,
-                    scale_height=scale_height,
-                ),
-                "cached": True,
-            }
-        )
-
-    upload = request.files.get("preview")
-    if upload is None:
-        return jsonify({"error": "missing preview"}), 400
-    png_bytes = upload.read(MAX_PNG_BYTES + 1)
-    if len(png_bytes) > MAX_PNG_BYTES:
-        return jsonify({"error": "preview too big"}), 400
-    if not looks_like_png(png_bytes):
-        return jsonify({"error": "not a png"}), 400
-
-    save_lineup_preview(share_id, png_bytes)
-
-    return jsonify(
-        {
-            "share_id": share_id,
-            "preview_url": _generate_image_url(
-                characters,
-                measure_ears=measure_ears,
-                scale_height=scale_height,
-            ),
-            "cached": False,
-        }
-    )
-
-
-@app.route("/generate-image")
-def generate_image():
-    """
-    OG / Discord preview. Same ?characters= query as the page.
-    Only serves a client-uploaded PNG; 404 until someone views the lineup.
-    """
-    share_id = _lineup_share_id_from_args(request.args)
-    if share_id and lineup_preview_exists(share_id):
-        return send_file(
-            lineup_png_path(share_id),
-            mimetype="image/png",
-            max_age=31536000,
-            download_name="preview.png",
-        )
-    return "Preview not ready", 404
 
 
 @app.route("/api/lineup")
@@ -348,12 +204,6 @@ def index():
     payload = _lineup_state(characters_list, measure_ears, scale_height)
     lineup = payload["characters"]
     characters_query = payload["charactersQuery"]
-    preview_url = _generate_image_url(
-        characters_query,
-        measure_ears=measure_ears,
-        scale_height=scale_height,
-        external=True,
-    )
 
     return render_template(
         "index.html",
@@ -365,10 +215,7 @@ def index():
         measure_ears=measure_ears,
         scale_height=scale_height,
         lineup=lineup,
-        preview_url=preview_url,
         page_url=_as_https(request.url),
-        share_export_width=EXPORT_WIDTH,
-        share_export_height=EXPORT_HEIGHT,
         version=os.getenv("GIT_COMMIT", "ERR_NO_REVISION"),
         server_url=os.getenv("SERVER_URL", "https://nextcloud.kitsunehosting.net/"),
         presets=presets,
