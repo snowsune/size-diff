@@ -12,6 +12,8 @@ from flask import (
 import os
 import logging
 
+from werkzeug.middleware.proxy_fix import ProxyFix
+
 from app.utils.calculate_heights import convert_to_inches
 from app.utils.parse_data import (
     extract_characters,
@@ -33,15 +35,15 @@ from app.shares import (
     lineup_png_path,
     lineup_preview_exists,
     looks_like_png,
-    preview_looks_valid,
+    normalize_characters_query,
     save_lineup_preview,
     share_id_for_query,
 )
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 stats_manager = StatsManager("/var/size-diff/stats.db")
-
 
 def _truthy_arg(value, default=False):
     if value is None:
@@ -62,9 +64,6 @@ _PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 PAINTERS_CANVAS_ROOT = os.path.join(
     _PROJECT_ROOT, "node_modules", "painters-canvas"
 )
-OG_PLACEHOLDER = os.path.join(
-    os.path.dirname(__file__), "static", "images", "og-placeholder.png"
-)
 
 
 # Sets up logging
@@ -83,7 +82,7 @@ species_list = [
 
 
 def _lineup_share_id_from_args(args) -> str | None:
-    characters = (args.get("characters") or "").strip()
+    characters = normalize_characters_query(args.get("characters") or "")
     if not characters:
         return None
     measure_ears = args.get("measure_ears", "true") != "false"
@@ -96,6 +95,12 @@ def _lineup_share_id_from_args(args) -> str | None:
         scale_height=scale_height,
     )
     return share_id_for_query(canonical)
+
+
+def _as_https(url: str) -> str:
+    if url.startswith("http://"):
+        return "https://" + url[len("http://") :]
+    return url
 
 
 def _generate_image_url(
@@ -111,7 +116,8 @@ def _generate_image_url(
         kwargs["measure_ears"] = "false"
     if scale_height:
         kwargs["scale_height"] = "true"
-    return url_for("generate_image", _external=external, **kwargs)
+    url = url_for("generate_image", _external=external, **kwargs)
+    return _as_https(url) if external else url
 
 
 @app.route("/lib/painters-canvas/<path:filename>")
@@ -150,12 +156,7 @@ def serve_lineup_share(share_id):
         return "Not found", 404
     if path.is_file():
         return send_file(path, mimetype="image/png", max_age=31536000)
-    return send_file(
-        OG_PLACEHOLDER,
-        mimetype="image/png",
-        max_age=60,
-        download_name="preview.png",
-    )
+    return "Preview not ready", 404
 
 
 @app.route("/api/shares/lineup", methods=["POST"])
@@ -168,7 +169,7 @@ def upload_lineup_share():
     if not allow_upload(ip):
         return jsonify({"error": "slow down a sec"}), 429
 
-    characters = (request.form.get("characters") or "").strip()
+    characters = normalize_characters_query(request.form.get("characters") or "")
     if not characters:
         return jsonify({"error": "missing characters"}), 400
 
@@ -203,8 +204,6 @@ def upload_lineup_share():
         return jsonify({"error": "preview too big"}), 400
     if not looks_like_png(png_bytes):
         return jsonify({"error": "not a png"}), 400
-    if not preview_looks_valid(png_bytes):
-        return jsonify({"error": "preview too small / wrong size"}), 400
 
     save_lineup_preview(share_id, png_bytes)
 
@@ -225,7 +224,7 @@ def upload_lineup_share():
 def generate_image():
     """
     OG / Discord preview. Same ?characters= query as the page.
-    Serves the client-rendered cache when we have one, else the placeholder.
+    Only serves a client-uploaded PNG; 404 until someone views the lineup.
     """
     share_id = _lineup_share_id_from_args(request.args)
     if share_id and lineup_preview_exists(share_id):
@@ -235,12 +234,7 @@ def generate_image():
             max_age=31536000,
             download_name="preview.png",
         )
-    return send_file(
-        OG_PLACEHOLDER,
-        mimetype="image/png",
-        max_age=60,
-        download_name="preview.png",
-    )
+    return "Preview not ready", 404
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -331,6 +325,7 @@ def index():
         scale_height=scale_height,
         lineup=lineup,
         preview_url=preview_url,
+        page_url=_as_https(request.url),
         share_export_width=EXPORT_WIDTH,
         share_export_height=EXPORT_HEIGHT,
         version=os.getenv("GIT_COMMIT", "ERR_NO_REVISION"),

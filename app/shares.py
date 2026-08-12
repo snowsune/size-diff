@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import hashlib
 import re
-import struct
 import time
 from pathlib import Path
 from urllib.parse import urlencode
@@ -14,7 +13,6 @@ _DEFAULT_SHARES_ROOT = _PROJECT_ROOT / "data" / "shares"
 
 SHARE_ID_RE = re.compile(r"^[a-f0-9]{16,64}$")
 MAX_PNG_BYTES = 8 * 1024 * 1024
-MIN_PREVIEW_BYTES = 2_000
 EXPORT_WIDTH = 1200
 EXPORT_HEIGHT = 630
 
@@ -29,6 +27,17 @@ def lineup_share_dir() -> Path:
     return path
 
 
+def normalize_characters_query(characters: str) -> str:
+    """
+    Collapse the character delimiter to '+'.
+
+    Query decoders treat bare '+' as space (`Alice+wolf` → `Alice wolf`),
+    while multipart uploads and `%2B` keep a real plus. Same lineup must
+    hash the same either way.
+    """
+    return "+".join(part for part in characters.replace("+", " ").split() if part)
+
+
 def canonicalize_lineup_query(
     characters: str,
     *,
@@ -36,7 +45,7 @@ def canonicalize_lineup_query(
     scale_height: bool,
 ) -> str:
     """Stable query string so the same lineup always maps to the same cache key."""
-    pairs = [("characters", characters.strip())]
+    pairs = [("characters", normalize_characters_query(characters))]
     if not measure_ears:
         pairs.append(("measure_ears", "false"))
     if scale_height:
@@ -59,22 +68,12 @@ def looks_like_png(data: bytes) -> bool:
     return len(data) >= 8 and data[:8] == b"\x89PNG\r\n\x1a\n"
 
 
-def preview_looks_valid(data: bytes) -> bool:
-    """Real OG frames are ~1200x630. Tiny test squares dont count."""
-    if not looks_like_png(data) or len(data) < MIN_PREVIEW_BYTES or len(data) < 33:
-        return False
-    if data[12:16] != b"IHDR":
-        return False
-    width, height = struct.unpack(">II", data[16:24])
-    return width >= 600 and height >= 300
-
-
 def lineup_preview_exists(share_id: str) -> bool:
     try:
         path = lineup_png_path(share_id)
     except ValueError:
         return False
-    return path.is_file() and preview_looks_valid(path.read_bytes())
+    return path.is_file()
 
 
 def save_lineup_preview(share_id: str, png_bytes: bytes) -> Path:

@@ -2,9 +2,6 @@
 
 Find it at https://size-diff.snowsune.net/
 
-Lineups are drawn **client-side** with [Painter's Canvas](https://github.com/snowsune/PaintersCanvas)!
-Species height math still runs on the server. OG previews are a static placeholder png for now (no Pillow lineup render).
-
 
 ## Development
 
