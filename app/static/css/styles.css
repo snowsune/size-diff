@@ -279,6 +279,25 @@ button:hover {
   margin-top: 0.15rem;
 }
 
+.control-move {
+  margin-top: 0;
+  padding: 0.35rem 0.4rem;
+  font-size: 0.85em;
+  line-height: 1;
+  text-align: center;
+  border-radius: 5px;
+  text-decoration: none;
+  background-color: #222;
+  color: #ccc;
+  border: 1px solid #444;
+  display: inline-block;
+}
+
+.control-move:hover {
+  background-color: #333;
+  color: #fff;
+}
+
 .control-remove {
   flex: 1;
   margin-top: 0;

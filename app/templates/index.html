@@ -301,6 +301,12 @@
                                 <input type="color" name="color" value="{{ entry.color or '#888888' }}" aria-label="{{ entry.name }} color">
                             </label>
                             <div class="control-actions">
+                                {% if i > 0 %}
+                                <a class="control-move" href="/move/{{ i }}/left?characters={{ characters_query }}{{ settings_query }}" title="Move left" aria-label="Move {{ entry.name }} left">←</a>
+                                {% endif %}
+                                {% if not loop.last %}
+                                <a class="control-move" href="/move/{{ i }}/right?characters={{ characters_query }}{{ settings_query }}" title="Move right" aria-label="Move {{ entry.name }} right">→</a>
+                                {% endif %}
                                 <a class="control-remove" href="/remove/{{ i }}?characters={{ characters_query }}{{ settings_query }}">Remove</a>
                             </div>
                         </form>

@@ -736,14 +736,35 @@ function rebuildCharacterControls(config) {
 
     const actions = document.createElement("div");
     actions.className = "control-actions";
+    const linkParams = new URLSearchParams();
+    linkParams.set("characters", charactersQuery);
+    if (!measureEars) linkParams.set("measure_ears", "false");
+    if (scaleHeight) linkParams.set("scale_height", "true");
+    const qs = linkParams.toString();
+
+    if (i > 0) {
+      const left = document.createElement("a");
+      left.className = "control-move";
+      left.textContent = "←";
+      left.title = "Move left";
+      left.setAttribute("aria-label", `Move ${entry.name} left`);
+      left.href = `/move/${i}/left?${qs}`;
+      actions.append(left);
+    }
+    if (i < config.characters.length - 1) {
+      const right = document.createElement("a");
+      right.className = "control-move";
+      right.textContent = "→";
+      right.title = "Move right";
+      right.setAttribute("aria-label", `Move ${entry.name} right`);
+      right.href = `/move/${i}/right?${qs}`;
+      actions.append(right);
+    }
+
     const remove = document.createElement("a");
     remove.className = "control-remove";
     remove.textContent = "Remove";
-    const removeParams = new URLSearchParams();
-    removeParams.set("characters", charactersQuery);
-    if (!measureEars) removeParams.set("measure_ears", "false");
-    if (scaleHeight) removeParams.set("scale_height", "true");
-    remove.href = `/remove/${i}?${removeParams.toString()}`;
+    remove.href = `/remove/${i}?${qs}`;
     actions.append(remove);
     form.appendChild(actions);
 
@@ -956,10 +977,10 @@ function wireSoftNav() {
         return;
       }
 
-      const remove = target.closest("a.control-remove");
-      if (remove instanceof HTMLAnchorElement) {
+      const moveOrRemove = target.closest("a.control-move, a.control-remove");
+      if (moveOrRemove instanceof HTMLAnchorElement) {
         event.preventDefault();
-        mutateLineup(remove.href)
+        mutateLineup(moveOrRemove.href)
           .then((data) => applyLineupState(data))
           .catch(showSoftNavError);
         return;

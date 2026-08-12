@@ -278,6 +278,26 @@ def remove_character(index):
     return _finish_lineup(updated_list, measure_ears, scale_height)
 
 
+@app.route("/move/<int:index>/<direction>", methods=["GET"])
+def move_character(index, direction):
+    """Swap/shift a char"""
+    characters = request.args.get("characters", "")
+    characters_list = list(extract_characters(characters))
+    measure_ears = _truthy_arg(request.args.get("measure_ears"), default=True)
+    scale_height = _truthy_arg(request.args.get("scale_height"), default=False)
+
+    if direction not in ("left", "right") or not (0 <= index < len(characters_list)):
+        return _finish_lineup(characters_list, measure_ears, scale_height)
+
+    swap = index - 1 if direction == "left" else index + 1
+    if 0 <= swap < len(characters_list):
+        characters_list[index], characters_list[swap] = (
+            characters_list[swap],
+            characters_list[index],
+        )
+    return _finish_lineup(characters_list, measure_ears, scale_height)
+
+
 @app.route("/update/<int:index>", methods=["GET", "POST"])
 def update_character(index):
     """Tweak one character's anthro height and/or color, keep the rest of the lineup."""
