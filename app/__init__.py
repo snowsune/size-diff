@@ -27,6 +27,13 @@ from app.utils.character import Character, normalize_hex_color
 from app.utils.lineup import build_lineup_payload
 from app.utils.species_lookup import list_species_names
 from app.utils.paths import SPECIES_DATA_DIR
+from app.preview import (
+    EXPORT_HEIGHT,
+    EXPORT_WIDTH,
+    MAX_PNG_BYTES,
+    normalize_characters_query,
+    preview_file,
+)
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -62,12 +69,6 @@ else:
 
 # Load species list on startup
 species_list = list_species_names()
-
-
-def _as_https(url: str) -> str:
-    if url.startswith("http://"):
-        return "https://" + url[len("http://") :]
-    return url
 
 
 def _wants_json() -> bool:
@@ -115,6 +116,36 @@ def serve_art(rel_path):
     if not os.path.isfile(resolved):
         return "Not found", 404
     return send_file(resolved, max_age=31536000)
+
+
+@app.route("/preview.png", methods=["GET", "POST"])
+def lineup_preview():
+    """Same ?characters= slug as `/`. POST warms /tmp; GET serves PNG (CF caches)."""
+    characters = normalize_characters_query(request.args.get("characters") or "")
+    if not characters:
+        return ("missing characters", 400) if request.method == "POST" else (
+            "Preview not ready",
+            404,
+        )
+
+    measure_ears = _truthy_arg(request.args.get("measure_ears"), default=True)
+    scale_height = _truthy_arg(request.args.get("scale_height"), default=False)
+    path = preview_file(
+        characters, measure_ears=measure_ears, scale_height=scale_height
+    )
+
+    if request.method == "GET":
+        if not path.is_file():
+            return "Preview not ready", 404
+        # Long TTL so Cloudflare holds it; /tmp is just the origin miss buffer.
+        return send_file(path, mimetype="image/png", max_age=7 * 24 * 3600)
+
+    upload = request.files.get("preview")
+    data = upload.read(MAX_PNG_BYTES + 1) if upload else b""
+    if not data or len(data) > MAX_PNG_BYTES or data[:8] != b"\x89PNG\r\n\x1a\n":
+        return "bad preview", 400
+    path.write_bytes(data)
+    return "", 204
 
 
 @app.route("/api/lineup")
@@ -204,6 +235,8 @@ def index():
     payload = _lineup_state(characters_list, measure_ears, scale_height)
     lineup = payload["characters"]
     characters_query = payload["charactersQuery"]
+    preview_path = payload["previewPath"]
+    preview_url = request.url_root.rstrip("/") + preview_path
 
     return render_template(
         "index.html",
@@ -215,7 +248,11 @@ def index():
         measure_ears=measure_ears,
         scale_height=scale_height,
         lineup=lineup,
-        page_url=_as_https(request.url),
+        preview_url=preview_url,
+        preview_path=preview_path,
+        page_url=request.url,
+        share_export_width=EXPORT_WIDTH,
+        share_export_height=EXPORT_HEIGHT,
         version=os.getenv("GIT_COMMIT", "ERR_NO_REVISION"),
         server_url=os.getenv("SERVER_URL", "https://nextcloud.kitsunehosting.net/"),
         presets=presets,

@@ -5,6 +5,7 @@ from urllib.parse import urlencode
 from flask import url_for
 
 from app.utils.calculate_heights import calculate_height_offset
+from app.preview import EXPORT_HEIGHT, EXPORT_WIDTH
 
 
 def _art_json_url(stem: str) -> str:
@@ -83,5 +84,8 @@ def build_lineup_payload(
         "measureToHead": measure_ears,
         "scaleHeight": scale_height,
         "charactersQuery": characters_query,
+        "exportWidth": EXPORT_WIDTH,
+        "exportHeight": EXPORT_HEIGHT,
         "pagePath": "/?" + urlencode(params),
+        "previewPath": "/preview.png?" + urlencode(params),
     }

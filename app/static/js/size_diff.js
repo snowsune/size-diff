@@ -419,7 +419,10 @@ function loadImage(url) {
  *   measureToHead: boolean,
  *   scaleHeight: boolean,
  *   charactersQuery?: string,
+ *   exportWidth?: number,
+ *   exportHeight?: number,
  *   pagePath?: string,
+ *   previewPath?: string,
  * }} LineupConfig
  */
 
@@ -501,6 +504,9 @@ export async function renderLineup(host, config, opts = {}) {
 
   if (!opts.lightbox) {
     layoutCharacterControls(canvas);
+    uploadLineupPreview(canvas, config).catch((err) => {
+      console.warn("preview upload failed:", err);
+    });
     enableLineupLightbox(canvas, config);
   }
 
@@ -602,6 +608,36 @@ function layoutCharacterControls(canvas) {
     tallest = Math.max(tallest, card.offsetHeight);
   });
   row.style.minHeight = `${tallest}px`;
+}
+
+/**
+ * Draw the lineup into a 1200x630 frame and POST it to the same preview slug.
+ *
+ * @param {any} canvas
+ * @param {LineupConfig} config
+ */
+async function uploadLineupPreview(canvas, config) {
+  const previewPath = config.previewPath;
+  if (!previewPath || typeof canvas.exportPngBlob !== "function") return;
+
+  const frameWidth = config.exportWidth || 1200;
+  const frameHeight = config.exportHeight || 630;
+
+  const blob = await canvas.exportPngBlob({
+    pixelRatio: 1,
+    frameWidth,
+    frameHeight,
+    frameBackground: "#ffffff",
+  });
+
+  const body = new FormData();
+  body.set("preview", blob, "preview.png");
+
+  const res = await fetch(previewPath, { method: "POST", body });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`upload failed (${res.status}): ${text}`);
+  }
 }
 
 /** @param {LineupConfig} config */
