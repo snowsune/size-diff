@@ -8,6 +8,7 @@ from flask import (
     url_for,
     flash,
     jsonify,
+    Response,
 )
 import os
 import logging
@@ -30,15 +31,15 @@ from app.utils.paths import SPECIES_DATA_DIR
 from app.preview import (
     EXPORT_HEIGHT,
     EXPORT_WIDTH,
-    MAX_PNG_BYTES,
     normalize_characters_query,
-    preview_file,
+    render_preview_png,
 )
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 stats_manager = StatsManager("/var/size-diff/stats.db")
+
 
 def _truthy_arg(value, default=False):
     if value is None:
@@ -54,11 +55,10 @@ def _settings_query(measure_ears: bool, scale_height: bool) -> str:
         settings_query += "&scale_height=true"
     return settings_query
 
+
 # Painter's Canvas lives in node_modules (npm install from github)
 _PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-PAINTERS_CANVAS_ROOT = os.path.join(
-    _PROJECT_ROOT, "node_modules", "painters-canvas"
-)
+PAINTERS_CANVAS_ROOT = os.path.join(_PROJECT_ROOT, "node_modules", "painters-canvas")
 
 
 # Sets up logging
@@ -118,34 +118,28 @@ def serve_art(rel_path):
     return send_file(resolved, max_age=31536000)
 
 
-@app.route("/preview.png", methods=["GET", "POST"])
+@app.route("/preview.png", methods=["GET"])
 def lineup_preview():
-    """Same ?characters= slug as `/`. POST warms /tmp; GET serves PNG (CF caches)."""
+    """Same ?characters= slug as `/`. Renders via Node each time (CF caches)."""
     characters = normalize_characters_query(request.args.get("characters") or "")
     if not characters:
-        return ("missing characters", 400) if request.method == "POST" else (
-            "Preview not ready",
-            404,
-        )
+        return "missing characters", 400
 
     measure_ears = _truthy_arg(request.args.get("measure_ears"), default=True)
     scale_height = _truthy_arg(request.args.get("scale_height"), default=False)
-    path = preview_file(
-        characters, measure_ears=measure_ears, scale_height=scale_height
+    characters_list = extract_characters(characters)
+    payload = _lineup_state(characters_list, measure_ears, scale_height)
+    try:
+        png = render_preview_png(payload)
+    except Exception:
+        logging.exception("preview render failed for %s", characters)
+        return "Preview render failed", 500
+
+    return Response(
+        png,
+        mimetype="image/png",
+        headers={"Cache-Control": "public, max-age=86400"},
     )
-
-    if request.method == "GET":
-        if not path.is_file():
-            return "Preview not ready", 404
-        # Long TTL so Cloudflare holds it; /tmp is just the origin miss buffer.
-        return send_file(path, mimetype="image/png", max_age=7 * 24 * 3600)
-
-    upload = request.files.get("preview")
-    data = upload.read(MAX_PNG_BYTES + 1) if upload else b""
-    if not data or len(data) > MAX_PNG_BYTES or data[:8] != b"\x89PNG\r\n\x1a\n":
-        return "bad preview", 400
-    path.write_bytes(data)
-    return "", 204
 
 
 @app.route("/api/lineup")
@@ -321,7 +315,10 @@ def update_character(index):
             characters_list[index].height = max(1.0, feet * 12.0 + inches)
         except ValueError:
             if _wants_json():
-                return jsonify({"error": "Height needs to be numbers (feet + inches)."}), 400
+                return (
+                    jsonify({"error": "Height needs to be numbers (feet + inches)."}),
+                    400,
+                )
             flash("Height needs to be numbers (feet + inches).", "error")
             return redirect(request.referrer or url_for("index"))
 
