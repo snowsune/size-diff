@@ -3,9 +3,9 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Need node + git so we can npm install painters-canvas from github
+# Install js deps, fonts
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends nodejs npm git \
+    && apt-get install -y --no-install-recommends nodejs npm git fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
