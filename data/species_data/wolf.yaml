@@ -1,0 +1,25 @@
+male:
+  image: "Placeholder/m_wolf.png"
+  ears_offset: 0
+  color: "050504"
+  species_length: 40
+  species_tail_length: 20
+  species_weight: 100 # Pounds
+  data:
+    - anthro_size: 76 # 6'4"
+      height: 36
+    - anthro_size: 60 # 5'
+      height: 32
+
+female:
+  image: "Hunner/Hieght_Ref_Ky-Li_for_Vixi.png"
+  ears_offset: 10
+  color: "212120"
+  species_length: 40
+  species_tail_length: 20
+  species_weight: 100 # Pounds
+  data:
+    - anthro_size: 76 # 6'4"
+      height: 34
+    - anthro_size: 60 # 5'
+      height: 28

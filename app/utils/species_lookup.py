@@ -1,5 +1,7 @@
 import yaml
 
+from app.utils.paths import SPECIES_DATA_DIR
+
 # Default ambiguous species data
 DEFAULT_DATA = {
     "male": {
@@ -23,10 +25,20 @@ DEFAULT_DATA = {
 
 def load_species_data(species_name):
     try:
-        file_path = f"app/species_data/{species_name}.yaml"
+        file_path = SPECIES_DATA_DIR / f"{species_name}.yaml"
         with open(file_path, "r") as file:
             data = yaml.safe_load(file)
         return data
     except FileNotFoundError:
-        # Return default ambiguous data if species file is not found
         return DEFAULT_DATA
+
+
+def list_species_names() -> list[str]:
+    """Species ids from data/species_data/*.yaml (sorted)."""
+    if not SPECIES_DATA_DIR.is_dir():
+        return []
+    return sorted(
+        p.stem
+        for p in SPECIES_DATA_DIR.glob("*.yaml")
+        if p.is_file()
+    )

@@ -3,67 +3,62 @@ from flask import (
     render_template,
     request,
     send_file,
-    jsonify,
+    send_from_directory,
     redirect,
     url_for,
     flash,
-    make_response,
+    jsonify,
+    Response,
 )
 import os
-import io
-import random
 import logging
 
-from PIL import Image
+from werkzeug.middleware.proxy_fix import ProxyFix
 
-from concurrent.futures import ThreadPoolExecutor
-
-from flask_caching import Cache
-from functools import wraps
-
-from app.utils.species_lookup import load_species_data
-from app.utils.calculate_heights import calculate_height_offset, convert_to_inches
+from app.utils.calculate_heights import convert_to_inches
 from app.utils.parse_data import (
     extract_characters,
-    filter_valid_characters,
     generate_characters_query_string,
-    remove_character_from_query,
     load_preset_characters,
     get_default_characters,
 )
 from app.utils.stats import StatsManager
-from app.utils.generate_image import render_image
-from app.utils.character import Character
+from app.utils.art_paths import get_art_image_path
+from app.utils.character import Character, normalize_hex_color
+from app.utils.lineup import build_lineup_payload
+from app.utils.species_lookup import list_species_names
+from app.utils.paths import SPECIES_DATA_DIR
+from app.preview import (
+    EXPORT_HEIGHT,
+    EXPORT_WIDTH,
+    normalize_characters_query,
+    render_preview_png,
+)
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 stats_manager = StatsManager("/var/size-diff/stats.db")
-executor = ThreadPoolExecutor(max_workers=4)
-
-# Cache
-cache = Cache(app, config={"CACHE_TYPE": "simple"})
-cache_stats = {"hits": 0, "misses": 0}
 
 
-def cache_with_stats(timeout, query_string=False):
-    """Track cache performance while caching responses."""
+def _truthy_arg(value, default=False):
+    if value is None:
+        return default
+    return str(value).strip().lower() in ("1", "true", "yes", "on")
 
-    def decorator(f):
-        @wraps(f)
-        def wrapped(*args, **kwargs):
-            cache_key = f"{request.path}?{request.query_string.decode('utf-8')}"
-            cached_response = cache.get(cache_key)
-            if cached_response:
-                cache_stats["hits"] += 1
-                return cached_response
-            cache_stats["misses"] += 1
-            response = f(*args, **kwargs)
-            cache.set(cache_key, response, timeout=timeout)
-            return response
 
-        return wrapped
+def _settings_query(measure_ears: bool, scale_height: bool) -> str:
+    settings_query = ""
+    if not measure_ears:
+        settings_query += "&measure_ears=false"
+    if scale_height:
+        settings_query += "&scale_height=true"
+    return settings_query
 
-    return decorator
+
+# Painter's Canvas lives in node_modules (npm install from github)
+_PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+PAINTERS_CANVAS_ROOT = os.path.join(_PROJECT_ROOT, "node_modules", "painters-canvas")
 
 
 # Sets up logging
@@ -73,81 +68,92 @@ else:
     logging.basicConfig(level=logging.INFO)
 
 # Load species list on startup
-species_data_folder = "app/species_data"
-species_list = [
-    f.replace(".yaml", "")
-    for f in os.listdir(species_data_folder)
-    if f.endswith(".yaml")
-]
+species_list = list_species_names()
 
 
-@app.route("/generate-image")
-@cache_with_stats(timeout=31536000, query_string=True)
-def generate_image():
-    # Get characters
+def _wants_json() -> bool:
+    """Soft-nav requests use ?format=json (header is a backup)."""
+    return (
+        request.args.get("format") == "json"
+        or request.headers.get("X-Size-Diff-Soft") == "1"
+    )
+
+
+def _lineup_state(characters_list, measure_ears: bool, scale_height: bool) -> dict:
+    if not characters_list:
+        characters_list = get_default_characters()
+    characters_query = generate_characters_query_string(characters_list)
+    return build_lineup_payload(
+        characters_list,
+        measure_ears=measure_ears,
+        scale_height=scale_height,
+        characters_query=characters_query,
+    )
+
+
+def _finish_lineup(characters_list, measure_ears: bool, scale_height: bool):
+    """Redirect for normal browsers; JSON for soft-nav fetches."""
+    payload = _lineup_state(characters_list, measure_ears, scale_height)
+    if _wants_json():
+        return jsonify(payload)
+    return redirect(payload["pagePath"])
+
+
+@app.route("/lib/painters-canvas/<path:filename>")
+def painters_canvas_asset(filename):
+    """Serve Painter's Canvas ESM from node_modules. Thats it. No vendor copy."""
+    return send_from_directory(PAINTERS_CANVAS_ROOT, filename)
+
+
+@app.route("/art/<path:rel_path>")
+def serve_art(rel_path):
+    """Serve art from art/."""
+    file_path = get_art_image_path(rel_path)
+    art_root = os.path.abspath("art")
+    resolved = os.path.abspath(file_path)
+    if not resolved.startswith(art_root + os.sep):
+        return "Not found", 404
+    if not os.path.isfile(resolved):
+        return "Not found", 404
+    return send_file(resolved, max_age=31536000)
+
+
+@app.route("/preview.png", methods=["GET"])
+def lineup_preview():
+    """Same ?characters= slug as `/`. Renders via Node each time (CF caches)."""
+    characters = normalize_characters_query(request.args.get("characters") or "")
+    if not characters:
+        return "missing characters", 400
+
+    measure_ears = _truthy_arg(request.args.get("measure_ears"), default=True)
+    scale_height = _truthy_arg(request.args.get("scale_height"), default=False)
+    characters_list = extract_characters(characters)
+    payload = _lineup_state(characters_list, measure_ears, scale_height)
+    try:
+        png = render_preview_png(payload)
+    except Exception:
+        logging.exception("preview render failed for %s", characters)
+        return "Preview render failed", 500
+
+    return Response(
+        png,
+        mimetype="image/png",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
+
+
+@app.route("/api/lineup")
+def api_lineup():
+    """Lineup JSON for soft-nav redraws (same blob the page embeds)."""
     characters = request.args.get("characters", "")
     characters_list = extract_characters(characters)
-
-    # Get settings
-    measure_ears = request.args.get("measure_ears", True) == "True"
-    scale_height = request.args.get("scale_height", True) == "True"
-
-    # Get height
-    size = int(request.args.get("size", "400"))
-
-    # Record we've generated a new image!
-    stats_manager.increment_images_generated()
-
-    def generate_and_save():
-        if len(characters_list) == 0:
-            logging.warn("Asked to generate an empty image!")
-
-            # Generate an empty image
-            image = Image.new("RGB", (int(size * 1.4), size))
-            pixels = image.load()
-
-            for i in range(image.size[0]):
-                for j in range(image.size[1]):
-                    pixels[i, j] = (
-                        random.randint(0, 255),
-                        random.randint(0, 255),
-                        random.randint(0, 255),
-                    )
-        else:
-            image = render_image(
-                characters_list,
-                size,
-                measure_to_ears=measure_ears,
-                use_species_scaling=scale_height,
-            )
-
-        # Save image to a BytesIO object
-        img_io = io.BytesIO()
-        image.save(img_io, "PNG")
-        img_io.seek(0)
-        return img_io
-
-    # Submit the task to the executor
-    future = executor.submit(generate_and_save)
-
-    try:
-        img_io = future.result(timeout=30)  # Wait for up to 30 seconds
-    except TimeoutError:
-        return "Image generation timed out", 504
-
-    # Create a response with the image and set Content-Type to image/png
-    response = make_response(img_io.read())
-    response.headers.set("Content-Type", "image/png")
-    response.headers.set("Content-Disposition", "inline", filename="preview.png")
-    response.headers.set("Cache-Control", "public, max-age=31536000")
-
-    return response
+    measure_ears = _truthy_arg(request.args.get("measure_ears"), default=True)
+    scale_height = _truthy_arg(request.args.get("scale_height"), default=False)
+    return jsonify(_lineup_state(characters_list, measure_ears, scale_height))
 
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    species = species_list  # Assuming species_list is defined elsewhere
-
     # Extract characters from query string
     characters = request.args.get("characters", "")
     characters_list = extract_characters(characters)
@@ -169,10 +175,18 @@ def index():
 
     # Load presets for the dropdown
     presets = load_preset_characters()
-    preset_map = {
-        f"{p['name'].replace('_', ' ').title()} --- {p['species'].replace('_', ' ').title()}, {p['gender']}, {p.get('description', '')}": f"{p['species']},{p['gender']},{p['height']},{p['name']}"
-        for p in presets
-    }
+    preset_map = {}
+    for p in presets:
+        label = (
+            f"{p['name'].replace('_', ' ').title()} --- "
+            f"{p['species'].replace('_', ' ').title()}, {p['gender']}, "
+            f"{p.get('description', '')}"
+        )
+        query = f"{p['species']},{p['gender']},{p['height']},{p['name']}"
+        color = normalize_hex_color(p.get("color"))
+        if color:
+            query = f"{query},{color}"
+        preset_map[label] = query
 
     if request.method == "POST":
         # Get species, name, and gender from form data
@@ -195,7 +209,8 @@ def index():
             try:
                 anthro_height = convert_to_inches(height)
             except Exception as e:
-                # Flash onscreen if error
+                if _wants_json():
+                    return jsonify({"error": str(e)}), 400
                 flash(str(e), "error")
                 return redirect(url_for("index"))
 
@@ -206,28 +221,32 @@ def index():
             characters_list.append(new_character)
 
         # Redirect with updated query string
-        characters_query = generate_characters_query_string(characters_list)
-
-        # Add settings to query string if enabled
-        settings_query = f"&measure_ears=false" if not measure_ears else ""
-        settings_query += f"&scale_height=true" if scale_height else ""
-
-        return redirect(f"/?characters={characters_query}{settings_query}")
+        return _finish_lineup(characters_list, measure_ears, scale_height)
 
     # Could prolly move this somewhere else?
-    settings_query = f"&measure_ears=false" if not measure_ears else ""
-    settings_query += f"&scale_height=true" if scale_height else ""
+    settings_query = _settings_query(measure_ears, scale_height)
+
+    payload = _lineup_state(characters_list, measure_ears, scale_height)
+    lineup = payload["characters"]
+    characters_query = payload["charactersQuery"]
+    preview_path = payload["previewPath"]
+    preview_url = request.url_root.rstrip("/") + preview_path
 
     return render_template(
         "index.html",
         stats=stats,
-        cache_performance=f"{cache_stats['hits']}/{cache_stats['misses']}",
         species=species_list,
         characters_list=characters_list,
-        characters_query=generate_characters_query_string(characters_list),
+        characters_query=characters_query,
         settings_query=settings_query,
         measure_ears=measure_ears,
         scale_height=scale_height,
+        lineup=lineup,
+        preview_url=preview_url,
+        preview_path=preview_path,
+        page_url=request.url,
+        share_export_width=EXPORT_WIDTH,
+        share_export_height=EXPORT_HEIGHT,
         version=os.getenv("GIT_COMMIT", "ERR_NO_REVISION"),
         server_url=os.getenv("SERVER_URL", "https://nextcloud.kitsunehosting.net/"),
         presets=presets,
@@ -244,17 +263,84 @@ def remove_character(index):
     logging.info(f"Remove path saw {characters} arg")
 
     # Remove the character at the specified index
-    updated_query = remove_character_from_query(characters_list, index)
+    updated_list = list(characters_list)
+    if 0 <= index < len(updated_list):
+        del updated_list[index]
 
-    # Redirect to the updated URL with the character removed
-    return redirect(f"/?characters={updated_query}")
+    measure_ears = _truthy_arg(request.args.get("measure_ears"), default=True)
+    scale_height = _truthy_arg(request.args.get("scale_height"), default=False)
+    return _finish_lineup(updated_list, measure_ears, scale_height)
+
+
+@app.route("/move/<int:index>/<direction>", methods=["GET"])
+def move_character(index, direction):
+    """Swap/shift a char"""
+    characters = request.args.get("characters", "")
+    characters_list = list(extract_characters(characters))
+    measure_ears = _truthy_arg(request.args.get("measure_ears"), default=True)
+    scale_height = _truthy_arg(request.args.get("scale_height"), default=False)
+
+    if direction not in ("left", "right") or not (0 <= index < len(characters_list)):
+        return _finish_lineup(characters_list, measure_ears, scale_height)
+
+    swap = index - 1 if direction == "left" else index + 1
+    if 0 <= swap < len(characters_list):
+        characters_list[index], characters_list[swap] = (
+            characters_list[swap],
+            characters_list[index],
+        )
+    return _finish_lineup(characters_list, measure_ears, scale_height)
+
+
+@app.route("/update/<int:index>", methods=["GET", "POST"])
+def update_character(index):
+    """Tweak one character's anthro height and/or color, keep the rest of the lineup."""
+    characters = request.args.get("characters") or request.form.get("characters") or ""
+    characters_list = extract_characters(characters)
+
+    if not (0 <= index < len(characters_list)):
+        if _wants_json():
+            return jsonify({"error": "Could not find that character to update."}), 404
+        flash("Could not find that character to update.", "error")
+        return redirect(url_for("index"))
+
+    src = request.form if request.method == "POST" else request.args
+
+    feet_raw = src.get("feet")
+    inches_raw = src.get("inches")
+    if feet_raw is not None or inches_raw is not None:
+        try:
+            feet = float(feet_raw or 0)
+            inches = float(inches_raw or 0)
+            characters_list[index].height = max(1.0, feet * 12.0 + inches)
+        except ValueError:
+            if _wants_json():
+                return (
+                    jsonify({"error": "Height needs to be numbers (feet + inches)."}),
+                    400,
+                )
+            flash("Height needs to be numbers (feet + inches).", "error")
+            return redirect(request.referrer or url_for("index"))
+
+    if "color" in src:
+        characters_list[index].color = normalize_hex_color(src.get("color"))
+
+    measure_ears = _truthy_arg(
+        src.get("measure_ears", request.args.get("measure_ears")),
+        default=True,
+    )
+    scale_height = _truthy_arg(
+        src.get("scale_height", request.args.get("scale_height")),
+        default=False,
+    )
+    return _finish_lineup(characters_list, measure_ears, scale_height)
 
 
 # The about page
 @app.route("/about")
 def about():
     # Load a YAML file to display on the page
-    yaml_file_path = os.path.join("app/species_data", "red_fox.yaml")
+    yaml_file_path = SPECIES_DATA_DIR / "red_fox.yaml"
     with open(yaml_file_path, "r") as yaml_file:
         yaml_content = yaml_file.read()
 
@@ -276,37 +362,21 @@ def add_preset():
         characters_list = get_default_characters()
     # Add the new preset
     if preset_val:
-        # Parse the preset string (species,gender,height,name)
+        # species,gender,height,name[,color]
         parts = preset_val.split(",")
-        if len(parts) == 4:
+        if len(parts) >= 4:
             characters_list.append(
                 Character(
                     name=parts[3],
                     species=parts[0],
                     height=float(parts[2]),
                     gender=parts[1],
+                    color=parts[4] if len(parts) >= 5 else None,
                 )
             )
-    # Build the new query string
-    characters_query = generate_characters_query_string(characters_list)
-    # Preserve settings if present
-    measure_ears = request.args.get("measure_ears")
-    scale_height = request.args.get("scale_height")
-    settings_query = ""
-    if measure_ears == "false":
-        settings_query += "&measure_ears=false"
-    if scale_height == "true":
-        settings_query += "&scale_height=true"
-    return redirect(f"/?characters={characters_query}{settings_query}")
-
-
-@app.route("/taur")
-def taur():
-    """
-    Base route for volnar's sub-page!
-    """
-
-    return render_template("taur.html")
+    measure_ears = _truthy_arg(request.args.get("measure_ears"), default=True)
+    scale_height = _truthy_arg(request.args.get("scale_height"), default=False)
+    return _finish_lineup(characters_list, measure_ears, scale_height)
 
 
 # For WSGI

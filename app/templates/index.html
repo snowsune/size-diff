@@ -12,19 +12,17 @@
     <!-- Open Graph tags -->
     <meta property="og:title" content="Vixi's Anthro Size Diff Calculator" />
     <meta property="og:description" content="Compare your anthro sizes!" />
-    <meta property="og:image"
-        content="{{ url_for('generate_image', characters=characters_query, measure_ears=measure_ears, scale_height=scale_height, size=630) }}" />
+    <meta property="og:image" content="{{ preview_url }}" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:url" content="https://size-diff.kitsunehosting.net/" />
+    <meta property="og:url" content="{{ page_url }}" />
     <meta property="og:type" content="website" />
 
     <!-- Twitter Card tags for larger image display in discord only (lol, special) -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Vixi's Anthro Size Diff Calculator" />
     <meta name="twitter:description" content="Compare your anthro sizes!" />
-    <meta name="twitter:image"
-        content="{{ url_for('generate_image', characters=characters_query, measure_ears=measure_ears, scale_height=scale_height, size=630) }}" />
+    <meta name="twitter:image" content="{{ preview_url }}" />
 </head>
 
 <body>
@@ -35,18 +33,6 @@
 
     <div class="container">
         <h1>Vixi's Anthro Size Diff Calculator!</h1>
-
-        <!-- Taur Calculator Button -->
-        <div class="taur-calc-link"
-            style="position: absolute; top: 120px; right: 40px; display: flex; flex-direction: column; align-items: flex-end; z-index: 10;">
-            <a href="/taur" class="taur-btn"
-                style="display: flex; align-items: center; background: #f80; color: #000; padding: 20px 30px; border-radius: 10px; font-size: 0.8em; font-weight: bold; text-decoration: none; box-shadow: 0 2px 8px #0008; transition: background 0.3s;">
-                <span style="margin-right: 18px; font-size: 1.5em;">Check out the Taur Calculator!</span>
-                <span style="font-size: 2.5em;">&#8594;</span>
-            </a>
-            <span style="margin-top: 10px; font-size: 1.1em; color: #fff; opacity: 0.8;">A new way to size up your
-                taur-self!</span>
-        </div>
 
         <!-- Display the flash message if there is one -->
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -125,22 +111,12 @@
                 </label>
             </div>
 
-            <!-- Switch script -->
-            <script>
-                document.getElementById('measure_ears').addEventListener('change', function () {
-                    this.form.submit();
-                });
-
-                document.getElementById('scale_height').addEventListener('change', function () {
-                    this.form.submit();
-                });
-            </script>
-
         </form>
 
         <script>
             // Use presetMap passed from Flask as a JSON object
             const presetMap = {{ preset_map | tojson | safe }};
+            window.sizeDiffPresetMap = presetMap;
             const presetNames = Object.keys(presetMap);
             const input = document.getElementById('preset-autocomplete');
             const suggestionsBox = document.getElementById('preset-suggestions');
@@ -217,10 +193,10 @@
                 });
             }
             document.getElementById('preset-add-btn').onclick = function () {
+                // Soft-nav captures this click when size_diff.js loaded; this is no-JS fallback.
                 var val = input.value;
                 var presetVal = presetMap[val] || null;
                 if (!presetVal) {
-                    // Try to match ignoring case
                     for (const key in presetMap) {
                         if (key.toLowerCase().startsWith(val.toLowerCase())) {
                             presetVal = presetMap[key];
@@ -231,13 +207,12 @@
                 if (!presetVal) return;
                 var url = new URL(window.location.href);
                 var chars = url.searchParams.get('characters') || '';
-                var base = '/add-preset?';
                 var params = new URLSearchParams();
                 params.set('preset', presetVal);
                 if (chars) params.set('characters', chars);
                 if (url.searchParams.get('measure_ears') === 'false') params.set('measure_ears', 'false');
                 if (url.searchParams.get('scale_height') === 'true') params.set('scale_height', 'true');
-                window.location.href = base + params.toString();
+                window.location.href = '/add-preset?' + params.toString();
             };
             // Optional: allow Enter key in input to trigger add
             input.addEventListener('keydown', function (e) {
@@ -300,17 +275,58 @@
 
         {% if characters_list %}
         <div class="image-container">
-            <img src="{{ url_for('generate_image', characters=characters_query, measure_ears=measure_ears, scale_height=scale_height, size=1024) }}"
-                alt="Generated Size Image" height="380vh" />
-
-            <div class="remove-buttons">
-                {% for char in characters_list %}
-                <a href="{{ url_for('remove_character', index=loop.index0, characters=characters_query, measure_ears=measure_ears, scale_height=scale_height) }}"
-                    class="remove-btn">
-                    Remove {{ char["name"] }} <!-- Now using the character's name -->
-                </a>
-                {% endfor %}
+            <div class="lineup-scroll">
+                <div class="lineup-stack">
+                    <div id="size-diff-canvas" class="lineup-host" aria-label="Size comparison"></div>
+                    <div class="character-controls" id="character-controls">
+                    {% for entry in lineup %}
+                    {% set i = loop.index0 %}
+                    <div class="character-control" data-slot-index="{{ i }}">
+                        <div class="control-name">{{ entry.name }}</div>
+                        <form class="control-form" method="get" action="{{ url_for('update_character', index=i) }}">
+                            <input type="hidden" name="characters" value="{{ characters_query }}">
+                            {% if not measure_ears %}<input type="hidden" name="measure_ears" value="false">{% endif %}
+                            {% if scale_height %}<input type="hidden" name="scale_height" value="true">{% endif %}
+                            <label class="control-field">
+                                <span>Height</span>
+                                <span class="height-inputs">
+                                    <input type="number" name="feet" min="0" max="40" step="1" value="{{ entry.feet }}" aria-label="{{ entry.name }} feet">
+                                    <span class="unit">'</span>
+                                    <input type="number" name="inches" min="0" max="11.99" step="0.5" value="{{ entry.inches }}" aria-label="{{ entry.name }} inches">
+                                    <span class="unit">"</span>
+                                </span>
+                            </label>
+                            <label class="control-field">
+                                <span>Color</span>
+                                <input type="color" name="color" value="{{ entry.color or '#888888' }}" aria-label="{{ entry.name }} color">
+                            </label>
+                            <div class="control-actions">
+                                {% if i > 0 %}
+                                <a class="control-move" href="/move/{{ i }}/left?characters={{ characters_query }}{{ settings_query }}" title="Move left" aria-label="Move {{ entry.name }} left">←</a>
+                                {% endif %}
+                                {% if not loop.last %}
+                                <a class="control-move" href="/move/{{ i }}/right?characters={{ characters_query }}{{ settings_query }}" title="Move right" aria-label="Move {{ entry.name }} right">→</a>
+                                {% endif %}
+                                <a class="control-remove" href="/remove/{{ i }}?characters={{ characters_query }}{{ settings_query }}">Remove</a>
+                            </div>
+                        </form>
+                    </div>
+                    {% endfor %}
+                    </div>
+                </div>
             </div>
+            <script type="application/json" id="size-diff-lineup">
+                {{ {
+                    "characters": lineup,
+                    "measureToHead": measure_ears,
+                    "scaleHeight": scale_height,
+                    "charactersQuery": characters_query,
+                    "exportWidth": share_export_width,
+                    "exportHeight": share_export_height,
+                    "previewPath": preview_path,
+                } | tojson }}
+            </script>
+            <script type="module" src="{{ url_for('static', filename='js/size_diff.js') }}"></script>
         </div>
 
         <!-- Takes you to the about page -->
@@ -319,8 +335,8 @@
         </div>
 
         <div class="share-link">
-            <p>Share this lineup:</p>
-            <a href="{{ request.url }}">{{ request.url }}</a>
+            <p>Share this lineup: <span class="share-hint">(click to copy)</span></p>
+            <button type="button" class="share-copy" data-url="{{ page_url }}" title="Copy lineup link">{{ page_url }}</button>
         </div>
         {% endif %}
     </div>
@@ -335,9 +351,9 @@
             and <a href="https://www.furaffinity.net/user/zhelya">Zhelya</a>
         </p>
         <p>
-            Join my <a href="{{ server_url }}">discord server!</a> Images Generated: {{ stats.images_generated }} |
-            Cache Performance: {{ cache_performance }} | Unique Visitors: {{ stats.unique_visitors }} | <a
-                href="https://ko-fi.com/snowsune">Support me on Kofi!</a>
+            Join me on <a href="https://matrix.kitsunehosting.net/">Matrix!</a> |
+            Unique Visitors: {{ stats.unique_visitors }} |
+            <a href="https://ko-fi.com/snowsune">Support me on Kofi!</a>
         </p>
     </footer>
 </body>

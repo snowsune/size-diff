@@ -1,0 +1,18 @@
+{
+  "name": "sinopa",
+  "image": "sinopa.png",
+  "joints": {
+    "origin": {
+      "x": 325,
+      "y": 666
+    },
+    "head": {
+      "x": 320,
+      "y": 26
+    },
+    "top-of-head": {
+      "x": 319,
+      "y": 2
+    }
+  }
+}

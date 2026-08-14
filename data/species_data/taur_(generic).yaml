@@ -1,0 +1,30 @@
+# Shared Hunner taur parts: lower body + upper body + tail (no rider)
+x-taur-composite: &taur_composite
+  base: "Hunner/Taur/Side_Taur_Hight_Refrence_L_BODY_Volnar_for_Vixi"
+  parts:
+    - joint: body
+      art: "Hunner/Taur/Side_Taur_Hight_Refrence_U_BODY_Volnar_for_Vixi"
+    - joint: tail
+      art: "Hunner/Taur/Side_Taur_Hight_Refrence_TAIL_Volnar_for_Vixi"
+
+male:
+  image: "Hunner/Taur/Side_Taur_Hight_Refrence_L_BODY_Volnar_for_Vixi.png"
+  ears_offset: 1
+  color: "f2de2b"
+  composite: *taur_composite
+  data:
+    - anthro_size: 76 # 6'4"
+      height: 76
+    - anthro_size: 60 # 5'
+      height: 60
+
+female:
+  image: "Hunner/Taur/Side_Taur_Hight_Refrence_L_BODY_Volnar_for_Vixi.png"
+  ears_offset: 1
+  color: "c91b12"
+  composite: *taur_composite
+  data:
+    - anthro_size: 76 # 6'4"
+      height: 76
+    - anthro_size: 60 # 5'
+      height: 60

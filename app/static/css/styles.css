@@ -12,15 +12,18 @@ body {
   font-family: Arial, sans-serif;
   display: flex;
   justify-content: center;
-  align-items: center;
-  min-height: 90vh;
+  align-items: flex-start;
+  min-height: 100vh;
+  /* room to scroll past the fixed footer */
+  padding-bottom: 5.5rem;
 }
 
 .container {
   text-align: center;
-  max-width: 800px;
+  max-width: 1100px;
   width: 100%;
   padding: 10px;
+  padding-bottom: 2rem;
 }
 
 /* Title style */
@@ -79,32 +82,236 @@ button:hover {
   background-color: #ffab40;
 }
 
-/* Image container styling */
+/* Image container — full viewport width, form stays in .container */
 .image-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 15px; /* Spacing between image and buttons */
-  margin: 20px auto; /* Center the whole container */
+  gap: 12px;
+  width: 100vw;
+  max-width: 100vw;
+  margin: 16px 0;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  padding: 0 12px;
+  box-sizing: border-box;
 }
 
-.remove-buttons {
+.lineup-scroll {
+  width: 100%;
+  max-width: none;
   display: flex;
-  gap: 10px; /* Spacing between buttons */
-  flex-wrap: wrap; /* Allow wrapping if too many buttons */
   justify-content: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
 
-.remove-btn {
-  padding: 10px;
+.lineup-stack {
+  display: flex;
+  flex-direction: column;
+  width: max-content;
+  margin: 0 auto;
+  align-items: stretch;
+}
+
+.lineup-host {
+  width: max-content;
+  min-height: 160px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #888;
+  overflow: visible;
+}
+
+.lineup-host canvas {
+  /* keep the real draw width; scroll sideways on phones instead of squishing */
+  max-width: none;
+  flex-shrink: 0;
+  height: auto;
+  border-radius: 4px;
+  image-rendering: auto;
+}
+
+.lineup-lightbox-open {
+  overflow: hidden;
+}
+
+.lineup-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.82);
+}
+
+.lineup-lightbox-panel {
+  position: relative;
+  max-width: min(96vw, 2400px);
+  max-height: 94vh;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.lineup-lightbox-scroll {
+  overflow: auto;
+  max-height: calc(94vh - 2.5rem);
+  border-radius: 6px;
+  background: #111;
+}
+
+.lineup-lightbox-close {
+  align-self: flex-end;
+  margin: 0;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.95em;
+  background: #333;
+  color: #fff;
+}
+
+.lineup-lightbox-close:hover {
+  background: #555;
+}
+
+.lineup-lightbox .lineup-host {
+  min-width: 0;
+  padding: 0.5rem;
+  background: #111;
+}
+
+.character-controls {
+  position: relative;
+  width: 100%;
+  margin-top: 0.5rem;
+  /* even columns until JS parks them under each sprite */
+  display: flex;
+  justify-content: space-evenly;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.character-controls.is-placed {
+  display: block;
+}
+
+.character-control {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  width: 7.25rem;
+  flex: 0 0 auto;
+  padding: 0.35rem 0.25rem;
+  box-sizing: border-box;
+}
+
+.character-controls.is-placed .character-control {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+}
+
+.control-name {
+  font-size: 0.85em;
+  font-weight: bold;
+  color: #9fe7ff;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.control-form {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.3rem;
+  width: 100%;
+}
+
+.control-field {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.15rem;
+  font-size: 0.75em;
+  margin: 0;
+  color: #bbb;
+}
+
+.height-inputs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+}
+
+.height-inputs input[type="number"] {
+  width: 2.6rem;
+  padding: 0.3rem 0.15rem;
+  font-size: 0.95em;
+  text-align: center;
+}
+
+.height-inputs .unit {
+  color: #888;
+}
+
+.control-field input[type="color"] {
+  width: 100%;
+  height: 1.6rem;
+  padding: 0;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid #444;
+  border-radius: 4px;
+}
+
+.control-actions {
+  display: flex;
+  gap: 0.3rem;
+  margin-top: 0.15rem;
+}
+
+.control-move {
+  margin-top: 0;
+  padding: 0.35rem 0.4rem;
+  font-size: 0.85em;
+  line-height: 1;
+  text-align: center;
+  border-radius: 5px;
+  text-decoration: none;
+  background-color: #222;
+  color: #ccc;
+  border: 1px solid #444;
+  display: inline-block;
+}
+
+.control-move:hover {
+  background-color: #333;
+  color: #fff;
+}
+
+.control-remove {
+  flex: 1;
+  margin-top: 0;
+  padding: 0.35rem 0.25rem;
+  font-size: 0.75em;
+  text-align: center;
+  border-radius: 5px;
+  text-decoration: none;
   background-color: #611212;
   color: #fff;
-  text-decoration: none;
-  border-radius: 5px;
-  transition: background-color 0.3s;
+  display: inline-block;
 }
 
-.remove-btn:hover {
+.control-remove:hover {
   background-color: #8b1f1f;
 }
 
@@ -155,6 +362,49 @@ a {
 }
 .about-link a:hover {
   text-decoration: underline;
+}
+
+.share-link {
+  margin: 1rem auto 2rem;
+  padding: 0 1rem;
+  max-width: 1100px;
+  word-break: break-all;
+}
+
+.share-link p {
+  margin-bottom: 0.4rem;
+}
+
+.share-hint {
+  font-size: 0.85em;
+  color: #666;
+  font-weight: normal;
+}
+
+.share-copy {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  background: #f7f7f7;
+  color: #1a4a6e;
+  font: inherit;
+  font-size: 0.95em;
+  cursor: pointer;
+  word-break: break-all;
+}
+
+.share-copy:hover {
+  background: #eef5fb;
+  border-color: #8ab;
+}
+
+.share-copy.is-copied {
+  background: #e7f6ea;
+  border-color: #6a9;
+  color: #1a5c2e;
 }
 
 .back-link {

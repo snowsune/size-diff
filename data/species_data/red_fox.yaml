@@ -1,0 +1,23 @@
+male:
+  image: "Chrissy/randal.png"
+  ears_offset: 4
+  species_length: 28
+  species_tail_length: 16
+  species_weight: 12 # Pounds
+  data:
+    - anthro_size: 76 # 6'4"
+      height: 17
+    - anthro_size: 60 # 5'
+      height: 15
+
+female:
+  image: "Chrissy/sinopa.png"
+  ears_offset: 1.5
+  species_length: 28
+  species_tail_length: 16
+  species_weight: 12 # Pounds
+  data:
+    - anthro_size: 76 # 6'4"
+      height: 15
+    - anthro_size: 60 # 5'
+      height: 13

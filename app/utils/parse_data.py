@@ -1,93 +1,72 @@
 import logging
-from app.utils.character import Character
-from app.utils.species_lookup import load_species_data
-from app.utils.calculate_heights import calculate_height_offset
+import yaml
+
+from app.utils.character import Character, normalize_hex_color
+from app.utils.paths import PRESETS_PATH
 
 
 def extract_characters(query_string: str) -> list:
     """
-    Extracts species, gender, height, and name from the query string.
+    Extracts species, gender, height, name, and optional color from the query string.
     Returns a list of Character instances with defaults for missing values.
     """
 
     characters_list = []
 
-    # Ensure the delimiter is a space, in case '+' is unreliable
+    # '+' and spaces both separate characters (query decoders turn bare '+' into space)
     query_string = query_string.replace("+", " ")
 
     if query_string:
         for char_data in query_string.split(" "):
             try:
-                # Unpack with default values for any missing fields
-                species, gender, height, name = (
-                    char_data.split(",") + ["unknown", "unknown", "60", "unknown"]
-                )[:4]
+                parts = char_data.split(",")
+                # species,gender,height,name[,color]
+                padded = parts + ["unknown", "unknown", "60", "unknown"]
+                species, gender, height, name = padded[:4]
+                color = normalize_hex_color(parts[4]) if len(parts) >= 5 else None
 
-                # Ensure height is a float, with a default if missing or invalid
                 height = float(height) if height.replace(".", "", 1).isdigit() else 0.0
 
                 characters_list.append(
-                    Character(name=name, species=species, height=height, gender=gender)
+                    Character(
+                        name=name,
+                        species=species,
+                        height=height,
+                        gender=gender,
+                        color=color,
+                    )
                 )
 
             except ValueError as e:
                 logging.warning(f"Error parsing character data '{char_data}': {e}")
-                continue  # Gracefully skip incorrect formats
+                continue
 
     return characters_list
 
 
-def remove_character_from_query(characters_list: list, index_to_remove: int) -> str:
-    """
-    Remove the character at the given index from the characters list and regenerate the query string.
-    """
-    if 0 <= index_to_remove < len(characters_list):
-        # Remove the character at the specified index
-        del characters_list[index_to_remove]
-
-    # Generate and return the new query string
-    return generate_characters_query_string(characters_list)
-
-
-def filter_valid_characters(characters_list: list) -> list:
-    """
-    Validates characters by calculating their display heights from species data.
-    Returns a list of Character instances with updated height and image.
-    """
-    valid_characters = []
-
-    for char in characters_list:
-        species_data = load_species_data(char.species)
-        calculated_height_data = calculate_height_offset(
-            {"species": char.species, "gender": char.gender, "height": char.height}
-        )
-
-        # Update character attributes based on calculated data
-        char.height = calculated_height_data[char.gender]["estimated_height"]
-        char.image = calculated_height_data[char.gender]["image"]
-
-        valid_characters.append(char)
-
-    return valid_characters
-
-
 def generate_characters_query_string(characters_list: list) -> str:
-    """
-    Generates a query string from the list of Character instances.
-    """
+    """Generates a query string from the list of Character instances."""
     return "+".join(char.to_query_string() for char in characters_list)
+
+
+def _character_from_preset(preset: dict) -> Character:
+    return Character(
+        name=preset["name"],
+        species=preset["species"],
+        height=float(preset["height"]),
+        gender=preset["gender"],
+        color=preset.get("color"),
+    )
 
 
 def load_preset_characters():
     """
-    Loads preset characters from the preset_species.yaml file.
-    Returns a list of dicts with keys: name, species, gender, height, description.
+    Loads preset characters from data/presets.yaml.
+    Keys: name, species, gender, height, optional description/color/default.
     """
-    import yaml
-
     try:
-        with open("app/species_data/preset_species.yaml", "r") as f:
-            data = yaml.safe_load(f)
+        with open(PRESETS_PATH, "r") as f:
+            data = yaml.safe_load(f) or {}
         return data.get("presets", [])
     except Exception as e:
         logging.warning(f"Could not load preset characters: {e}")
@@ -95,11 +74,14 @@ def load_preset_characters():
 
 
 def get_default_characters():
-    """
-    Returns the default list of Character objects for the app.
-    """
-    return [
-        Character(name="Vixi", species="arctic_fox", height=62, gender="female"),
-        Character(name="Randal", species="red_fox", height=66, gender="male"),
-        Character(name="Ky-Li", species="canine", height=88, gender="female"),
+    """Defaults are presets marked default: true (file order)."""
+    defaults = [
+        _character_from_preset(p)
+        for p in load_preset_characters()
+        if p.get("default")
     ]
+    if defaults:
+        return defaults
+    # Fallback if yaml forgot the flags
+    logging.warning("No default: true presets found; using first three presets")
+    return [_character_from_preset(p) for p in load_preset_characters()[:3]]

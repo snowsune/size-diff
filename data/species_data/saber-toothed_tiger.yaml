@@ -1,0 +1,25 @@
+male:
+  image: "Hunner/Hieght_Ref_NO_BAK_Tirga_for_Tirga.png"
+  ears_offset: 3
+  color: "00730b"
+  species_length: 60
+  species_tail_length: 30
+  species_weight: 400 # Pounds
+  data:
+    - anthro_size: 76 # 6'4"
+      height: 44
+    - anthro_size: 60 # 5'
+      height: 38
+
+female:
+  image: "Hunner/Hieght_Ref_NO_BAK_Tirga_for_Tirga.png"
+  ears_offset: 3
+  color: "c00de0"
+  species_length: 60
+  species_tail_length: 30
+  species_weight: 400 # Pounds
+  data:
+    - anthro_size: 74 # 6'2"
+      height: 46
+    - anthro_size: 60 # 5'
+      height: 34

@@ -1,0 +1,18 @@
+{
+  "name": "m_fennec",
+  "image": "m_fennec.png",
+  "joints": {
+    "origin": {
+      "x": 188,
+      "y": 429
+    },
+    "head": {
+      "x": 187,
+      "y": 51
+    },
+    "top-of-head": {
+      "x": 184,
+      "y": 1
+    }
+  }
+}

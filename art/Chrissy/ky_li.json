@@ -1,0 +1,18 @@
+{
+  "name": "ky_li",
+  "image": "ky_li.png",
+  "joints": {
+    "origin": {
+      "x": 317,
+      "y": 668
+    },
+    "head": {
+      "x": 312,
+      "y": 76
+    },
+    "top-of-head": {
+      "x": 313,
+      "y": 1
+    }
+  }
+}
