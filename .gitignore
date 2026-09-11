@@ -1,6 +1,6 @@
 Pipfile*
-cache
 *.*~
 .env
 *.sqlite3
-art/dist/
+__pycache__
+node_modules/

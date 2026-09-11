@@ -1,0 +1,18 @@
+{
+  "name": "chrissy",
+  "image": "chrissy.png",
+  "joints": {
+    "origin": {
+      "x": 311,
+      "y": 674
+    },
+    "head": {
+      "x": 312,
+      "y": 76
+    },
+    "top-of-head": {
+      "x": 309,
+      "y": 16
+    }
+  }
+}

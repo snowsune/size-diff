@@ -1,0 +1,9 @@
+{
+  "name": "size-diff",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@napi-rs/canvas": "^1.0.6",
+    "painters-canvas": "git+https://github.com/snowsune/PaintersCanvas.git"
+  }
+}

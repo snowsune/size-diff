@@ -1,0 +1,15 @@
+male:
+  image: "Chrissy/m_rexo.png"
+  data:
+    - anthro_size: 76 # 6'4"
+      height: 76 # From chrissy
+    - anthro_size: 60 # 5'
+      height: 60 # From chrissy
+
+female:
+  image: "Chrissy/chrissy.png"
+  data:
+    - anthro_size: 76 # 6'4"
+      height: 76 # From chrissy
+    - anthro_size: 60 # 5'
+      height: 60 # From chrissy

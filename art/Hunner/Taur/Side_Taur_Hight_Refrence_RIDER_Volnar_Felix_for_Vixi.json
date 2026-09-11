@@ -1,0 +1,22 @@
+{
+  "name": "Side_Taur_Hight_Refrence_RIDER_Volnar_Felix_for_Vixi",
+  "image": "Side_Taur_Hight_Refrence_RIDER_Volnar_Felix_for_Vixi.png",
+  "joints": {
+    "origin": {
+      "x": 971,
+      "y": 2016
+    },
+    "head": {
+      "x": 1216,
+      "y": 741
+    },
+    "top-of-head": {
+      "x": 1412,
+      "y": 641
+    },
+    "seat": {
+      "x": 1240,
+      "y": 1447
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "name": "vixi",
+  "image": "vixi.png",
+  "joints": {
+    "origin": {
+      "x": 274,
+      "y": 595
+    },
+    "head": {
+      "x": 273,
+      "y": 39
+    },
+    "top-of-head": {
+      "x": 273,
+      "y": 2
+    }
+  }
+}

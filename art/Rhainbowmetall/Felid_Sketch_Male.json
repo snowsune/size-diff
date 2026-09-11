@@ -1,0 +1,18 @@
+{
+  "name": "Felid_Sketch_Male",
+  "image": "Felid_Sketch_Male.png",
+  "joints": {
+    "origin": {
+      "x": 798,
+      "y": 1597
+    },
+    "head": {
+      "x": 798,
+      "y": 137
+    },
+    "top-of-head": {
+      "x": 797,
+      "y": 114
+    }
+  }
+}
