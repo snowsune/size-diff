@@ -750,11 +750,29 @@ function updateShareLink(pagePath) {
   }
 }
 
+function previewUrlFromShareUrl(shareUrl) {
+  const preview = new URL(shareUrl, window.location.origin);
+  preview.pathname = "/preview.png";
+  return preview.href;
+}
+
+/** Kick /preview.png so Node+CF have the PNG before someone pastes the link! (hopefully...) */
+function warmSharePreview(shareUrl) {
+  try {
+    fetch(previewUrlFromShareUrl(shareUrl)).catch((err) => {
+      console.warn("preview warmup failed:", err);
+    });
+  } catch {
+    /* ignore malformed share urls */
+  }
+}
+
 /** @type {ReturnType<typeof setTimeout> | null} */
 let shareCopiedTimer = null;
 
 async function copyShareLink(btn) {
   const url = btn.dataset.url || window.location.href;
+  warmSharePreview(url);
   try {
     await navigator.clipboard.writeText(url);
   } catch {
