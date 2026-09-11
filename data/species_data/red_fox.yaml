@@ -1,6 +1,5 @@
 male:
   image: "Chrissy/randal.png"
-  ears_offset: 4
   species_length: 28
   species_tail_length: 16
   species_weight: 12 # Pounds
@@ -12,7 +11,6 @@ male:
 
 female:
   image: "Chrissy/sinopa.png"
-  ears_offset: 1.5
   species_length: 28
   species_tail_length: 16
   species_weight: 12 # Pounds

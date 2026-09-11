@@ -57,7 +57,6 @@ def build_lineup(characters, use_species_scaling: bool = False) -> list[dict]:
             "inches": inches,
             "imageUrl": url_for("serve_art", rel_path=adjusted.image),
             "color": color,
-            "earsOffset": float(adjusted.ears_offset or 0),
         }
         composite = _lineup_composite(getattr(adjusted, "composite", None))
         if composite:

@@ -1,7 +1,6 @@
 # Kamryn supplied an image and its, a little different but we can always change it later <3
 male:
   image: "Mori/m_shark.png"
-  ears_offset: 3
   # color: "311b9e"
   species_length: 72
   species_tail_length: 36
@@ -14,7 +13,6 @@ male:
 
 female:
   image: "Mori/f_shark.png"
-  ears_offset: 3
   # color: "664ce6"
   species_length: 72
   species_tail_length: 36

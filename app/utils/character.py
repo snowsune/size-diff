@@ -27,7 +27,6 @@ class Character:
         gender: str,
         feral_height: float = 0.0,
         image: str = "",
-        ears_offset: float = 0.0,
         color: Optional[str] = None,
         composite: Optional[dict] = None,
     ):
@@ -37,7 +36,6 @@ class Character:
         self.gender = gender
         self.feral_height = feral_height
         self.image = image
-        self.ears_offset = ears_offset
         self.color = normalize_hex_color(color)
         self.composite = composite
 

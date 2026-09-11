@@ -1,6 +1,5 @@
 male:
   image: "Chrissy/m_rexo.png"
-  ears_offset: 7.5
   data:
     - anthro_size: 76 # 6'4"
       height: 76 # From chrissy
@@ -9,7 +8,6 @@ male:
 
 female:
   image: "Chrissy/chrissy.png"
-  ears_offset: 6
   data:
     - anthro_size: 76 # 6'4"
       height: 76 # From chrissy

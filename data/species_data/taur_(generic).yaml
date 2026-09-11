@@ -9,7 +9,6 @@ x-taur-composite: &taur_composite
 
 male:
   image: "Hunner/Taur/Side_Taur_Hight_Refrence_L_BODY_Volnar_for_Vixi.png"
-  ears_offset: 1
   color: "f2de2b"
   composite: *taur_composite
   data:
@@ -20,7 +19,6 @@ male:
 
 female:
   image: "Hunner/Taur/Side_Taur_Hight_Refrence_L_BODY_Volnar_for_Vixi.png"
-  ears_offset: 1
   color: "c91b12"
   composite: *taur_composite
   data:

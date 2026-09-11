@@ -90,7 +90,6 @@ async function withThickenedLines(sprite, radius = 1) {
 }
 
 async function spriteFromArt(image, opts) {
-  const earsOffset = Number(opts.earsOffset) || 0;
   const w = image.naturalWidth || image.width;
   const h = image.naturalHeight || image.height;
   const cx = w / 2;
@@ -98,12 +97,6 @@ async function spriteFromArt(image, opts) {
     origin: { x: cx, y: h },
     top: { x: cx, y: 0 },
   };
-  if (earsOffset > 0) {
-    joints["top-of-head"] = {
-      x: cx,
-      y: h * (earsOffset / (100 + earsOffset)),
-    };
-  }
   let colored = image;
   let color = opts.color ?? null;
   if (color) {
@@ -259,7 +252,6 @@ async function loadCharacterSprite(char) {
     );
     return spriteFromArt(await loadImage(char.imageUrl), {
       name: char.name,
-      earsOffset: char.earsOffset,
       color: char.color,
     });
   }

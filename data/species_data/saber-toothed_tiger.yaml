@@ -1,6 +1,5 @@
 male:
   image: "Hunner/Hieght_Ref_NO_BAK_Tirga_for_Tirga.png"
-  ears_offset: 3
   color: "00730b"
   species_length: 60
   species_tail_length: 30
@@ -13,7 +12,6 @@ male:
 
 female:
   image: "Hunner/Hieght_Ref_NO_BAK_Tirga_for_Tirga.png"
-  ears_offset: 3
   color: "c00de0"
   species_length: 60
   species_tail_length: 30

@@ -1,6 +1,5 @@
 male:
   image: "Hunner/Size_Refs_Mouse_for_Vixi (male).png"
-  ears_offset: 6
   color: "007516"
   species_length: 4
   species_tail_length: 3
@@ -13,7 +12,6 @@ male:
 
 female:
   image: "Hunner/Size_Refs_Mouse_for_Vixi (female).png"
-  ears_offset: 7
   color: "7900ad"
   species_length: 4
   species_tail_length: 3

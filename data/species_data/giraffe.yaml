@@ -1,6 +1,5 @@
 male:
   image: "Placeholder/m_giraffe.png"
-  ears_offset: 0
   species_length: 120
   species_tail_length: 36
   species_weight: 3000 # Pounds
@@ -12,7 +11,6 @@ male:
 
 female:
   image: "Placeholder/m_giraffe.png"
-  ears_offset: 0
   species_length: 120
   species_tail_length: 36
   species_weight: 2600 # Pounds

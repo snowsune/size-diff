@@ -1,0 +1,18 @@
+{
+  "name": "Trip_Lines_Decimated",
+  "image": "Trip_Lines_Decimated.png",
+  "joints": {
+    "origin": {
+      "x": 306,
+      "y": 2193
+    },
+    "head": {
+      "x": 499,
+      "y": 42
+    },
+    "top-of-head": {
+      "x": 550,
+      "y": 0
+    }
+  }
+}

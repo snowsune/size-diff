@@ -70,7 +70,6 @@ def calculate_height_offset(
         feral_height=final_height,
         gender=character.gender,
         image=gender_data["image"],
-        ears_offset=gender_data["ears_offset"],
         color=getattr(character, "color", None),
         composite=gender_data.get("composite"),
     )

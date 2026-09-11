@@ -123,14 +123,13 @@ async function withThickenedLines(sprite, radius = 1) {
 
 /**
  * No sidecar JSON yet? Invent scale joints from the image box.
- * origin at the feet, top at the tip, top-of-head nudged down by earsOffset.
+ * origin at the feet, top at the tip.
  *
  * @param {HTMLImageElement} image
- * @param {{ name: string, earsOffset?: number, color?: string | null }} opts
+ * @param {{ name: string, color?: string | null }} opts
  * @returns {Promise<Sprite>}
  */
 export async function spriteFromArt(image, opts) {
-  const earsOffset = Number(opts.earsOffset) || 0;
   const w = image.naturalWidth;
   const h = image.naturalHeight;
   const cx = w / 2;
@@ -140,15 +139,6 @@ export async function spriteFromArt(image, opts) {
     origin: { x: cx, y: h },
     top: { x: cx, y: 0 },
   };
-
-  if (earsOffset > 0) {
-    // same math the old pillow path used:
-    // visual = height * (1 + ears/100), so head line is ears/(100+ears) down from the tip
-    joints["top-of-head"] = {
-      x: cx,
-      y: h * (earsOffset / (100 + earsOffset)),
-    };
-  }
 
   let colored = image;
   let color = opts.color ?? null;
@@ -323,7 +313,7 @@ function spriteCacheKey(char) {
         .map((p) => `${p.joint}:${p.jsonUrl}`)
         .join(",")}`
     : "";
-  return `${char.imageUrl}|${color}|${composite}|${char.earsOffset || 0}`;
+  return `${char.imageUrl}|${color}|${composite}`;
 }
 
 /**
@@ -369,7 +359,6 @@ export async function loadCharacterSprite(char) {
       const image = await loadImage(char.imageUrl);
       return spriteFromArt(image, {
         name: char.name,
-        earsOffset: char.earsOffset,
         color: char.color,
       });
     }
@@ -408,7 +397,6 @@ function loadImage(url) {
  *   inches?: number,
  *   imageUrl: string,
  *   color: string | null,
- *   earsOffset: number,
  *   composite?: { base: string, parts: { joint: string, jsonUrl: string }[] },
  * }} LineupCharacter
  */

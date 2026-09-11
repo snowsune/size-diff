@@ -1,6 +1,5 @@
 male:
   image: "Placeholder/f_equine.png"
-  ears_offset: 0
   species_length: 72
   species_tail_length: 24
   species_weight: 1000 # Pounds
@@ -12,7 +11,6 @@ male:
 
 female:
   image: "Placeholder/f_equine.png"
-  ears_offset: 0
   species_length: 72
   species_tail_length: 24
   species_weight: 1000 # Pounds

@@ -6,7 +6,6 @@ from app.utils.paths import SPECIES_DATA_DIR
 DEFAULT_DATA = {
     "male": {
         "image": "missing.png",
-        "ears_offset": 0.0,
         "data": [
             {"anthro_size": 60, "height": 60},
             {"anthro_size": 1, "height": 1},
@@ -14,7 +13,6 @@ DEFAULT_DATA = {
     },
     "female": {
         "image": "missing.png",
-        "ears_offset": 0.0,
         "data": [
             {"anthro_size": 60, "height": 60},
             {"anthro_size": 1, "height": 1},
