@@ -57,7 +57,7 @@
                 <label for="species">Select Species:</label>
                 <select id="species" name="species">
                     {% for specie in species %}
-                    <option value="{{ specie }}" {% if specie==selected_species %} selected {% endif %}>
+                    <option value="{{ specie }}">
                         {{ specie.replace('_', ' ').title() }}
                     </option>
                     {% endfor %}
@@ -68,9 +68,9 @@
             <div class="form-group">
                 <label for="gender">Select Gender:</label>
                 <select id="gender" name="gender">
-                    <option value="male" {% if gender=='male' %} selected {% endif %}>Male</option>
-                    <option value="female" {% if gender=='female' %} selected {% endif %}>Female</option>
-                    <option value="androgynous" {% if gender=='androgynous' %} selected {% endif %}>Androgynous</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="androgynous">Androgynous</option>
                 </select>
             </div>
 
@@ -78,7 +78,7 @@
             <div class="form-group">
                 <label for="anthro_height">Anthro Height:</label>
                 <legend>Ex. 125cm or 4'11"</legend>
-                <input type="string" id="anthro_height" name="anthro_height" value="{{ anthro_height }}">
+                <input type="text" id="anthro_height" name="anthro_height">
             </div>
 
             <!-- Add and Preset Controls in a vertically stacked box -->
@@ -321,9 +321,6 @@
                     "measureToHead": measure_ears,
                     "scaleHeight": scale_height,
                     "charactersQuery": characters_query,
-                    "exportWidth": share_export_width,
-                    "exportHeight": share_export_height,
-                    "previewPath": preview_path,
                 } | tojson }}
             </script>
             <script type="module" src="{{ url_for('static', filename='js/size_diff.js') }}"></script>

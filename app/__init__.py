@@ -29,8 +29,6 @@ from app.utils.lineup import build_lineup_payload
 from app.utils.species_lookup import list_species_names
 from app.utils.paths import SPECIES_DATA_DIR
 from app.preview import (
-    EXPORT_HEIGHT,
-    EXPORT_WIDTH,
     normalize_characters_query,
     render_preview_png,
 )
@@ -169,12 +167,12 @@ def index():
     # Retrieve the current stats
     stats = stats_manager.get_stats()
 
+    # Load presets for the dropdown (and empty-lineup defaults)
+    presets = load_preset_characters()
+
     # Insert default character values if none exist
     if len(characters_list) == 0:
-        characters_list = get_default_characters()
-
-    # Load presets for the dropdown
-    presets = load_preset_characters()
+        characters_list = get_default_characters(presets)
     preset_map = {}
     for p in presets:
         label = (
@@ -245,11 +243,8 @@ def index():
         preview_url=preview_url,
         preview_path=preview_path,
         page_url=request.url,
-        share_export_width=EXPORT_WIDTH,
-        share_export_height=EXPORT_HEIGHT,
         version=os.getenv("GIT_COMMIT", "ERR_NO_REVISION"),
         server_url=os.getenv("SERVER_URL", "https://nextcloud.kitsunehosting.net/"),
-        presets=presets,
         preset_map=preset_map,
     )
 

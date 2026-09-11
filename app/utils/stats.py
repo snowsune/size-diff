@@ -26,8 +26,7 @@ class StatsManager:
                 """
                 CREATE TABLE IF NOT EXISTS stats (
                     date TEXT PRIMARY KEY,
-                    unique_visitors INTEGER,
-                    images_generated INTEGER
+                    unique_visitors INTEGER
                 )
             """
             )
@@ -42,8 +41,8 @@ class StatsManager:
             today = datetime.now().strftime("%Y-%m-%d")
             cursor.execute(
                 """
-                INSERT OR IGNORE INTO stats (date, unique_visitors, images_generated)
-                VALUES (?, 0, 0)
+                INSERT OR IGNORE INTO stats (date, unique_visitors)
+                VALUES (?, 0)
             """,
                 (today,),
             )
@@ -67,11 +66,11 @@ class StatsManager:
                         (today,),
                     )
                 except sqlite3.IntegrityError as e:
-                    logging.warn(f"Integrity error {e} when recording IP")
+                    logging.warning(f"Integrity error {e} when recording IP")
                     pass
                 conn.commit()
         except Exception as e:
-            logging.warn(f"Got uncaught exception {e} when saving visitor stat!")
+            logging.warning(f"Got uncaught exception {e} when saving visitor stat!")
 
     def get_stats(self):
         """Retrieve current statistics for today."""

@@ -315,21 +315,6 @@ button:hover {
   background-color: #8b1f1f;
 }
 
-/* Style the switches */
-.switch-group {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 5px;
-}
-
-.switch-group label {
-  display: flex;
-  align-items: center;
-  font-size: 1em;
-}
-
 input[type="checkbox"] {
   margin-left: 10px;
   transform: scale(1.2); /* Slightly larger */

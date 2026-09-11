@@ -73,15 +73,13 @@ def load_preset_characters():
         return []
 
 
-def get_default_characters():
+def get_default_characters(presets=None):
     """Defaults are presets marked default: true (file order)."""
-    defaults = [
-        _character_from_preset(p)
-        for p in load_preset_characters()
-        if p.get("default")
-    ]
+    if presets is None:
+        presets = load_preset_characters()
+    defaults = [_character_from_preset(p) for p in presets if p.get("default")]
     if defaults:
         return defaults
     # Fallback if yaml forgot the flags
     logging.warning("No default: true presets found; using first three presets")
-    return [_character_from_preset(p) for p in load_preset_characters()[:3]]
+    return [_character_from_preset(p) for p in presets[:3]]

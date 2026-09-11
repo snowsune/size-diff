@@ -1,5 +1,4 @@
 import re
-import numpy as np
 
 from app.utils.species_lookup import load_species_data
 from app.utils.character import Character
@@ -25,6 +24,22 @@ def convert_to_inches(_input: str) -> int:
     raise ValueError(f"Invalid input format: {_input}")
 
 
+def _scaled_height(anthro_sizes, heights, anthro_height: float) -> float:
+    """Degree-1 least squares fit (what numpy.polyfit used to do)."""
+    n = len(anthro_sizes)
+    if n == 0:
+        return anthro_height
+    if n == 1:
+        return float(heights[0])
+    mean_x = sum(anthro_sizes) / n
+    mean_y = sum(heights) / n
+    var = sum((x - mean_x) ** 2 for x in anthro_sizes)
+    if var == 0:
+        return mean_y
+    cov = sum((x - mean_x) * (y - mean_y) for x, y in zip(anthro_sizes, heights))
+    return mean_y + (cov / var) * (anthro_height - mean_x)
+
+
 def calculate_height_offset(
     character: Character, use_species_scaling=False
 ) -> Character:
@@ -45,9 +60,7 @@ def calculate_height_offset(
     heights = [point["height"] for point in height_data]
     anthro_sizes = [point["anthro_size"] for point in height_data]
 
-    coef = np.polyfit(anthro_sizes, heights, 1)
-    feral_height = np.polyval(coef, anthro_height)
-
+    feral_height = _scaled_height(anthro_sizes, heights, anthro_height)
     final_height = max(feral_height, 2) if use_species_scaling else anthro_height
 
     _char = Character(
