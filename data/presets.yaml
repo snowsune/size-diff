@@ -65,3 +65,9 @@ presets:
     height: 50
     color: "08590e"
     description: Sweet mouse artist!
+  - name: Myles
+    species: lagomorph
+    gender: male
+    height: 65
+    color: "2b4d4f"
+    description: Bnuuy artist!
