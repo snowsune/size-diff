@@ -1,0 +1,24 @@
+# Thank you trip <3
+male:
+  image: "Trip_Sergal/Trip_Lines_Decimated.png"
+  color: "e07020"
+  species_length: 48
+  species_tail_length: 24
+  species_weight: 120 # Pounds
+  data:
+    - anthro_size: 76 # 6'4"
+      height: 76
+    - anthro_size: 60 # 5'
+      height: 60
+
+female:
+  image: "Trip_Sergal/Trip_Lines_Decimated.png"
+  color: "e07020"
+  species_length: 48
+  species_tail_length: 24
+  species_weight: 120 # Pounds
+  data:
+    - anthro_size: 74 # 6'2"
+      height: 74
+    - anthro_size: 60 # 5'
+      height: 60
