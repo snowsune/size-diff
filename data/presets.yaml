@@ -118,4 +118,9 @@ presets:
     height: 95
     color: "ffb7c5"
     description: Pretty BIG ladyfox!
-
+  - name: Felix
+    species: red_fox
+    gender: male
+    height: 69
+    color: "d66f20"
+    description: Special kitsune fren :P

@@ -32,6 +32,7 @@ from app.utils.taur_data import load_taur_data
 from app.preview import (
     normalize_characters_query,
     render_preview_png,
+    render_taur_preview_png,
 )
 
 app = Flask(__name__)
@@ -168,6 +169,49 @@ def lineup_preview():
         png = render_preview_png(payload)
     except Exception:
         logging.exception("preview render failed for %s", characters)
+        return "Preview render failed", 500
+
+    return Response(
+        png,
+        mimetype="image/png",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
+
+
+def _taur_preview_params(args) -> dict:
+    """Query params for taur preview, with species defaults filled when missing."""
+    params = {key: args.get(key, "") for key in args.keys()}
+    species = (params.get("species") or "").strip()
+    if species and species != "generic" and species in TAUR_SPECIES_NAMES:
+        try:
+            data = load_species_data(species)
+            male = data.get("male") or {}
+            height_points = male.get("data") or [{}]
+            defaults = {
+                "species_height": height_points[0].get("height"),
+                "species_length": male.get("species_length"),
+                "species_tail_length": male.get("species_tail_length"),
+                "species_weight": male.get("species_weight"),
+            }
+            for key, inches in defaults.items():
+                if not str(params.get(key) or "").strip() and inches:
+                    params[key] = str(inches)
+        except Exception:
+            logging.exception("failed to load species defaults for %s", species)
+    return params
+
+
+@app.route("/taur/preview.png", methods=["GET"])
+def taur_preview():
+    """Same query slug as `/taur`. Renders via Node each time (CF caches)."""
+    if not request.args:
+        return "missing taur params", 400
+
+    payload = {"params": _taur_preview_params(request.args)}
+    try:
+        png = render_taur_preview_png(payload)
+    except Exception:
+        logging.exception("taur preview render failed for %s", request.query_string)
         return "Preview render failed", 500
 
     return Response(
@@ -395,6 +439,10 @@ def taur():
                 "species_height": 0,
             }
 
+    qs = request.query_string.decode("utf-8")
+    preview_url = (
+        request.url_root.rstrip("/") + "/taur/preview.png?" + qs if qs else None
+    )
     return render_template(
         "taur.html",
         species=TAUR_SPECIES_NAMES,
@@ -402,7 +450,7 @@ def taur():
         taur_data=TAUR_DATA,
         taur_layer_urls=_taur_layer_urls(),
         debug=app.debug or os.getenv("GIT_COMMIT") is None,
-        preview_url=None,
+        preview_url=preview_url,
     )
 
 

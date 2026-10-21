@@ -525,19 +525,6 @@ function initTaurCanvas(config) {
         });
     }
 
-    function exportSharePng() {
-        const canvas = scaleCanvas?.canvas;
-        if (!canvas?.toBlob) {
-            return Promise.reject(new Error("No canvas to export"));
-        }
-        return new Promise((resolve, reject) => {
-            canvas.toBlob(
-                (blob) => (blob ? resolve(blob) : reject(new Error("export failed"))),
-                "image/png",
-            );
-        });
-    }
-
     Promise.all(
         Object.entries(layerSources).map(async ([key, source]) => {
             baseSprites[key] = await loadLayerSprite(key, source, taurData.layers[key]);
@@ -554,7 +541,6 @@ function initTaurCanvas(config) {
 
     host.addEventListener("compositor-redraw", drawScene);
     window.addEventListener("resize", drawScene);
-    window.taurExportSharePng = exportSharePng;
 }
 
 if (window.taurCanvasConfig) {

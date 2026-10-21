@@ -75,49 +75,26 @@ function initTaurForm(config = {}) {
             : `${window.location.origin}/taur`;
     }
 
-    async function uploadSharePreview(queryString) {
-        // For uploading share previews!
-        if (!window.taurLastResult || !window.taurExportSharePng || !queryString) {
-            return false;
-        }
-
-        const blob = await window.taurExportSharePng();
-        const body = new FormData();
-        body.append('query', queryString);
-        body.append('image', blob, 'preview.png');
-
-        const response = await fetch('/api/shares/taur', {
-            method: 'POST',
-            body,
-        });
-
-        if (!response.ok) {
-            const payload = await response.json().catch(() => ({}));
-            throw new Error(payload.error || 'Preview upload failed');
-        }
-
-        return true;
+    function previewUrlFromShareUrl(shareUrl) {
+        const preview = new URL(shareUrl, window.location.origin);
+        preview.pathname = '/taur/preview.png';
+        return preview.href;
     }
 
-    async function shareLink() {
-        const url = buildShareUrl();
-        const queryString = new URL(url).search.slice(1);
-
-        shareBtn.disabled = true;
-        const previousLabel = shareBtn.textContent;
-        shareBtn.textContent = 'Sharing…';
-
+    /** Kick /taur/preview.png so Node+CF have the PNG before someone pastes the link. */
+    function warmSharePreview(shareUrl) {
         try {
-            if (queryString) {
-                await uploadSharePreview(queryString);
-            }
-        } catch (err) {
-            console.warn('Share preview upload failed:', err);
-        } finally {
-            shareBtn.disabled = false;
-            shareBtn.textContent = previousLabel;
+            fetch(previewUrlFromShareUrl(shareUrl)).catch((err) => {
+                console.warn('preview warmup failed:', err);
+            });
+        } catch {
+            /* ignore malformed share urls */
         }
+    }
 
+    function shareLink() {
+        const url = buildShareUrl();
+        warmSharePreview(url);
         window.history.replaceState(null, '', url.replace(window.location.origin, ''));
         shareUrlInput.value = url;
         shareEl.hidden = false;
@@ -359,11 +336,11 @@ function initTaurForm(config = {}) {
     });
 
     shareBtn?.addEventListener('click', () => {
-        shareLink().catch((err) => console.warn('Share failed:', err));
+        shareLink();
     });
     shareCopyBtn?.addEventListener('click', async () => {
         try {
-            await shareLink();
+            shareLink();
             await navigator.clipboard.writeText(shareUrlInput.value);
             shareCopyBtn.textContent = 'Copied!';
             setTimeout(() => { shareCopyBtn.textContent = 'Copy'; }, 1500);
