@@ -81,16 +81,41 @@ presets:
     gender: female
     height: 82
     color: "8b3dff"
-    description: Tall purple borzoi!
+    description: The Snout Devout herself~
   - name: Seth
     species: rat
     gender: male
     height: 50
     color: "404040"
-    description: Dark grey rat!
+    description: Handsome artist!
   - name: Zephyr
     species: snow_leopard
     gender: male
     height: 68
     color: "2d8a3e"
-    description: Green snow leopard!
+    description: Green snep~
+  - name: Ash
+    species: jackal
+    gender: male
+    height: 77
+    color: "c8c8c8"
+    description: Lockedash <3
+  - name: Shiba
+    species: red_fox
+    gender: male
+    height: 156
+    color: "2d8a3e"
+    description: BIG green fox!
+  - name: Diezoraika
+    species: taur_(generic)
+    gender: male
+    height: 126
+    color: "2b2b2b"
+    description: Big ol' taur~
+  - name: Jade
+    species: red_fox
+    gender: female
+    height: 95
+    color: "ffb7c5"
+    description: Pretty BIG ladyfox!
+
