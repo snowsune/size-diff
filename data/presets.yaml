@@ -88,3 +88,9 @@ presets:
     height: 50
     color: "404040"
     description: Dark grey rat!
+  - name: Zephyr
+    species: snow_leopard
+    gender: male
+    height: 68
+    color: "2d8a3e"
+    description: Green snow leopard!
