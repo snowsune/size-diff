@@ -133,6 +133,86 @@ button:hover {
   background-color: #ffab40;
 }
 
+#add-btn:disabled,
+#preset-add-btn:disabled {
+  background: #e0e0e0 !important;
+  color: #888 !important;
+  cursor: not-allowed !important;
+  border: 1px solid #ccc !important;
+  opacity: 1 !important;
+}
+
+.preset-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.preset-row .ts-wrapper {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+
+.preset-row .ts-control {
+  min-height: 2.2em;
+  padding: 4px 8px;
+  font-size: 1em;
+  border: none;
+  border-radius: 5px;
+  box-shadow: none;
+}
+
+.preset-row .ts-control.focus {
+  box-shadow: 0 0 0 2px rgba(255, 136, 0, 0.35);
+}
+
+.preset-row .ts-dropdown {
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  z-index: 20;
+}
+
+.preset-row .ts-dropdown .option {
+  padding: 6px 10px;
+}
+
+.preset-row .ts-dropdown .option.active {
+  background: #e0e0ff;
+  color: #000;
+}
+
+.preset-option-name {
+  font-size: 1em;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.preset-option-meta {
+  font-size: 0.8em;
+  color: #666;
+  line-height: 1.3;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#preset-add-btn {
+  height: 2.2em;
+  min-width: 90px;
+  font-size: 0.7em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0 12px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
 /* Image container — full viewport width, form stays in .container */
 .image-container {
   display: flex;

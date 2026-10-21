@@ -7,6 +7,7 @@
     <title>Vixi's Anthro Size Diff Calculator!</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/banner.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.6.2/dist/css/tom-select.default.min.css">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
 
     <!-- Open Graph tags -->
@@ -92,16 +93,9 @@
             <!-- Add and Preset Controls in a vertically stacked box -->
             <div class="form-group" style="display: flex; flex-direction: column; align-items: stretch; gap: 0.5em;">
                 <button type="submit" id="add-btn" style="height: 3.5em; width: 100%;" disabled>Add</button>
-                <div style="display: flex; align-items: center; gap: 8px; width: 100%; position: relative;">
-                    <input id="preset-autocomplete" placeholder="Or add a preset..."
-                        style="height: 2.2em; width: 100%; min-width: 0; font-size: 1em; margin: 0; padding: 0 8px; box-sizing: border-box;"
-                        autocomplete="off" oninput="showPresetSuggestions()" onkeydown="presetKeyDown(event)">
-                    <div id="preset-suggestions"
-                        style="position: absolute; top: 2.3em; left: 0; right: 0; background: white; border: 1px solid #ccc; z-index: 10; display: none; max-height: 180px; overflow-y: auto;">
-                    </div>
-                    <button type="button" id="preset-add-btn"
-                        style="height: 2.2em; min-width: 90px; font-size: .7em; display: flex; align-items: center; justify-content: center; margin: 0; padding: 0 12px; box-sizing: border-box;"
-                        disabled>Add Preset</button>
+                <div class="preset-row">
+                    <select id="preset-select" placeholder="Or add a preset..." autocomplete="off"></select>
+                    <button type="button" id="preset-add-btn" disabled>Add Preset</button>
                 </div>
             </div>
 
@@ -121,114 +115,62 @@
 
         </form>
 
+        <script src="https://cdn.jsdelivr.net/npm/tom-select@2.6.2/dist/js/tom-select.complete.min.js"></script>
         <script>
-            // Use presetMap passed from Flask as a JSON object
-            const presetMap = {{ preset_map | tojson | safe }};
-            window.sizeDiffPresetMap = presetMap;
-            const presetNames = Object.keys(presetMap);
-            const input = document.getElementById('preset-autocomplete');
-            const suggestionsBox = document.getElementById('preset-suggestions');
-            let selectedSuggestion = -1;
+            const presetOptions = {{ preset_options | tojson | safe }};
+            window.sizeDiffPresets = presetOptions;
 
-            function fuzzyMatch(str, query) {
-                // Simple fuzzy: all query chars in order in str
-                query = query.toLowerCase();
-                str = str.toLowerCase();
-                let j = 0;
-                for (let i = 0; i < str.length && j < query.length; i++) {
-                    if (str[i] === query[j]) j++;
-                }
-                return j === query.length;
+            const presetBtn = document.getElementById('preset-add-btn');
+
+            function updatePresetAddButton(value) {
+                presetBtn.disabled = !value;
             }
 
-            function showPresetSuggestions() {
-                const val = input.value.trim();
-                suggestionsBox.innerHTML = '';
-                selectedSuggestion = -1;
-                if (!val) {
-                    suggestionsBox.style.display = 'none';
-                    return;
-                }
-                // Fuzzy and substring match
-                const matches = presetNames.filter(name => name.toLowerCase().includes(val.toLowerCase()) || fuzzyMatch(name, val));
-                if (matches.length === 0) {
-                    suggestionsBox.style.display = 'none';
-                    return;
-                }
-                matches.slice(0, 10).forEach((name, idx) => {
-                    const div = document.createElement('div');
-                    div.textContent = name;
-                    div.className = 'preset-suggestion';
-                    div.style.padding = '4px 8px';
-                    div.style.cursor = 'pointer';
-                    div.onmousedown = function (e) { // use mousedown so it fires before blur
-                        input.value = name;
-                        suggestionsBox.style.display = 'none';
-                        updatePresetAddButton();
-                    };
-                    if (idx === 0) div.style.borderTop = 'none';
-                    suggestionsBox.appendChild(div);
-                });
-                suggestionsBox.style.display = 'block';
+            function presetMeta(data) {
+                return [data.species, data.gender, data.description].filter(Boolean).join(' · ');
             }
 
-            input.addEventListener('blur', function () {
-                setTimeout(() => { suggestionsBox.style.display = 'none'; }, 100);
+            const presetSelect = new TomSelect('#preset-select', {
+                valueField: 'value',
+                labelField: 'name',
+                searchField: ['name', 'description', 'species'],
+                options: presetOptions,
+                maxOptions: 10,
+                placeholder: 'Or add a preset...',
+                allowEmptyOption: true,
+                create: false,
+                render: {
+                    option: function (data, escape) {
+                        const meta = presetMeta(data);
+                        return '<div class="preset-option">' +
+                            '<div class="preset-option-name">' + escape(data.name) + '</div>' +
+                            (meta ? '<div class="preset-option-meta">' + escape(meta) + '</div>' : '') +
+                            '</div>';
+                    },
+                    item: function (data, escape) {
+                        return '<div>' + escape(data.name) + '</div>';
+                    },
+                },
+                onChange: function (value) {
+                    updatePresetAddButton(value);
+                },
             });
+            window.sizeDiffPresetSelect = presetSelect;
+            updatePresetAddButton(presetSelect.getValue());
 
-            function presetKeyDown(e) {
-                const items = suggestionsBox.querySelectorAll('.preset-suggestion');
-                if (!items.length) return;
-                if (e.key === 'ArrowDown') {
-                    selectedSuggestion = (selectedSuggestion + 1) % items.length;
-                    updateSuggestionHighlight(items);
-                    e.preventDefault();
-                } else if (e.key === 'ArrowUp') {
-                    selectedSuggestion = (selectedSuggestion - 1 + items.length) % items.length;
-                    updateSuggestionHighlight(items);
-                    e.preventDefault();
-                } else if (e.key === 'Enter') {
-                    if (selectedSuggestion >= 0 && selectedSuggestion < items.length) {
-                        input.value = items[selectedSuggestion].textContent;
-                        suggestionsBox.style.display = 'none';
-                        updatePresetAddButton();
-                    }
-                }
-            }
-            function updateSuggestionHighlight(items) {
-                items.forEach((item, idx) => {
-                    item.classList.toggle('selected', idx === selectedSuggestion);
-                });
-            }
-            document.getElementById('preset-add-btn').onclick = function () {
+            presetBtn.onclick = function () {
                 // Soft-nav captures this click when size_diff.js loaded; this is no-JS fallback.
-                var val = input.value;
-                var presetVal = presetMap[val] || null;
-                if (!presetVal) {
-                    for (const key in presetMap) {
-                        if (key.toLowerCase().startsWith(val.toLowerCase())) {
-                            presetVal = presetMap[key];
-                            break;
-                        }
-                    }
-                }
+                const presetVal = presetSelect.getValue();
                 if (!presetVal) return;
-                var url = new URL(window.location.href);
-                var chars = url.searchParams.get('characters') || '';
-                var params = new URLSearchParams();
+                const url = new URL(window.location.href);
+                const chars = url.searchParams.get('characters') || '';
+                const params = new URLSearchParams();
                 params.set('preset', presetVal);
                 if (chars) params.set('characters', chars);
                 if (url.searchParams.get('measure_ears') === 'false') params.set('measure_ears', 'false');
                 if (url.searchParams.get('scale_height') === 'true') params.set('scale_height', 'true');
                 window.location.href = '/add-preset?' + params.toString();
             };
-            // Optional: allow Enter key in input to trigger add
-            input.addEventListener('keydown', function (e) {
-                if (e.key === 'Enter') {
-                    document.getElementById('preset-add-btn').click();
-                    e.preventDefault();
-                }
-            });
 
             // Enable/disable Add button based on name and height fields
             function updateAddButton() {
@@ -240,46 +182,7 @@
             document.getElementById('name').addEventListener('input', updateAddButton);
             document.getElementById('anthro_height').addEventListener('input', updateAddButton);
             updateAddButton();
-
-            // Enable/disable Add Preset button based on valid preset selection
-            function updatePresetAddButton() {
-                var val = input.value;
-                var presetVal = presetMap[val] || null;
-                const presetBtn = document.getElementById('preset-add-btn');
-                presetBtn.disabled = !presetVal;
-            }
-            input.addEventListener('input', updatePresetAddButton);
-            updatePresetAddButton();
         </script>
-
-        <style>
-            #preset-suggestions .preset-suggestion {
-                background: white;
-                color: black;
-            }
-
-            #preset-suggestions .preset-suggestion.selected,
-            #preset-suggestions .preset-suggestion:hover {
-                background: #e0e0ff;
-                color: black;
-            }
-
-            #add-btn:disabled {
-                background: #e0e0e0 !important;
-                color: #888 !important;
-                cursor: not-allowed !important;
-                border: 1px solid #ccc !important;
-                opacity: 1 !important;
-            }
-
-            #preset-add-btn:disabled {
-                background: #e0e0e0 !important;
-                color: #888 !important;
-                cursor: not-allowed !important;
-                border: 1px solid #ccc !important;
-                opacity: 1 !important;
-            }
-        </style>
 
         {% if characters_list %}
         <div class="image-container">

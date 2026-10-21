@@ -210,18 +210,21 @@ def index():
     # Insert default character values if none exist
     if len(characters_list) == 0:
         characters_list = get_default_characters(presets)
-    preset_map = {}
+    preset_options = []
     for p in presets:
-        label = (
-            f"{p['name'].replace('_', ' ').title()} --- "
-            f"{p['species'].replace('_', ' ').title()}, {p['gender']}, "
-            f"{p.get('description', '')}"
-        )
         query = f"{p['species']},{p['gender']},{p['height']},{p['name']}"
         color = normalize_hex_color(p.get("color"))
         if color:
             query = f"{query},{color}"
-        preset_map[label] = query
+        preset_options.append(
+            {
+                "value": query,
+                "name": p["name"].replace("_", " ").title(),
+                "species": p["species"].replace("_", " ").title(),
+                "gender": p["gender"],
+                "description": p.get("description") or "",
+            }
+        )
 
     if request.method == "POST":
         # Get species, name, and gender from form data
@@ -282,7 +285,7 @@ def index():
         page_url=request.url,
         version=os.getenv("GIT_COMMIT", "ERR_NO_REVISION"),
         server_url=os.getenv("SERVER_URL", "https://nextcloud.kitsunehosting.net/"),
-        preset_map=preset_map,
+        preset_options=preset_options,
     )
 
 

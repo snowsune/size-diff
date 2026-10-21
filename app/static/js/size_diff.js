@@ -966,8 +966,10 @@ function wireSoftNav() {
       if (presetBtn) {
         event.preventDefault();
         event.stopImmediatePropagation();
-        const input = document.getElementById("preset-autocomplete");
-        softAddPreset(input instanceof HTMLInputElement ? input.value : "").catch(
+        const ts = /** @type {any} */ (window).sizeDiffPresetSelect;
+        const value =
+          ts && typeof ts.getValue === "function" ? ts.getValue() : "";
+        softAddPreset(typeof value === "string" ? value : "").catch(
           showSoftNavError,
         );
       }
@@ -1073,22 +1075,9 @@ function wireSoftNav() {
 
 /**
  * Soft-add a preset without full reload.
- * @param {string} val
+ * @param {string} presetVal Tom Select option value (preset query string)
  */
-async function softAddPreset(val) {
-  /** @type {Record<string, string> | undefined} */
-  const presetMap = /** @type {any} */ (window).sizeDiffPresetMap;
-  if (!presetMap) return;
-
-  let presetVal = presetMap[val] || null;
-  if (!presetVal) {
-    for (const key in presetMap) {
-      if (key.toLowerCase().startsWith(val.toLowerCase())) {
-        presetVal = presetMap[key];
-        break;
-      }
-    }
-  }
+async function softAddPreset(presetVal) {
   if (!presetVal) return;
 
   const params = new URLSearchParams();
@@ -1110,8 +1099,8 @@ async function softAddPreset(val) {
   const data = await mutateLineup(`/add-preset?${params.toString()}`);
   await applyLineupState(data);
 
-  const input = document.getElementById("preset-autocomplete");
-  if (input instanceof HTMLInputElement) input.value = "";
+  const ts = /** @type {any} */ (window).sizeDiffPresetSelect;
+  if (ts && typeof ts.clear === "function") ts.clear(true);
   const presetBtn = document.getElementById("preset-add-btn");
   if (presetBtn instanceof HTMLButtonElement) presetBtn.disabled = true;
 }
