@@ -76,3 +76,9 @@ presets:
     gender: female
     height: 3.7
     color: "16c6e5"
+  - name: Sonia
+    species: borzoi
+    gender: female
+    height: 82
+    color: "8b3dff"
+    description: Tall purple borzoi!

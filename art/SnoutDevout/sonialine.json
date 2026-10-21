@@ -1,0 +1,22 @@
+{
+  "name": "sonialine",
+  "image": "sonialine.png",
+  "joints": {
+    "origin": {
+      "x": 400,
+      "y": 1889
+    },
+    "head": {
+      "x": 420,
+      "y": 200
+    },
+    "top-of-head": {
+      "x": 405,
+      "y": 95
+    },
+    "ear-tip": {
+      "x": 409,
+      "y": 5
+    }
+  }
+}
