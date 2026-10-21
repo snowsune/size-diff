@@ -26,8 +26,9 @@ from app.utils.stats import StatsManager
 from app.utils.art_paths import get_art_image_path
 from app.utils.character import Character, normalize_hex_color
 from app.utils.lineup import build_lineup_payload
-from app.utils.species_lookup import list_species_names
+from app.utils.species_lookup import list_species_names, load_species_data
 from app.utils.paths import SPECIES_DATA_DIR
+from app.utils.taur_data import load_taur_data
 from app.preview import (
     normalize_characters_query,
     render_preview_png,
@@ -67,6 +68,13 @@ else:
 
 # Load species list on startup
 species_list = list_species_names()
+TAUR_SPECIES_NAMES = [
+    s
+    for s in species_list
+    if s not in ("taur_(generic)", "preset_species", "rexouium")
+]
+TAUR_DATA = load_taur_data()
+TAUR_CALCULATOR_DIR = os.path.join(os.path.dirname(__file__), "taur_calculator")
 
 
 def _wants_json() -> bool:
@@ -101,6 +109,28 @@ def _finish_lineup(characters_list, measure_ears: bool, scale_height: bool):
 def painters_canvas_asset(filename):
     """Serve Painter's Canvas ESM from node_modules. Thats it. No vendor copy."""
     return send_from_directory(PAINTERS_CANVAS_ROOT, filename)
+
+
+@app.route("/taur-calculator/<path:filename>")
+def taur_calculator_asset(filename):
+    return send_from_directory(TAUR_CALCULATOR_DIR, filename)
+
+
+def _taur_layer_urls() -> dict:
+    urls = {}
+    art_root = os.path.abspath("art")
+    for key, layer in TAUR_DATA["layers"].items():
+        rel = layer["path"]
+        assets = {"url": url_for("serve_art", rel_path=rel), "path": rel}
+        root, ext = os.path.splitext(rel)
+        mask_rel = f"{root}_Mask{ext}"
+        if os.path.isfile(os.path.join(art_root, mask_rel)):
+            assets["mask"] = {
+                "url": url_for("serve_art", rel_path=mask_rel),
+                "path": mask_rel,
+            }
+        urls[key] = assets
+    return urls
 
 
 @app.route("/art/<path:rel_path>")
@@ -329,6 +359,41 @@ def update_character(index):
         default=False,
     )
     return _finish_lineup(characters_list, measure_ears, scale_height)
+
+
+@app.route("/taur")
+def taur():
+    """CalculaTAUR — Volnar / Snow / Hunner."""
+    species_data_map = {}
+    for species_name in TAUR_SPECIES_NAMES:
+        try:
+            data = load_species_data(species_name)
+            male_data = data.get("male") or {}
+            height_points = male_data.get("data") or [{}]
+            species_data_map[species_name] = {
+                "species_length": male_data.get("species_length", 0),
+                "species_tail_length": male_data.get("species_tail_length", 0),
+                "species_weight": male_data.get("species_weight", 0),
+                "species_height": height_points[0].get("height", 0),
+            }
+        except Exception as e:
+            logging.warning("Failed to load species data for %s: %s", species_name, e)
+            species_data_map[species_name] = {
+                "species_length": 0,
+                "species_tail_length": 0,
+                "species_weight": 0,
+                "species_height": 0,
+            }
+
+    return render_template(
+        "taur.html",
+        species=TAUR_SPECIES_NAMES,
+        species_data=species_data_map,
+        taur_data=TAUR_DATA,
+        taur_layer_urls=_taur_layer_urls(),
+        debug=app.debug or os.getenv("GIT_COMMIT") is None,
+        preview_url=None,
+    )
 
 
 # The about page

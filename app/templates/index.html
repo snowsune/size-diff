@@ -34,6 +34,14 @@
     <div class="container">
         <h1>Vixi's Anthro Size Diff Calculator!</h1>
 
+        <div class="taur-calc-link">
+            <a href="{{ url_for('taur') }}" class="taur-btn">
+                <span>Check out the Taur Calculator!</span>
+                <span class="taur-btn-arrow">→</span>
+            </a>
+            <span class="taur-calc-tagline">A new way to size up your taur-self!</span>
+        </div>
+
         <!-- Display the flash message if there is one -->
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
