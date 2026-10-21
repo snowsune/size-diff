@@ -65,7 +65,10 @@ const SizeDiffUnits = (() => {
      * Accepts plain numbers, 6'4", 180cm, 1.5m.
      */
     function parseLengthInput(input) {
-        const raw = String(input).trim();
+        const raw = String(input)
+            .trim()
+            .replace(/[\u201C\u201D\u2033]/g, '"')
+            .replace(/[\u2018\u2019\u2032]/g, "'");
         if (!raw) {
             return NaN;
         }
@@ -90,7 +93,7 @@ const SizeDiffUnits = (() => {
             return parseFloat(feetOnlyMatch[1]) * 12;
         }
 
-        const inchesOnlyMatch = raw.match(/^(\d+(?:\.\d+)?)"$/);
+        const inchesOnlyMatch = raw.match(/^(\d+(?:\.\d+)?)\s*"$/);
         if (inchesOnlyMatch) {
             return parseFloat(inchesOnlyMatch[1]);
         }

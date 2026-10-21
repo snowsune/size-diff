@@ -10,7 +10,7 @@ male:
       height: 7
 
 female:
-  image: "missing.png"
+  image: "Kyte/KyteRef.png"
   species_length: 20
   species_tail_length: 14
   species_weight: 3 # Pounds

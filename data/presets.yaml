@@ -71,3 +71,8 @@ presets:
     height: 65
     color: "2b4d4f"
     description: Bnuuy artist!
+  - name: Kyte
+    species: fennec_fox
+    gender: female
+    height: 3.7
+    color: "16c6e5"

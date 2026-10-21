@@ -4,24 +4,47 @@ from app.utils.species_lookup import load_species_data
 from app.utils.character import Character
 
 
-def convert_to_inches(_input: str) -> int:
+def convert_to_inches(_input: str) -> float:
     """
-    Accept values like 125cm or 4'4" and return inches.
+    Accept values like 125cm, 4'11", 5", or 10" and return inches.
     Raises ValueError if input is invalid.
     """
+    raw = str(_input).strip()
+    raw = (
+        raw.replace("\u201c", '"')
+        .replace("\u201d", '"')
+        .replace("\u2033", '"')
+        .replace("\u2018", "'")
+        .replace("\u2019", "'")
+        .replace("\u2032", "'")
+    )
+    if not raw:
+        raise ValueError("Height is empty")
 
-    cm_match = re.match(r"(\d+)cm", _input)
+    cm_match = re.fullmatch(r"(\d+(?:\.\d+)?)\s*cm", raw, re.IGNORECASE)
     if cm_match:
-        cm_value = int(cm_match.group(1))
-        return round(cm_value / 2.54)
+        return float(cm_match.group(1)) / 2.54
 
-    ft_in_match = re.match(r"(\d+)'(\d+)\"", _input)
+    m_match = re.fullmatch(r"(\d+(?:\.\d+)?)\s*m", raw, re.IGNORECASE)
+    if m_match:
+        return (float(m_match.group(1)) * 100) / 2.54
+
+    ft_in_match = re.fullmatch(r"(\d+)'\s*(\d+(?:\.\d+)?)\"?", raw)
     if ft_in_match:
-        feet = int(ft_in_match.group(1))
-        inches = int(ft_in_match.group(2))
-        return (feet * 12) + inches
+        return int(ft_in_match.group(1), 10) * 12 + float(ft_in_match.group(2))
 
-    raise ValueError(f"Invalid input format: {_input}")
+    feet_only_match = re.fullmatch(r"(\d+(?:\.\d+)?)'", raw)
+    if feet_only_match:
+        return float(feet_only_match.group(1)) * 12
+
+    inches_only_match = re.fullmatch(r"(\d+(?:\.\d+)?)\s*\"", raw)
+    if inches_only_match:
+        return float(inches_only_match.group(1))
+
+    try:
+        return float(raw)
+    except ValueError as exc:
+        raise ValueError(f"Invalid input format: {_input}") from exc
 
 
 def _scaled_height(anthro_sizes, heights, anthro_height: float) -> float:
