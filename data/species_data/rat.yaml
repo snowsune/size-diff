@@ -1,0 +1,23 @@
+male:
+  image: "Hunner/Size_Refs_Mouse_for_Vixi (male).png"
+  color: "404040"
+  species_length: 9
+  species_tail_length: 7
+  species_weight: 1 # Pounds
+  data:
+    - anthro_size: 76 # 6'4"
+      height: 5
+    - anthro_size: 60 # 5'
+      height: 6.5
+
+female:
+  image: "Hunner/Size_Refs_Mouse_for_Vixi (female).png"
+  color: "505050"
+  species_length: 9
+  species_tail_length: 7
+  species_weight: 0.9 # Pounds
+  data:
+    - anthro_size: 74 # 6'2"
+      height: 4.5
+    - anthro_size: 60 # 5'
+      height: 6

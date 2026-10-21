@@ -82,3 +82,9 @@ presets:
     height: 82
     color: "8b3dff"
     description: Tall purple borzoi!
+  - name: Seth
+    species: rat
+    gender: male
+    height: 50
+    color: "404040"
+    description: Dark grey rat!
