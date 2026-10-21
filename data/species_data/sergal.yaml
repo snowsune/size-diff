@@ -1,6 +1,6 @@
 # Thank you trip <3
 male:
-  image: "Trip_Sergal/Trip_Lines_Decimated.png"
+  image: "Trip_Sergal/Trip_Lines.png"
   color: "e07020"
   species_length: 48
   species_tail_length: 24
@@ -12,7 +12,7 @@ male:
       height: 60
 
 female:
-  image: "Trip_Sergal/Trip_Lines_Decimated.png"
+  image: "Trip_Sergal/Trip_Lines.png"
   color: "e07020"
   species_length: 48
   species_tail_length: 24

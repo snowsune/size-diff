@@ -1,6 +1,6 @@
 {
-  "name": "Trip_Lines_Decimated",
-  "image": "Trip_Lines_Decimated.png",
+  "name": "Trip_Lines",
+  "image": "Trip_Lines.png",
   "joints": {
     "origin": {
       "x": 306,

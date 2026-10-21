@@ -113,7 +113,7 @@ def serve_art(rel_path):
         return "Not found", 404
     if not os.path.isfile(resolved):
         return "Not found", 404
-    return send_file(resolved, max_age=31536000)
+    return send_file(resolved, max_age=86400)
 
 
 @app.route("/preview.png", methods=["GET"])
