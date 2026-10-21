@@ -167,6 +167,9 @@ export async function spriteFromArt(image, opts) {
 function ensureScaleJoints(sprite) {
   const joints = { ...sprite.joints };
 
+  if (!joints.top && joints["ear-tip"]) {
+    joints.top = { ...joints["ear-tip"] };
+  }
   if (!joints["top-of-head"] && joints.top_of_head) {
     joints["top-of-head"] = { ...joints.top_of_head };
   }

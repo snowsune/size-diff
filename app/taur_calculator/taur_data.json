@@ -17,7 +17,7 @@
       "scale_from": "TH",
       "span_pixels": 1006,
       "joints": {
-        "floor": [1452, 2487],
+        "floor": [1452, 2464],
         "upper_attach": [738, 1481],
         "tail_attach": [1386, 1453],
         "rider_attach": [1133, 1543]

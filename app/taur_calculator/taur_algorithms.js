@@ -7,6 +7,7 @@ const TaurAlgorithms = (() => {
     const FORM_FIELDS = {
         shared: [
             'name', 'algorithm', 'taur_body_color', 'show_measurements',
+            'measure_to_head',
             'show_rider', 'rider_height', 'taur_rider_color',
             'show_standing', 'standing_height', 'taur_standing_color',
         ],

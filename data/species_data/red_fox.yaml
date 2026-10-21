@@ -1,7 +1,7 @@
 male:
   image: "Chrissy/randal.png"
   species_length: 28
-  species_tail_length: 16
+  species_tail_length: 21
   species_weight: 12 # Pounds
   data:
     - anthro_size: 76 # 6'4"
@@ -12,7 +12,7 @@ male:
 female:
   image: "Chrissy/sinopa.png"
   species_length: 28
-  species_tail_length: 16
+  species_tail_length: 21
   species_weight: 12 # Pounds
   data:
     - anthro_size: 76 # 6'4"

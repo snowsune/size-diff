@@ -30,6 +30,9 @@ const VolnarsAlgorithm = (() => {
         const anthroLegs = anthroHeight * 4 / 8;
         const anthroTorso = anthroHeight * 3 / 8;
         const anthroHead = anthroHeight * 1 / 8;
+        const anthroRatio = anthroHeight > 0 ? taurFullHeight / anthroHeight : 0;
+        const taurTorso = anthroTorso * anthroRatio;
+        const taurHead = anthroHead * anthroRatio;
 
         let taurHeight;
         let taurLengthCalc;
@@ -38,14 +41,14 @@ const VolnarsAlgorithm = (() => {
             taurHeight = anthroLegs;
             taurLengthCalc = taurLength ?? speciesLength;
         } else {
+            // Vitruvian: anthro 4/8 legs, 3/8 torso, 1/8 head, scaled to TFH.
+            // TH was never specified by Volnar — the old SH*(TFH/AH) fallback
+            // left TH+TTo+THe short of TFH on small species (17" fox → 24" body).
             taurLengthCalc = (2 * anthroTorso) - anthroHead;
-            taurHeight = anthroHeight > 0
-                ? speciesHeight * (taurFullHeight / anthroHeight)
-                : 0;
+            taurHeight = taurFullHeight - taurTorso - taurHead;
         }
 
         const taurRatio = speciesHeight > 0 ? taurHeight / speciesHeight : 0;
-        const anthroRatio = anthroHeight > 0 ? taurFullHeight / anthroHeight : 0;
 
         const cbpResult = {};
         if (customBodyParts) {
@@ -54,8 +57,6 @@ const VolnarsAlgorithm = (() => {
             }
         }
 
-        const taurTorso = anthroTorso * anthroRatio;
-        const taurHead = anthroHead * anthroRatio;
         const taurTail = speciesTailLength != null ? speciesTailLength * taurRatio : 0;
         const taurWeight = speciesWeight * (anthroRatio ** 3);
 

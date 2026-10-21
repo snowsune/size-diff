@@ -63,6 +63,11 @@ function initTaurForm(config = {}) {
                 params.append(key, value);
             }
         }
+        // Default-on checkbox: always write 0/1 so a share can uncheck it.
+        params.set(
+            'measure_to_head',
+            document.getElementById('measure_to_head')?.checked ? '1' : '0',
+        );
 
         const query = params.toString();
         return query
@@ -298,7 +303,7 @@ function initTaurForm(config = {}) {
     form.addEventListener('submit', (event) => event.preventDefault());
 
     form.addEventListener('input', (event) => {
-        if (event.target.name === 'show_measurements') {
+        if (event.target.name === 'show_measurements' || event.target.name === 'measure_to_head') {
             return;
         }
         if (event.target.name === 'taur_body_color' || event.target.name === 'taur_rider_color' || event.target.name === 'taur_standing_color') {
@@ -321,7 +326,7 @@ function initTaurForm(config = {}) {
 
     form.addEventListener('change', (event) => {
         const { name } = event.target;
-        if (name === 'show_measurements') {
+        if (name === 'show_measurements' || name === 'measure_to_head') {
             if (!event.target.disabled) {
                 redrawCanvas();
             }

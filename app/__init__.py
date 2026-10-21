@@ -123,6 +123,13 @@ def _taur_layer_urls() -> dict:
         rel = layer["path"]
         assets = {"url": url_for("serve_art", rel_path=rel), "path": rel}
         root, ext = os.path.splitext(rel)
+        json_rel = f"{root}.json"
+        json_path = os.path.join(art_root, json_rel)
+        if os.path.isfile(json_path):
+            assets["json"] = (
+                f"{url_for('serve_art', rel_path=json_rel)}"
+                f"?v={int(os.path.getmtime(json_path))}"
+            )
         mask_rel = f"{root}_Mask{ext}"
         if os.path.isfile(os.path.join(art_root, mask_rel)):
             assets["mask"] = {
