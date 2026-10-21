@@ -1,0 +1,23 @@
+male:
+  image: "SnoutDevout/sonialine.png"
+  color: "8b3dff"
+  species_length: 42
+  species_tail_length: 20
+  species_weight: 75 # Pounds
+  data:
+    - anthro_size: 76 # 6'4"
+      height: 32
+    - anthro_size: 60 # 5'
+      height: 28
+
+female:
+  image: "SnoutDevout/sonialine.png"
+  color: "8b3dff"
+  species_length: 42
+  species_tail_length: 20
+  species_weight: 70 # Pounds
+  data:
+    - anthro_size: 76 # 6'4"
+      height: 30
+    - anthro_size: 60 # 5'
+      height: 26

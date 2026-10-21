@@ -1,0 +1,18 @@
+{
+  "name": "Hieght_Ref_Maxene_for_Vixi",
+  "image": "Hieght_Ref_Maxene_for_Vixi.png",
+  "joints": {
+    "origin": {
+      "x": 405,
+      "y": 2278
+    },
+    "head": {
+      "x": 547,
+      "y": 77
+    },
+    "top_of_head": {
+      "x": 552,
+      "y": 53
+    }
+  }
+}

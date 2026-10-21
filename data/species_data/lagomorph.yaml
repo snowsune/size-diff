@@ -1,0 +1,24 @@
+# Myles' male ref covers both for now.
+male:
+  image: "Myles/Myles_Lagomorph_Male.png"
+  color: "c49a5c"
+  species_length: 18
+  species_tail_length: 3
+  species_weight: 8 # Pounds
+  data:
+    - anthro_size: 76 # 6'4"
+      height: 16
+    - anthro_size: 60 # 5'
+      height: 12
+
+female:
+  image: "Myles/Myles_Lagomorph_Male.png"
+  color: "c49a5c"
+  species_length: 18
+  species_tail_length: 3
+  species_weight: 8 # Pounds
+  data:
+    - anthro_size: 74 # 6'2"
+      height: 14
+    - anthro_size: 60 # 5'
+      height: 10

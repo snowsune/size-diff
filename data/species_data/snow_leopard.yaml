@@ -1,0 +1,23 @@
+male:
+  image: "Rhainbowmetall/Felid_Sketch_Male.png"
+  color: "2d8a3e"
+  species_length: 42
+  species_tail_length: 36
+  species_weight: 100 # Pounds
+  data:
+    - anthro_size: 76 # 6'4"
+      height: 24
+    - anthro_size: 60 # 5'
+      height: 20
+
+female:
+  image: "Rhainbowmetall/Felid_Sketch_Female.png"
+  color: "2d8a3e"
+  species_length: 42
+  species_tail_length: 36
+  species_weight: 80 # Pounds
+  data:
+    - anthro_size: 74 # 6'2"
+      height: 22
+    - anthro_size: 60 # 5'
+      height: 18

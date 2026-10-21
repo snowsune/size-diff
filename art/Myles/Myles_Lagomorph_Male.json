@@ -1,0 +1,18 @@
+{
+  "name": "Myles_Lagomorph_Male",
+  "image": "Myles_Lagomorph_Male.png",
+  "joints": {
+    "origin": {
+      "x": 524,
+      "y": 2045
+    },
+    "head": {
+      "x": 520,
+      "y": 48
+    },
+    "top-of-head": {
+      "x": 540,
+      "y": 4
+    }
+  }
+}
