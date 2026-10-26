@@ -11,6 +11,7 @@ presets:
     species: red_fox
     gender: male
     height: 65.6
+    color: b61e1e
     default: true
     description: "All things in moderation... except chocolate!"
   - name: Ky-Li
@@ -40,6 +41,7 @@ presets:
     species: red_fox
     gender: female
     height: 66
+    color: a333d4
     description: All things foxy vixen! With 100% bonus wings!
   - name: Tirga
     species: saber-toothed_tiger

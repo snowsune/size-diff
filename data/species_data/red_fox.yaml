@@ -1,5 +1,5 @@
 male:
-  image: "Chrissy/randal.png"
+  image: "Hunner/Randal/Randal_Fox_Height_ref NAME.png"
   species_length: 28
   species_tail_length: 21
   species_weight: 12 # Pounds
@@ -10,7 +10,7 @@ male:
       height: 15
 
 female:
-  image: "Chrissy/sinopa.png"
+  image: "Hunner/Aryaltel/Ary_Fox_Height_ref.png"
   species_length: 28
   species_tail_length: 21
   species_weight: 12 # Pounds
