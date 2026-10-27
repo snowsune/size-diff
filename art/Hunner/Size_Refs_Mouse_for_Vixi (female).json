@@ -1,0 +1,18 @@
+{
+  "name": "Size_Refs_Mouse_for_Vixi (female)",
+  "image": "Size_Refs_Mouse_for_Vixi (female).png",
+  "joints": {
+    "origin": {
+      "x": 1530,
+      "y": 3953
+    },
+    "head": {
+      "x": 1514,
+      "y": 458
+    },
+    "top-of-head": {
+      "x": 1513,
+      "y": 209
+    }
+  }
+}

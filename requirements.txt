@@ -1,7 +1,4 @@
 Flask
-Pillow
-numpy
 pyyaml
 gunicorn
-flask-caching
 

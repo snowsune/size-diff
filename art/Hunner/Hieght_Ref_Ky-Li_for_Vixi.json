@@ -1,0 +1,18 @@
+{
+  "name": "Hieght_Ref_Ky-Li_for_Vixi",
+  "image": "Hieght_Ref_Ky-Li_for_Vixi.png",
+  "joints": {
+    "origin": {
+      "x": 321,
+      "y": 2336
+    },
+    "head": {
+      "x": 497,
+      "y": 244
+    },
+    "top-of-head": {
+      "x": 586,
+      "y": 18
+    }
+  }
+}

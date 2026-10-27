@@ -1,0 +1,22 @@
+{
+  "name": "Randal_Fox_Height_ref NAME",
+  "image": "Randal_Fox_Height_ref NAME.png",
+  "joints": {
+    "origin": {
+      "x": 924,
+      "y": 3000
+    },
+    "head": {
+      "x": 904,
+      "y": 280
+    },
+    "top-of-head": {
+      "x": 904,
+      "y": 183
+    },
+    "ear-tip": {
+      "x": 1070,
+      "y": 43
+    }
+  }
+}

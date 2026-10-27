@@ -1,0 +1,22 @@
+{
+  "name": "KyteRef",
+  "image": "KyteRef.png",
+  "joints": {
+    "origin": {
+      "x": 500,
+      "y": 1244
+    },
+    "head": {
+      "x": 490,
+      "y": 160
+    },
+    "top-of-head": {
+      "x": 500,
+      "y": 132
+    },
+    "ear-tip": {
+      "x": 542,
+      "y": 9
+    }
+  }
+}

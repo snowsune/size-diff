@@ -1,0 +1,22 @@
+{
+  "name": "Ary_Fox_Height_ref",
+  "image": "Ary_Fox_Height_ref.png",
+  "joints": {
+    "origin": {
+      "x": 920,
+      "y": 2995
+    },
+    "head": {
+      "x": 900,
+      "y": 327
+    },
+    "top-of-head": {
+      "x": 900,
+      "y": 178
+    },
+    "ear-tip": {
+      "x": 1071,
+      "y": 28
+    }
+  }
+}

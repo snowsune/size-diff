@@ -7,24 +7,30 @@
     <title>Vixi's Anthro Size Diff Calculator!</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/banner.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.6.2/dist/css/tom-select.default.min.css">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+    <script type="importmap">
+    {
+      "imports": {
+        "painters-canvas": "/lib/painters-canvas/src/index.js"
+      }
+    }
+    </script>
 
     <!-- Open Graph tags -->
     <meta property="og:title" content="Vixi's Anthro Size Diff Calculator" />
     <meta property="og:description" content="Compare your anthro sizes!" />
-    <meta property="og:image"
-        content="{{ url_for('generate_image', characters=characters_query, measure_ears=measure_ears, scale_height=scale_height, size=630) }}" />
+    <meta property="og:image" content="{{ preview_url }}" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:url" content="https://size-diff.kitsunehosting.net/" />
+    <meta property="og:url" content="{{ page_url }}" />
     <meta property="og:type" content="website" />
 
     <!-- Twitter Card tags for larger image display in discord only (lol, special) -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Vixi's Anthro Size Diff Calculator" />
     <meta name="twitter:description" content="Compare your anthro sizes!" />
-    <meta name="twitter:image"
-        content="{{ url_for('generate_image', characters=characters_query, measure_ears=measure_ears, scale_height=scale_height, size=630) }}" />
+    <meta name="twitter:image" content="{{ preview_url }}" />
 </head>
 
 <body>
@@ -36,16 +42,12 @@
     <div class="container">
         <h1>Vixi's Anthro Size Diff Calculator!</h1>
 
-        <!-- Taur Calculator Button -->
-        <div class="taur-calc-link"
-            style="position: absolute; top: 120px; right: 40px; display: flex; flex-direction: column; align-items: flex-end; z-index: 10;">
-            <a href="/taur" class="taur-btn"
-                style="display: flex; align-items: center; background: #f80; color: #000; padding: 20px 30px; border-radius: 10px; font-size: 0.8em; font-weight: bold; text-decoration: none; box-shadow: 0 2px 8px #0008; transition: background 0.3s;">
-                <span style="margin-right: 18px; font-size: 1.5em;">Check out the Taur Calculator!</span>
-                <span style="font-size: 2.5em;">&#8594;</span>
+        <div class="taur-calc-link">
+            <a href="{{ url_for('taur') }}" class="taur-btn">
+                <span>Check out the Taur Calculator!</span>
+                <span class="taur-btn-arrow">→</span>
             </a>
-            <span style="margin-top: 10px; font-size: 1.1em; color: #fff; opacity: 0.8;">A new way to size up your
-                taur-self!</span>
+            <span class="taur-calc-tagline">A new way to size up your taur-self!</span>
         </div>
 
         <!-- Display the flash message if there is one -->
@@ -71,7 +73,7 @@
                 <label for="species">Select Species:</label>
                 <select id="species" name="species">
                     {% for specie in species %}
-                    <option value="{{ specie }}" {% if specie==selected_species %} selected {% endif %}>
+                    <option value="{{ specie }}">
                         {{ specie.replace('_', ' ').title() }}
                     </option>
                     {% endfor %}
@@ -82,32 +84,25 @@
             <div class="form-group">
                 <label for="gender">Select Gender:</label>
                 <select id="gender" name="gender">
-                    <option value="male" {% if gender=='male' %} selected {% endif %}>Male</option>
-                    <option value="female" {% if gender=='female' %} selected {% endif %}>Female</option>
-                    <option value="androgynous" {% if gender=='androgynous' %} selected {% endif %}>Androgynous</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="androgynous">Androgynous</option>
                 </select>
             </div>
 
             <!-- Height Field -->
             <div class="form-group">
                 <label for="anthro_height">Anthro Height:</label>
-                <legend>Ex. 125cm or 4'11"</legend>
-                <input type="string" id="anthro_height" name="anthro_height" value="{{ anthro_height }}">
+                <legend>Ex. 125cm, 4'11", or 10"</legend>
+                <input type="text" id="anthro_height" name="anthro_height">
             </div>
 
             <!-- Add and Preset Controls in a vertically stacked box -->
             <div class="form-group" style="display: flex; flex-direction: column; align-items: stretch; gap: 0.5em;">
                 <button type="submit" id="add-btn" style="height: 3.5em; width: 100%;" disabled>Add</button>
-                <div style="display: flex; align-items: center; gap: 8px; width: 100%; position: relative;">
-                    <input id="preset-autocomplete" placeholder="Or add a preset..."
-                        style="height: 2.2em; width: 100%; min-width: 0; font-size: 1em; margin: 0; padding: 0 8px; box-sizing: border-box;"
-                        autocomplete="off" oninput="showPresetSuggestions()" onkeydown="presetKeyDown(event)">
-                    <div id="preset-suggestions"
-                        style="position: absolute; top: 2.3em; left: 0; right: 0; background: white; border: 1px solid #ccc; z-index: 10; display: none; max-height: 180px; overflow-y: auto;">
-                    </div>
-                    <button type="button" id="preset-add-btn"
-                        style="height: 2.2em; min-width: 90px; font-size: .7em; display: flex; align-items: center; justify-content: center; margin: 0; padding: 0 12px; box-sizing: border-box;"
-                        disabled>Add Preset</button>
+                <div class="preset-row">
+                    <select id="preset-select" placeholder="Or add a preset..." autocomplete="off"></select>
+                    <button type="button" id="preset-add-btn" disabled>Add Preset</button>
                 </div>
             </div>
 
@@ -125,127 +120,64 @@
                 </label>
             </div>
 
-            <!-- Switch script -->
-            <script>
-                document.getElementById('measure_ears').addEventListener('change', function () {
-                    this.form.submit();
-                });
-
-                document.getElementById('scale_height').addEventListener('change', function () {
-                    this.form.submit();
-                });
-            </script>
-
         </form>
 
+        <script src="https://cdn.jsdelivr.net/npm/tom-select@2.6.2/dist/js/tom-select.complete.min.js"></script>
         <script>
-            // Use presetMap passed from Flask as a JSON object
-            const presetMap = {{ preset_map | tojson | safe }};
-            const presetNames = Object.keys(presetMap);
-            const input = document.getElementById('preset-autocomplete');
-            const suggestionsBox = document.getElementById('preset-suggestions');
-            let selectedSuggestion = -1;
+            const presetOptions = {{ preset_options | tojson | safe }};
+            window.sizeDiffPresets = presetOptions;
 
-            function fuzzyMatch(str, query) {
-                // Simple fuzzy: all query chars in order in str
-                query = query.toLowerCase();
-                str = str.toLowerCase();
-                let j = 0;
-                for (let i = 0; i < str.length && j < query.length; i++) {
-                    if (str[i] === query[j]) j++;
-                }
-                return j === query.length;
+            const presetBtn = document.getElementById('preset-add-btn');
+
+            function updatePresetAddButton(value) {
+                presetBtn.disabled = !value;
             }
 
-            function showPresetSuggestions() {
-                const val = input.value.trim();
-                suggestionsBox.innerHTML = '';
-                selectedSuggestion = -1;
-                if (!val) {
-                    suggestionsBox.style.display = 'none';
-                    return;
-                }
-                // Fuzzy and substring match
-                const matches = presetNames.filter(name => name.toLowerCase().includes(val.toLowerCase()) || fuzzyMatch(name, val));
-                if (matches.length === 0) {
-                    suggestionsBox.style.display = 'none';
-                    return;
-                }
-                matches.slice(0, 10).forEach((name, idx) => {
-                    const div = document.createElement('div');
-                    div.textContent = name;
-                    div.className = 'preset-suggestion';
-                    div.style.padding = '4px 8px';
-                    div.style.cursor = 'pointer';
-                    div.onmousedown = function (e) { // use mousedown so it fires before blur
-                        input.value = name;
-                        suggestionsBox.style.display = 'none';
-                        updatePresetAddButton();
-                    };
-                    if (idx === 0) div.style.borderTop = 'none';
-                    suggestionsBox.appendChild(div);
-                });
-                suggestionsBox.style.display = 'block';
+            function presetMeta(data) {
+                return [data.species, data.gender, data.description].filter(Boolean).join(' · ');
             }
 
-            input.addEventListener('blur', function () {
-                setTimeout(() => { suggestionsBox.style.display = 'none'; }, 100);
+            const presetSelect = new TomSelect('#preset-select', {
+                valueField: 'value',
+                labelField: 'name',
+                searchField: ['name', 'description', 'species'],
+                options: presetOptions,
+                maxOptions: 10,
+                placeholder: 'Or add a preset...',
+                allowEmptyOption: true,
+                create: false,
+                render: {
+                    option: function (data, escape) {
+                        const meta = presetMeta(data);
+                        return '<div class="preset-option">' +
+                            '<div class="preset-option-name">' + escape(data.name) + '</div>' +
+                            (meta ? '<div class="preset-option-meta">' + escape(meta) + '</div>' : '') +
+                            '</div>';
+                    },
+                    item: function (data, escape) {
+                        return '<div>' + escape(data.name) + '</div>';
+                    },
+                },
+                onChange: function (value) {
+                    updatePresetAddButton(value);
+                },
             });
+            window.sizeDiffPresetSelect = presetSelect;
+            updatePresetAddButton(presetSelect.getValue());
 
-            function presetKeyDown(e) {
-                const items = suggestionsBox.querySelectorAll('.preset-suggestion');
-                if (!items.length) return;
-                if (e.key === 'ArrowDown') {
-                    selectedSuggestion = (selectedSuggestion + 1) % items.length;
-                    updateSuggestionHighlight(items);
-                    e.preventDefault();
-                } else if (e.key === 'ArrowUp') {
-                    selectedSuggestion = (selectedSuggestion - 1 + items.length) % items.length;
-                    updateSuggestionHighlight(items);
-                    e.preventDefault();
-                } else if (e.key === 'Enter') {
-                    if (selectedSuggestion >= 0 && selectedSuggestion < items.length) {
-                        input.value = items[selectedSuggestion].textContent;
-                        suggestionsBox.style.display = 'none';
-                        updatePresetAddButton();
-                    }
-                }
-            }
-            function updateSuggestionHighlight(items) {
-                items.forEach((item, idx) => {
-                    item.classList.toggle('selected', idx === selectedSuggestion);
-                });
-            }
-            document.getElementById('preset-add-btn').onclick = function () {
-                var val = input.value;
-                var presetVal = presetMap[val] || null;
-                if (!presetVal) {
-                    // Try to match ignoring case
-                    for (const key in presetMap) {
-                        if (key.toLowerCase().startsWith(val.toLowerCase())) {
-                            presetVal = presetMap[key];
-                            break;
-                        }
-                    }
-                }
+            presetBtn.onclick = function () {
+                // Soft-nav captures this click when size_diff.js loaded; this is no-JS fallback.
+                const presetVal = presetSelect.getValue();
                 if (!presetVal) return;
-                var url = new URL(window.location.href);
-                var chars = url.searchParams.get('characters') || '';
-                var base = '/add-preset?';
-                var params = new URLSearchParams();
+                const url = new URL(window.location.href);
+                const chars = url.searchParams.get('characters') || '';
+                const params = new URLSearchParams();
                 params.set('preset', presetVal);
                 if (chars) params.set('characters', chars);
                 if (url.searchParams.get('measure_ears') === 'false') params.set('measure_ears', 'false');
                 if (url.searchParams.get('scale_height') === 'true') params.set('scale_height', 'true');
-                window.location.href = base + params.toString();
+                window.location.href = '/add-preset?' + params.toString();
             };
-            // Optional: allow Enter key in input to trigger add
-            input.addEventListener('keydown', function (e) {
-                if (e.key === 'Enter') {
-                    document.getElementById('preset-add-btn').click();
-                    e.preventDefault();
-                }
-            });
 
             // Enable/disable Add button based on name and height fields
             function updateAddButton() {
@@ -257,60 +189,59 @@
             document.getElementById('name').addEventListener('input', updateAddButton);
             document.getElementById('anthro_height').addEventListener('input', updateAddButton);
             updateAddButton();
-
-            // Enable/disable Add Preset button based on valid preset selection
-            function updatePresetAddButton() {
-                var val = input.value;
-                var presetVal = presetMap[val] || null;
-                const presetBtn = document.getElementById('preset-add-btn');
-                presetBtn.disabled = !presetVal;
-            }
-            input.addEventListener('input', updatePresetAddButton);
-            updatePresetAddButton();
         </script>
-
-        <style>
-            #preset-suggestions .preset-suggestion {
-                background: white;
-                color: black;
-            }
-
-            #preset-suggestions .preset-suggestion.selected,
-            #preset-suggestions .preset-suggestion:hover {
-                background: #e0e0ff;
-                color: black;
-            }
-
-            #add-btn:disabled {
-                background: #e0e0e0 !important;
-                color: #888 !important;
-                cursor: not-allowed !important;
-                border: 1px solid #ccc !important;
-                opacity: 1 !important;
-            }
-
-            #preset-add-btn:disabled {
-                background: #e0e0e0 !important;
-                color: #888 !important;
-                cursor: not-allowed !important;
-                border: 1px solid #ccc !important;
-                opacity: 1 !important;
-            }
-        </style>
 
         {% if characters_list %}
         <div class="image-container">
-            <img src="{{ url_for('generate_image', characters=characters_query, measure_ears=measure_ears, scale_height=scale_height, size=1024) }}"
-                alt="Generated Size Image" height="380vh" />
-
-            <div class="remove-buttons">
-                {% for char in characters_list %}
-                <a href="{{ url_for('remove_character', index=loop.index0, characters=characters_query, measure_ears=measure_ears, scale_height=scale_height) }}"
-                    class="remove-btn">
-                    Remove {{ char["name"] }} <!-- Now using the character's name -->
-                </a>
-                {% endfor %}
+            <div class="lineup-scroll">
+                <div class="lineup-stack">
+                    <div id="size-diff-canvas" class="lineup-host" aria-label="Size comparison"></div>
+                    <div class="character-controls" id="character-controls">
+                    {% for entry in lineup %}
+                    {% set i = loop.index0 %}
+                    <div class="character-control" data-slot-index="{{ i }}">
+                        <div class="control-name">{{ entry.name }}</div>
+                        <form class="control-form" method="get" action="{{ url_for('update_character', index=i) }}">
+                            <input type="hidden" name="characters" value="{{ characters_query }}">
+                            {% if not measure_ears %}<input type="hidden" name="measure_ears" value="false">{% endif %}
+                            {% if scale_height %}<input type="hidden" name="scale_height" value="true">{% endif %}
+                            <label class="control-field">
+                                <span>Height</span>
+                                <span class="height-inputs">
+                                    <input type="number" name="feet" min="0" max="40" step="1" value="{{ entry.feet }}" aria-label="{{ entry.name }} feet">
+                                    <span class="unit">'</span>
+                                    <input type="number" name="inches" min="0" max="11.99" step="0.5" value="{{ entry.inches }}" aria-label="{{ entry.name }} inches">
+                                    <span class="unit">"</span>
+                                </span>
+                            </label>
+                            <label class="control-field">
+                                <span>Color</span>
+                                <input type="color" name="color" value="{{ entry.color or '#888888' }}" aria-label="{{ entry.name }} color">
+                            </label>
+                            <div class="control-actions">
+                                {% if i > 0 %}
+                                <a class="control-move" href="/move/{{ i }}/left?characters={{ characters_query }}{{ settings_query }}" title="Move left" aria-label="Move {{ entry.name }} left">←</a>
+                                {% endif %}
+                                {% if not loop.last %}
+                                <a class="control-move" href="/move/{{ i }}/right?characters={{ characters_query }}{{ settings_query }}" title="Move right" aria-label="Move {{ entry.name }} right">→</a>
+                                {% endif %}
+                                <a class="control-remove" href="/remove/{{ i }}?characters={{ characters_query }}{{ settings_query }}">Remove</a>
+                            </div>
+                        </form>
+                    </div>
+                    {% endfor %}
+                    </div>
+                </div>
             </div>
+            <script type="application/json" id="size-diff-lineup">
+                {{ {
+                    "characters": lineup,
+                    "measureToHead": measure_ears,
+                    "scaleHeight": scale_height,
+                    "charactersQuery": characters_query,
+                } | tojson }}
+            </script>
+            <script type="module" src="{{ url_for('static', filename='js/size_diff.js') }}"></script>
         </div>
 
         <!-- Takes you to the about page -->
@@ -319,8 +250,8 @@
         </div>
 
         <div class="share-link">
-            <p>Share this lineup:</p>
-            <a href="{{ request.url }}">{{ request.url }}</a>
+            <p>Share this lineup: <span class="share-hint">(click to copy)</span></p>
+            <button type="button" class="share-copy" data-url="{{ page_url }}" title="Copy lineup link">{{ page_url }}</button>
         </div>
         {% endif %}
     </div>
@@ -332,12 +263,16 @@
             <a href="https://www.furaffinity.net/user/n1chris">Chrissy</a>,
             <a href="https://bsky.app/profile/rhainbowmetall.bsky.social">Rhain</a>,
             <a href="#">Keith</a>,
-            and <a href="https://www.furaffinity.net/user/zhelya">Zhelya</a>
+            <a href="https://www.furaffinity.net/user/zhelya">Zhelya</a>,
+            <a href="https://www.furaffinity.net/user/tripwedge">Trip Sergal</a>,
+            <a href="https://lagomorph.club/">Myles</a>,
+            <a href="https://www.furaffinity.net/user/kyte/">Kyte</a> and 
+            <a href="https://www.furaffinity.net/user/snoutdevout">SnoutDevout</a>
         </p>
         <p>
-            Join my <a href="{{ server_url }}">discord server!</a> Images Generated: {{ stats.images_generated }} |
-            Cache Performance: {{ cache_performance }} | Unique Visitors: {{ stats.unique_visitors }} | <a
-                href="https://ko-fi.com/snowsune">Support me on Kofi!</a>
+            Join me on <a href="https://matrix.kitsunehosting.net/">Matrix!</a> |
+            Unique Visitors: {{ stats.unique_visitors }} |
+            <a href="https://ko-fi.com/snowsune">Support me on Kofi!</a>
         </p>
     </footer>
 </body>

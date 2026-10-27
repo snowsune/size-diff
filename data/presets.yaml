@@ -1,0 +1,128 @@
+# Preset characters for quick selection
+# Optional: description, color (RRGGBB), default (include in empty lineup)
+presets:
+  - name: Vixi
+    species: arctic_fox
+    gender: female
+    height: 62.0
+    default: true
+    description: "Thats me!"
+  - name: Randal
+    species: red_fox
+    gender: male
+    height: 65.6
+    color: b61e1e
+    default: true
+    description: "All things in moderation... except chocolate!"
+  - name: Ky-Li
+    species: canine
+    gender: female
+    height: 88.0
+    color: 191919
+    default: true
+    description: "We love our kydog~"
+  - name: Trip
+    species: sergal
+    gender: male
+    height: 74
+    description: "Trip Sergal"
+  - name: Fortune_Towers
+    species: giraffe
+    gender: female
+    height: 118
+    description: A tall strider? How much description do you need?
+  - name: Volnar
+    species: taur_(generic)
+    gender: androgynous
+    height: 108
+    color: ed2009
+    description: 4 legs 4 more fun!
+  - name: Aryaltel_Kavka
+    species: red_fox
+    gender: female
+    height: 66
+    color: a333d4
+    description: All things foxy vixen! With 100% bonus wings!
+  - name: Tirga
+    species: saber-toothed_tiger
+    gender: androgynous
+    height: 84
+    color: bb09ed
+    description: She's got more limbs than she knows what to do with.
+  - name: Alice
+    species: canine
+    gender: female
+    height: 141
+    color: ada816
+    description: Big ol' dog~
+  - name: Maxene
+    species: canine
+    gender: male
+    height: 120
+    color: cc382a
+    description: Cute demon doggo!
+  - name: Hunner
+    species: mouse
+    gender: male
+    height: 50
+    color: "08590e"
+    description: Sweet mouse artist!
+  - name: Myles
+    species: lagomorph
+    gender: male
+    height: 65
+    color: "2b4d4f"
+    description: Bnuuy artist!
+  - name: Kyte
+    species: fennec_fox
+    gender: female
+    height: 3.7
+    color: "16c6e5"
+  - name: Sonia
+    species: borzoi
+    gender: female
+    height: 82
+    color: "8b3dff"
+    description: The Snout Devout herself~
+  - name: Seth
+    species: rat
+    gender: male
+    height: 50
+    color: "404040"
+    description: Handsome artist!
+  - name: Zephyr
+    species: snow_leopard
+    gender: male
+    height: 68
+    color: "2d8a3e"
+    description: Green snep~
+  - name: Ash
+    species: jackal
+    gender: male
+    height: 77
+    color: "c8c8c8"
+    description: Lockedash <3
+  - name: Shiba
+    species: red_fox
+    gender: male
+    height: 156
+    color: "2d8a3e"
+    description: BIG green fox!
+  - name: Diezoraika
+    species: taur_(generic)
+    gender: male
+    height: 126
+    color: "2b2b2b"
+    description: Big ol' taur~
+  - name: Jade
+    species: red_fox
+    gender: female
+    height: 95
+    color: "ffb7c5"
+    description: Pretty BIG ladyfox!
+  - name: Felix
+    species: red_fox
+    gender: male
+    height: 69
+    color: "d66f20"
+    description: Special kitsune fren :P
